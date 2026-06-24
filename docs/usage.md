@@ -22,7 +22,7 @@ uv run python -m robot_lsp --version
 
 ## Logging
 
-Logs are written to stderr so stdout remains reserved for LSP messages.
+Logs are written as structured JSON lines to stderr so stdout remains reserved for LSP messages.
 
 ```powershell
 uv run python -m robot_lsp --log-level debug
@@ -51,4 +51,5 @@ Implemented behavior:
 
 - `importPaths` participates in `Resource` and `Variables` import resolution.
 - `diagnostics.enable` controls diagnostic scheduling and clears diagnostics when disabled.
-- `logLevel` and `completion.snippets` are stored for future feature integration.
+- `logLevel` updates the server logger during `initialize` and `workspace/didChangeConfiguration`.
+- `completion.snippets` is stored for future feature integration.

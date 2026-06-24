@@ -19,8 +19,8 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 | Order | Item | Source | Status |
 |---|---|---|---|
 | 01 | Executar matriz real de compatibilidade Robot Framework 7.x, não apenas a versão instalada | Stage 14 / compatibility matrix | done |
-| 02 | Automatizar publicação/distribuição de release, incluindo build artifacts e PyPI se aplicável | Stage 14 | pending |
-| 03 | Implementar logging estruturado aplicado à configuração `robot.lsp.logLevel` em runtime | Stage 13 / Stage 14 | pending |
+| 02 | Automatizar publicação/distribuição de release, incluindo build artifacts e PyPI se aplicável | Stage 14 | done |
+| 03 | Implementar logging estruturado aplicado à configuração `robot.lsp.logLevel` em runtime | Stage 13 / Stage 14 | done |
 | 04 | Aplicar `robot.lsp.completion.snippets` aos completion items e snippets configuráveis | Stage 13 | pending |
 | 05 | Implementar request outbound `workspace/configuration` e configuração por workspace folder | Stage 13 / workspace configuration spec | pending |
 | 06 | Adicionar worker pool/cancelamento real para operações longas quando houver métricas justificando | Stage 12 / performance specs | pending |

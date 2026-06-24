@@ -5,8 +5,8 @@ from robot_lsp.protocol.jsonrpc import create_notification, create_request
 from robot_lsp.protocol.server import LspServer
 
 
-def make_server(initialization_options=None):
-    server = LspServer()
+def make_server(initialization_options=None, log_levels=None):
+    server = LspServer(log_level_applier=log_levels.append if log_levels is not None else None)
     server.diagnostic_service = DiagnosticService(
         ParseService(server.document_store, RobotFrameworkParser()),
         server.publish_diagnostics,
@@ -38,6 +38,40 @@ class TestConfigurationHandler:
 
         assert response is None
         assert server.configuration_service.config.log_level == "debug"
+
+    def test_initialize_applies_configured_log_level(self):
+        log_levels = []
+
+        make_server({"robot": {"lsp": {"logLevel": "debug"}}}, log_levels=log_levels)
+
+        assert log_levels == ["debug"]
+
+    def test_did_change_configuration_applies_log_level_at_runtime(self):
+        log_levels = []
+        server, _capabilities = make_server(log_levels=log_levels)
+
+        server.handle_message(
+            create_notification(
+                "workspace/didChangeConfiguration",
+                params={"settings": {"robot": {"lsp": {"logLevel": "error"}}}},
+            )
+        )
+
+        assert log_levels == ["error"]
+
+    def test_did_change_configuration_does_not_reapply_same_log_level(self):
+        log_levels = []
+        server, _capabilities = make_server({"logLevel": "debug"}, log_levels=log_levels)
+        log_levels.clear()
+
+        server.handle_message(
+            create_notification(
+                "workspace/didChangeConfiguration",
+                params={"settings": {"robot": {"lsp": {"logLevel": "debug"}}}},
+            )
+        )
+
+        assert log_levels == []
 
     def test_diagnostics_disabled_does_not_schedule_on_did_open(self):
         server, _capabilities = make_server({"diagnostics": {"enable": False}})

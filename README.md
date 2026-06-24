@@ -30,6 +30,15 @@ just test
 uv run python -m compileall src tests
 ```
 
+## Package Build
+
+```powershell
+uv sync --extra dev
+uv build
+```
+
+See `docs/release.md` for release artifact validation.
+
 ## Implemented MVP Features
 
 - JSON-RPC 2.0 and LSP stdio framing

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from robot_lsp.application.completion_service import CompletionService
 from robot_lsp.application.code_action_service import CodeActionService
-from robot_lsp.application.configuration import ConfigurationService
+from robot_lsp.application.configuration import ConfigurationService, LogLevel
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
 from robot_lsp.application.formatting_service import FormattingService
@@ -36,6 +37,7 @@ class LspServer:
         formatting_service: FormattingService | None = None,
         code_action_service: CodeActionService | None = None,
         configuration_service: ConfigurationService | None = None,
+        log_level_applier: Callable[[LogLevel], None] | None = None,
     ) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
@@ -52,6 +54,7 @@ class LspServer:
         self.formatting_service = formatting_service
         self.code_action_service = code_action_service
         self.configuration_service = configuration_service or ConfigurationService()
+        self.log_level_applier = log_level_applier
         self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
@@ -117,7 +120,9 @@ class LspServer:
             self.client_capabilities = capabilities if isinstance(capabilities, dict) else {}
             initialization_options = params.get("initializationOptions")
             if isinstance(initialization_options, dict):
+                old_log_level = self.configuration_service.config.log_level
                 self.configuration_service.update(initialization_options)
+                self._apply_log_level_if_changed(old_log_level)
 
         self.state = ServerState.RUNNING
         return initialize_result()
@@ -248,7 +253,9 @@ class LspServer:
         if not isinstance(settings, dict):
             return None
         old_diagnostics_enabled = self._diagnostics_enabled()
+        old_log_level = self.configuration_service.config.log_level
         self.configuration_service.update(settings)
+        self._apply_log_level_if_changed(old_log_level)
         if old_diagnostics_enabled and not self._diagnostics_enabled() and self.diagnostic_service is not None:
             for uri in self.document_store.get_open_uris():
                 self.diagnostic_service.clear(uri)
@@ -256,6 +263,11 @@ class LspServer:
 
     def _diagnostics_enabled(self) -> bool:
         return self.configuration_service.config.diagnostics.enable
+
+    def _apply_log_level_if_changed(self, old_log_level: LogLevel) -> None:
+        new_log_level = self.configuration_service.config.log_level
+        if self.log_level_applier is not None and new_log_level != old_log_level:
+            self.log_level_applier(new_log_level)
 
     def _handle_completion(
         self,

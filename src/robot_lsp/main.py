@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import sys
 from collections.abc import Callable
 
 from robot_lsp.application.code_action_service import CodeActionService
@@ -11,6 +10,7 @@ from robot_lsp.application.configuration import ConfigurationService
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.formatting_service import FormattingService
 from robot_lsp.application.hover_service import HoverService
+from robot_lsp.application.logging_config import apply_log_level, configure_logging
 from robot_lsp.application.navigation_service import NavigationService
 from robot_lsp.application.parse_service import ParseService
 from robot_lsp.application.refactoring_service import RefactoringService
@@ -33,7 +33,10 @@ PublishDiagnostics = Callable[[str, list[LspDiagnostic]], None]
 
 
 def create_server(publish_diagnostics: PublishDiagnostics | None = None) -> LspServer:
-    server = LspServer(configuration_service=ConfigurationService())
+    server = LspServer(
+        configuration_service=ConfigurationService(),
+        log_level_applier=apply_log_level,
+    )
     parser = RobotFrameworkParser()
     parse_service = ParseService(server.document_store, parser)
     workspace_index = WorkspaceIndex(parser=parser)
@@ -102,18 +105,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{SERVER_NAME} {SERVER_VERSION}")
         return 0
 
-    _configure_logging(args.log_level)
+    configure_logging(args.log_level)
     return run_lsp_loop()
 
 
 def _flush_outgoing_notifications(server: LspServer, transport: TransportStdio) -> None:
     while server.outgoing_notifications:
         transport.write_message(encode_message(server.outgoing_notifications.pop(0)))
-
-
-def _configure_logging(log_level: str) -> None:
-    logging.basicConfig(
-        level=getattr(logging, log_level.upper()),
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        stream=sys.stderr,
-    )

@@ -28,10 +28,10 @@
 - Settings aceitas em formato direto, `robot.lsp` ou `robot: { lsp: ... }`.
 - `diagnostics.enable` controla agendamento de diagnostics e limpa diagnostics publicados quando desligado.
 - `importPaths` é usado pelo `WorkspaceIndex` para resolver imports de arquivo.
+- `logLevel` controla o logger `robot_lsp` durante `initialize` e `workspace/didChangeConfiguration`.
 
 ## Deferred
 
 - Request server-to-client `workspace/configuration`.
 - Configuração específica por workspace folder.
 - Aplicação de `completion.snippets` nos completion items.
-- Logging real baseado em `logLevel`.

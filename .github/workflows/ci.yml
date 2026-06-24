@@ -41,3 +41,22 @@ jobs:
       - run: uv pip install "robotframework==${{ matrix.robotframework-version }}"
       - run: uv run python -c "import robot.version; print(robot.version.VERSION)"
       - run: uv run pytest
+
+  package:
+    name: Build package artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --extra dev
+      - run: uv build
+      - run: python -m venv .venv-package-smoke
+      - run: .venv-package-smoke/bin/python -m pip install dist/*.whl
+      - run: .venv-package-smoke/bin/robot-lsp --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/*

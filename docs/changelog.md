@@ -13,3 +13,5 @@ Initial MVP implementation.
 - Rename, formatting and code actions
 - Parse cache and runtime configuration
 - CLI entrypoint for stdio operation
+- CI package build and wheel smoke install validation
+- Structured JSON stderr logging with runtime `robot.lsp.logLevel` updates
