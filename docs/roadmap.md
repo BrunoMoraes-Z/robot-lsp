@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 07 — Hover**
+**Stage 08 — Navigation**
 Status: `planned`
 
 ---
@@ -18,7 +18,7 @@ Status: `planned`
 | 04 | Robot Framework Model | done |
 | 05 | Diagnostics | done |
 | 06 | Completion | done |
-| 07 | Hover | planned |
+| 07 | Hover | done |
 | 08 | Navigation | planned |
 | 09 | Workspace Index | planned |
 | 10 | Refactoring | planned |
@@ -256,14 +256,21 @@ Status: `planned`
 - Range do símbolo sob o cursor
 
 **Done**
-- _Nothing yet_
+- Implementado `HoverService` em `src/robot_lsp/application/hover_service.py`
+- Implementados tipos `MarkupContent`, `Hover` e `HoverContext`
+- Implementado hover de keywords locais com assinatura, argumentos e documentação
+- Implementado hover de variáveis locais com tipo e valor
+- Implementado hover de imports com tipo, nome, alias e argumentos
+- Integrado handler `textDocument/hover` ao `LspServer`
+- Criados testes unitários para service e handler LSP
 
 **Acceptance Criteria**
-- Hover em keyword local retorna assinatura e documentação
-- Hover em variável retorna tipo e valor
-- Hover em import retorna tipo e caminho
-- Retorno respeita `MarkupKind.Markdown`
-- `null`/`None` se não encontrar nada no hover
+- ✅ Hover em keyword local retorna assinatura e documentação
+- ✅ Hover em variável retorna tipo e valor
+- ✅ Hover em import retorna tipo e caminho
+- ✅ Retorno respeita `MarkupKind.Markdown`
+- ✅ `null`/`None` se não encontrar nada no hover
+- ✅ Range no hover cobre o símbolo sob o cursor
 
 ---
 

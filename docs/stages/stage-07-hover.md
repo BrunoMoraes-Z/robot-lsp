@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+done
 
 ## Goal
 
@@ -57,3 +57,11 @@ Implementar hover para mostrar informações sobre símbolos sob o cursor: keywo
 ## Dependencies
 
 - Stage 04 (modelo RF)
+
+## Notes
+
+- Stage concluída com hover inicial para keywords locais, variables locais e imports.
+- `textDocument/hover` foi integrado ao `LspServer` como request LSP.
+- O serviço usa `DocumentStore` + `ParseService`, sem dependência direta do Robot Framework.
+- Hover de libraries/resources importados permanece fora do escopo e será tratado após workspace index.
+- Validação executada com `just test` e `uv run python -m compileall src tests`.

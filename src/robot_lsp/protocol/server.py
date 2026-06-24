@@ -5,6 +5,7 @@ from typing import Any
 from robot_lsp.application.completion_service import CompletionService
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
+from robot_lsp.application.hover_service import HoverService
 from robot_lsp.domain.diagnostics import LspDiagnostic
 from robot_lsp.domain.models import LspPosition
 
@@ -24,6 +25,7 @@ class LspServer:
         self,
         diagnostic_service: DiagnosticService | None = None,
         completion_service: CompletionService | None = None,
+        hover_service: HoverService | None = None,
     ) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
@@ -34,6 +36,7 @@ class LspServer:
         self.document_store = DocumentStore()
         self.diagnostic_service = diagnostic_service
         self.completion_service = completion_service
+        self.hover_service = hover_service
         self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
@@ -45,6 +48,7 @@ class LspServer:
         self._dispatcher.register("textDocument/didChange", self._handle_did_change)
         self._dispatcher.register("textDocument/didClose", self._handle_did_close)
         self._dispatcher.register("textDocument/completion", self._handle_completion)
+        self._dispatcher.register("textDocument/hover", self._handle_hover)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.method == "exit":
@@ -236,3 +240,25 @@ class LspServer:
         if completion is None:
             return {"isIncomplete": False, "items": []}
         return completion.to_lsp()
+
+    def _handle_hover(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> dict[str, Any] | None:
+        if self.hover_service is None or not isinstance(params, dict):
+            return None
+
+        text_document = params.get("textDocument")
+        position = params.get("position")
+        if not isinstance(text_document, dict) or not isinstance(position, dict):
+            return None
+
+        uri = text_document.get("uri")
+        line = position.get("line")
+        character = position.get("character")
+        if not isinstance(uri, str) or not isinstance(line, int) or not isinstance(character, int):
+            return None
+
+        hover = self.hover_service.compute_hover(uri, LspPosition(line=line, character=character))
+        return hover.to_lsp() if hover is not None else None
