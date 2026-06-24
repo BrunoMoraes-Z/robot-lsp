@@ -9,6 +9,7 @@ from robot_lsp.domain.positions import position_to_utf16_offset
 
 from .document_store import Document, DocumentStore
 from .parse_service import ParseService
+from .workspace import WorkspaceIndex
 
 
 class CompletionItemKind(IntEnum):
@@ -92,9 +93,15 @@ class CompletionService:
     ]
     VARIABLE_TRIGGERS = {"$", "@", "&", "%"}
 
-    def __init__(self, document_store: DocumentStore, parse_service: ParseService) -> None:
+    def __init__(
+        self,
+        document_store: DocumentStore,
+        parse_service: ParseService,
+        workspace_index: WorkspaceIndex | None = None,
+    ) -> None:
         self._document_store = document_store
         self._parse_service = parse_service
+        self._workspace_index = workspace_index
 
     def compute_completion(
         self,
@@ -113,13 +120,13 @@ class CompletionService:
             return CompletionList(items=[])
 
         if self._is_variable_context(context):
-            return CompletionList(self._variable_items(context.suite))
+            return CompletionList(self._variable_items(context))
         if self._is_section_context(context):
             return CompletionList(self._section_items())
         if context.section == "settings":
             return CompletionList(self._setting_items())
         if context.section in {"test cases", "keywords"}:
-            return CompletionList(self._keyword_items(context.suite))
+            return CompletionList(self._keyword_items(context))
 
         return CompletionList(items=[])
 
@@ -175,31 +182,59 @@ class CompletionService:
             for item in self.SETTING_ITEMS
         ]
 
-    def _keyword_items(self, suite: RobotSuite | None) -> list[CompletionItem]:
-        if suite is None:
+    def _keyword_items(self, context: CompletionContext) -> list[CompletionItem]:
+        if context.suite is None:
             return []
-        return [
+        items = [
             CompletionItem(
                 label=keyword.name,
                 kind=CompletionItemKind.FUNCTION,
                 detail="Local keyword",
                 documentation=keyword.doc or None,
             )
-            for keyword in suite.keywords
+            for keyword in context.suite.keywords
         ]
+        if self._workspace_index is not None and context.document.path is not None:
+            items.extend(
+                CompletionItem(
+                    label=location.name,
+                    kind=CompletionItemKind.FUNCTION,
+                    detail="Imported keyword",
+                )
+                for location in self._workspace_index.imported_keyword_locations(
+                    context.document.path,
+                    context.suite,
+                )
+                if location.name not in {item.label for item in items}
+            )
+        return items
 
-    def _variable_items(self, suite: RobotSuite | None) -> list[CompletionItem]:
-        if suite is None:
+    def _variable_items(self, context: CompletionContext) -> list[CompletionItem]:
+        if context.suite is None:
             return []
-        return [
+        items = [
             CompletionItem(
                 label=variable.name,
                 kind=CompletionItemKind.VARIABLE,
                 detail=f"Local {variable.kind} variable",
                 documentation=str(variable.value) if variable.value is not None else None,
             )
-            for variable in suite.variables
+            for variable in context.suite.variables
         ]
+        if self._workspace_index is not None and context.document.path is not None:
+            items.extend(
+                CompletionItem(
+                    label=location.name,
+                    kind=CompletionItemKind.VARIABLE,
+                    detail="Imported variable",
+                )
+                for location in self._workspace_index.imported_variable_locations(
+                    context.document.path,
+                    context.suite,
+                )
+                if location.name not in {item.label for item in items}
+            )
+        return items
 
 
 def _prefix_for_utf16_character(line_text: str, character: int) -> str:

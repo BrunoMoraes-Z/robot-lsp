@@ -2,7 +2,7 @@
 
 ## Stage
 
-**Planned** (Stage 09)
+Stage 09 — done
 
 ## Goal
 
@@ -44,3 +44,20 @@ class WorkspaceIndex:
 - Workspace index é a base para navigation (definition, references)
 - Necessário para suportar múltiplos arquivos e imports
 - Performance: pode exigir worker separado se workspace grande
+
+## Implemented
+
+- `WorkspaceIndex.scan(root)`
+- `WorkspaceIndex.update_file(path)`
+- `WorkspaceIndex.remove_file(path)`
+- `WorkspaceIndex.find_keyword(name)`
+- `WorkspaceIndex.find_variable(name)`
+- `WorkspaceIndex.resolve_import(source_path, import_)`
+- Cache em memória por mtime + hash
+
+## Future
+
+- Cache em disco
+- Watching de arquivos
+- Indexação assíncrona
+- References globais

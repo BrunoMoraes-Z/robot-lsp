@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 09 — Workspace Index**
+**Stage 10 — Refactoring**
 Status: `planned`
 
 ---
@@ -20,7 +20,7 @@ Status: `planned`
 | 06 | Completion | done |
 | 07 | Hover | done |
 | 08 | Navigation | done |
-| 09 | Workspace Index | planned |
+| 09 | Workspace Index | done |
 | 10 | Refactoring | planned |
 | 11 | Formatting & Code Actions | planned |
 | 12 | Performance & Isolation | planned |
@@ -312,7 +312,23 @@ Status: `planned`
 - Variáveis de resources importados
 - Cache de workspace
 
-**Status:** planned
+**Done**
+- Implementado `WorkspaceIndex` em `src/robot_lsp/application/workspace.py`
+- Implementados `WorkspaceEntry`, `SymbolLocation` e `ImportResolution`
+- Implementado scan de arquivos `.robot` e `.resource`
+- Implementadas buscas `find_keyword` e `find_variable`
+- Implementada resolução básica de imports `Resource`, `Variables` e `Library`
+- Implementado cache simples por mtime + hash de conteúdo
+- Integrado opcionalmente `WorkspaceIndex` ao `CompletionService`
+- Integrado opcionalmente `WorkspaceIndex` ao `NavigationService`
+- Criados testes de indexação, resolução e integração cross-file via resource
+
+**Acceptance Criteria**
+- ✅ Indexação de arquivos `.robot` e `.resource`
+- ✅ Resolução básica de imports `Library`, `Resource`, `Variables`
+- ✅ Keywords de resources importados ficam disponíveis para completion/definition
+- ✅ Variáveis de resources importados ficam disponíveis para completion
+- ✅ Cache em memória por mtime + hash de conteúdo
 
 ---
 

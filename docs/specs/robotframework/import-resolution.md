@@ -2,7 +2,7 @@
 
 ## Stage
 
-**Planned** (Stage 09)
+Stage 09 — partially implemented
 
 ## LSP Methods
 
@@ -31,3 +31,16 @@ Resolver imports `Library`, `Resource`, `Variables` para encontrar arquivos reai
 - Libraries podem ter aliases (`Library  Collections  alias=MyLib`)
 - Variables files podem ser `.py`, `.yaml`, `.json`, `.robot`
 - Resolução será implementada junto com workspace index
+
+## Implemented
+
+- `Resource` relativo ao arquivo atual
+- `Variables` relativo ao arquivo atual
+- `Library` via `importlib.util.find_spec()`
+- Robot standard libraries via `robot.libraries.<name>`
+
+## Future
+
+- Caminhos configurados pelo usuário
+- Libspec/libdoc completo para libraries
+- Resolução de variables files `.py`, `.yaml`, `.json` com extração semântica

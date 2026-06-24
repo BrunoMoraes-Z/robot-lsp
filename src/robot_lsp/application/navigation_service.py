@@ -8,6 +8,7 @@ from robot_lsp.domain.models import LspPosition, LspRange, RobotSuite
 
 from .document_store import Document, DocumentStore
 from .parse_service import ParseService
+from .workspace import WorkspaceIndex
 
 
 class SymbolKind(IntEnum):
@@ -22,14 +23,21 @@ class SymbolKind(IntEnum):
 class SymbolMatch:
     name: str
     kind: str
+    definition_uri: str
     definition_range: LspRange
     reference_range: LspRange
 
 
 class NavigationService:
-    def __init__(self, document_store: DocumentStore, parse_service: ParseService) -> None:
+    def __init__(
+        self,
+        document_store: DocumentStore,
+        parse_service: ParseService,
+        workspace_index: WorkspaceIndex | None = None,
+    ) -> None:
         self._document_store = document_store
         self._parse_service = parse_service
+        self._workspace_index = workspace_index
 
     def definition(self, uri: str, position: LspPosition) -> list[dict[str, Any]]:
         document, suite = self._document_and_suite(uri)
@@ -39,7 +47,7 @@ class NavigationService:
         match = self._symbol_at(document, suite, position)
         if match is None:
             return []
-        return [_location(uri, match.definition_range)]
+        return [_location(match.definition_uri, match.definition_range)]
 
     def references(
         self,
@@ -122,17 +130,26 @@ class NavigationService:
             return None
         line_text = lines[position.line]
 
-        candidates: list[tuple[str, str, LspRange]] = []
-        candidates.extend((variable.name, "variable", variable.range) for variable in suite.variables)
-        candidates.extend((import_.name, "import", import_.range) for import_ in suite.imports)
-        candidates.extend((keyword.name, "keyword", keyword.range) for keyword in suite.keywords)
-        candidates.extend((test_case.name, "test_case", test_case.range) for test_case in suite.test_cases)
+        candidates: list[tuple[str, str, str, LspRange]] = []
+        candidates.extend((variable.name, "variable", document.uri, variable.range) for variable in suite.variables)
+        candidates.extend((import_.name, "import", document.uri, import_.range) for import_ in suite.imports)
+        candidates.extend((keyword.name, "keyword", document.uri, keyword.range) for keyword in suite.keywords)
+        candidates.extend((test_case.name, "test_case", document.uri, test_case.range) for test_case in suite.test_cases)
+        if self._workspace_index is not None and document.path is not None:
+            candidates.extend(
+                (location.name, "imported_keyword", location.uri, location.range)
+                for location in self._workspace_index.imported_keyword_locations(document.path, suite)
+            )
+            candidates.extend(
+                (location.name, "imported_variable", location.uri, location.range)
+                for location in self._workspace_index.imported_variable_locations(document.path, suite)
+            )
         candidates.sort(key=lambda item: len(item[0]), reverse=True)
 
-        for name, kind, definition_range in candidates:
+        for name, kind, definition_uri, definition_range in candidates:
             reference_range = _symbol_range_on_line(line_text, position.line, name, position)
             if reference_range is not None:
-                return SymbolMatch(name, kind, definition_range, reference_range)
+                return SymbolMatch(name, kind, definition_uri, definition_range, reference_range)
         return None
 
 
