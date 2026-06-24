@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 05 — Diagnostics**
+**Stage 06 — Completion**
 Status: `planned`
 
 ---
@@ -16,7 +16,7 @@ Status: `planned`
 | 02 | LSP Lifecycle | done |
 | 03 | Document Workspace | done |
 | 04 | Robot Framework Model | done |
-| 05 | Diagnostics | planned |
+| 05 | Diagnostics | done |
 | 06 | Completion | planned |
 | 07 | Hover | planned |
 | 08 | Navigation | planned |
@@ -197,14 +197,24 @@ Status: `planned`
 - Fallback para linha inteira quando range não está disponível
 
 **Done**
-- _Nothing yet_
+- Implementado `ParseService` em `src/robot_lsp/application/parse_service.py`
+- Implementado `DiagnosticService` em `src/robot_lsp/application/diagnostic_service.py`
+- Implementada serialização LSP de `LspDiagnostic` em `domain/diagnostics.py`
+- Integrado `DiagnosticService` ao `LspServer` via injeção opcional
+- Implementado `textDocument/publishDiagnostics` como notification de saída
+- `didOpen` e `didChange` agendam diagnostics com debounce
+- `didClose` limpa diagnostics e cancela timers pendentes
+- Implementado cancelamento de diagnostic pendente por URI
+- Implementada deduplicação para não publicar diagnostics idênticos
+- Criados testes unitários para parse diagnostics, clear, debounce, cancel, publication e ranges
 
 **Acceptance Criteria**
-- Documento inválido dispara `publishDiagnostics`
-- Documento corrigido limpa diagnostics
-- Debounce evita flood em digitação rápida
-- Diagnostics cancelados não são publicados
-- Parsing não quebra servidor em caso de erro grave
+- ✅ Documento inválido dispara `publishDiagnostics`
+- ✅ Documento corrigido limpa diagnostics
+- ✅ Debounce evita flood em digitação rápida
+- ✅ Diagnostics cancelados não são publicados
+- ✅ Parsing não quebra servidor em caso de erro grave
+- ✅ Severidade correta: error para parse error
 
 ---
 

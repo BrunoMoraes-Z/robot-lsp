@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+done
 
 ## Goal
 
@@ -59,3 +59,11 @@ Implementar geração de diagnostics a partir do parse do Robot Framework e publ
 ## Dependencies
 
 - Stage 04 (modelo RF)
+
+## Notes
+
+- Stage concluída com `ParseService`, `DiagnosticService` e integração opcional com `LspServer`.
+- O servidor mantém notifications de saída em `outgoing_notifications` até termos o loop de transporte completo.
+- `didOpen` e `didChange` agendam diagnostics; `didClose` limpa diagnostics.
+- `DiagnosticService.flush(uri)` foi adicionado para testes determinísticos e uso controlado.
+- Validação executada com `just test` e `uv run python -m compileall src tests`.

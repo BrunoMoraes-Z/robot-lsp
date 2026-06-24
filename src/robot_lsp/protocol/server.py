@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
+from robot_lsp.domain.diagnostics import LspDiagnostic
 
 from .dispatch import CancelToken, MethodDispatcher
 from .jsonrpc import (
@@ -10,12 +12,13 @@ from .jsonrpc import (
     SERVER_SHUTTING_DOWN,
     JsonRpcMessage,
     create_error_response,
+    create_notification,
 )
 from .lsp_types import ServerState, initialize_result
 
 
 class LspServer:
-    def __init__(self) -> None:
+    def __init__(self, diagnostic_service: DiagnosticService | None = None) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
         self.root_uri: str | None = None
@@ -23,6 +26,8 @@ class LspServer:
         self.exit_requested = False
         self.exit_code: int | None = None
         self.document_store = DocumentStore()
+        self.diagnostic_service = diagnostic_service
+        self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
         self._dispatcher.register("initialize", self._handle_initialize)
@@ -125,6 +130,8 @@ class LspServer:
             version=version if isinstance(version, int) else 0,
             language_id=language_id if isinstance(language_id, str) else "robotframework",
         )
+        if self.diagnostic_service is not None:
+            self.diagnostic_service.schedule_diagnostics(uri)
         return None
 
     def _handle_did_change(
@@ -157,6 +164,8 @@ class LspServer:
             text=text,
             version=version if isinstance(version, int) else 0,
         )
+        if self.diagnostic_service is not None:
+            self.diagnostic_service.schedule_diagnostics(uri)
         return None
 
     def _handle_did_close(
@@ -172,4 +181,17 @@ class LspServer:
         uri = text_document.get("uri")
         if isinstance(uri, str):
             self.document_store.close(uri)
+            if self.diagnostic_service is not None:
+                self.diagnostic_service.clear(uri)
         return None
+
+    def publish_diagnostics(self, uri: str, diagnostics: list[LspDiagnostic]) -> None:
+        self.outgoing_notifications.append(
+            create_notification(
+                "textDocument/publishDiagnostics",
+                params={
+                    "uri": uri,
+                    "diagnostics": [diagnostic.to_lsp() for diagnostic in diagnostics],
+                },
+            )
+        )
