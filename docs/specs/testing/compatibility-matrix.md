@@ -4,15 +4,17 @@
 
 Stage 14 — Release Hardening
 
+Post-MVP 01 — Robot Framework 7.x compatibility matrix
+
 ## RF Versions
 
 | RF Version | Status | Notes |
 |---|---|---|
-| 7.0.x | Target | Mínimo suportado |
-| 7.1.x | Target | |
-| 7.2.x | Target | Group/END |
-| 7.3.x | Target | |
-| 7.4.2 | Locally validated | Versão instalada no ambiente atual |
+| 7.0.1 | CI target | Mínimo suportado |
+| 7.1.1 | CI target | |
+| 7.2.2 | CI target | Group/END |
+| 7.3.2 | CI target | |
+| 7.4.2 | CI target + locally validated | Versão instalada no ambiente atual |
 
 ## Python Versions
 
@@ -52,4 +54,5 @@ Testes específicos para verificar que cada versão é detectada corretamente e 
 
 - `ubuntu-latest` and `windows-latest`
 - Python 3.10, 3.11 and 3.12
-- Installed Robot Framework version from project dependency resolution
+- Installed Robot Framework version from project dependency resolution for OS/Python coverage
+- Fixed Robot Framework compatibility matrix on Ubuntu/Python 3.12: 7.0.1, 7.1.1, 7.2.2, 7.3.2 and 7.4.2

@@ -5,6 +5,30 @@
 **MVP Complete**
 Status: `done`
 
+## Verification Summary
+
+As 14 etapas planejadas para o MVP foram implementadas e validadas pela suite atual.
+
+Validação local mais recente:
+- `uv run pytest` — 164 testes passando
+
+Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-MVP porque foram explicitamente adiados nos documentos de estágio/specs ou fazem parte de hardening de release além da primeira versão funcional.
+
+## Post-MVP Pending Roadmap
+
+| Order | Item | Source | Status |
+|---|---|---|---|
+| 01 | Executar matriz real de compatibilidade Robot Framework 7.x, não apenas a versão instalada | Stage 14 / compatibility matrix | done |
+| 02 | Automatizar publicação/distribuição de release, incluindo build artifacts e PyPI se aplicável | Stage 14 | pending |
+| 03 | Implementar logging estruturado aplicado à configuração `robot.lsp.logLevel` em runtime | Stage 13 / Stage 14 | pending |
+| 04 | Aplicar `robot.lsp.completion.snippets` aos completion items e snippets configuráveis | Stage 13 | pending |
+| 05 | Implementar request outbound `workspace/configuration` e configuração por workspace folder | Stage 13 / workspace configuration spec | pending |
+| 06 | Adicionar worker pool/cancelamento real para operações longas quando houver métricas justificando | Stage 12 / performance specs | pending |
+| 07 | Avaliar subprocess isolation para indexação/análise pesada com testes de integração dedicados | Stage 12 / Stage 14 risks | pending |
+| 08 | Adicionar progress reporting (`$/progress`, `window/workDoneProgress/create`) para operações longas | protocol progress spec | pending |
+| 09 | Expandir CI para novos targets quando necessário, como macOS e Python 3.13 | compatibility matrix | pending |
+| 10 | Implementar diagnostics semânticos/warnings além dos erros de parse do Robot Framework | diagnostics rules spec | pending |
+
 ---
 
 ## Stage Status

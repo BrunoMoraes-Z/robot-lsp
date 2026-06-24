@@ -23,3 +23,21 @@ jobs:
       - run: uv sync --extra dev
       - run: uv run pytest
       - run: uv run python -m compileall src tests
+
+  robotframework-compatibility:
+    name: Robot Framework ${{ matrix.robotframework-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        robotframework-version: ["7.0.1", "7.1.1", "7.2.2", "7.3.2", "7.4.2"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --extra dev
+      - run: uv pip install "robotframework==${{ matrix.robotframework-version }}"
+      - run: uv run python -c "import robot.version; print(robot.version.VERSION)"
+      - run: uv run pytest

@@ -55,7 +55,9 @@ def receive(proc) -> dict:
 - Teste de subprocesso real com `python -m robot_lsp` em `tests/integration/test_stdio_server.py`.
 - Sessão real via stdio: `initialize`, `initialized`, `didOpen`, `completion`, `shutdown`, `exit`.
 - Validação de completion em documento aberto por transporte stdio real.
+- Diagnostics assíncronos via stdio: publicação de parse error e limpeza após `didChange`.
 
 ## Future
 
-- Teste end-to-end de diagnostics assíncronos via stdio.
+- Teste de subprocesso com múltiplos documentos abertos.
+- Teste de subprocesso para hover, definition e formatting.
