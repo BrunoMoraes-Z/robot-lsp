@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+done
 
 ## Goal
 
@@ -58,3 +58,10 @@ Implementar o lifecycle básico do LSP: initialize, initialized, shutdown e exit
 ## Dependencies
 
 - Stage 01
+
+## Notes
+
+- Stage concluída com `LspServer`, `ServerState`, `TextDocumentSyncKind` e capabilities iniciais.
+- `textDocumentSync` retorna `{ "openClose": true, "change": Full }` conforme acceptance criteria.
+- `exit` define `exit_code=0` apenas após `shutdown`; caso contrário define `exit_code=1`.
+- Validação executada com `just test` e `uv run python -m compileall src tests`.

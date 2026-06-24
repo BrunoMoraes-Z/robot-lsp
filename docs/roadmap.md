@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 02 — LSP Lifecycle**
+**Stage 03 — Document Workspace**
 Status: `planned`
 
 ---
@@ -13,7 +13,7 @@ Status: `planned`
 |---|---|---|
 | 00 | Foundation | done |
 | 01 | JSON-RPC | done |
-| 02 | LSP Lifecycle | planned |
+| 02 | LSP Lifecycle | done |
 | 03 | Document Workspace | planned |
 | 04 | Robot Framework Model | planned |
 | 05 | Diagnostics | planned |
@@ -107,14 +107,21 @@ Status: `planned`
 - Testes de sessão LSP mínima via transporte em memória
 
 **Done**
-- _Nothing yet_
+- Implementado `LspServer` em `src/robot_lsp/protocol/server.py`
+- Implementados estados `uninitialized`, `running`, `shuttingDown`, `exited`
+- Implementados handlers `initialize`, `initialized`, `shutdown`, `exit`
+- Implementada validação de mensagens antes de `initialize` com erro `-32002`
+- Implementada validação de requests após `shutdown` com erro `-32003`
+- Implementado `serverInfo` com nome e versão do servidor
+- Implementadas capabilities iniciais em `src/robot_lsp/protocol/lsp_types.py`
+- Criados testes unitários de lifecycle em `tests/unit/protocol/test_server.py`
 
 **Acceptance Criteria**
-- Servidor responde `initialize` com capabilities corretas
-- `initialized` é aceito como notification
-- `shutdown` + `exit` encerra servidor
-- Mensagens antes de `initialize` são rejeitadas
-- Mensagens depois de `shutdown` são rejeitadas
+- ✅ Servidor responde `initialize` com capabilities corretas
+- ✅ `initialized` é aceito como notification
+- ✅ `shutdown` + `exit` encerra servidor
+- ✅ Mensagens antes de `initialize` são rejeitadas
+- ✅ Mensagens depois de `shutdown` são rejeitadas
 
 ---
 
