@@ -82,6 +82,23 @@ class TestWorkspaceIndex:
 
         assert resolution.resolved_path == variables.resolve()
 
+    def test_resolve_resource_import_from_configured_import_path(self, tmp_path):
+        workspace = tmp_path / "workspace"
+        resources = tmp_path / "resources"
+        workspace.mkdir()
+        resources.mkdir()
+        main = workspace / "main.robot"
+        resource = resources / "shared.resource"
+        main.write_text("*** Settings ***\nResource    shared.resource\n", encoding="utf-8")
+        resource.write_text("*** Keywords ***\nShared Keyword\n    Log    ok\n", encoding="utf-8")
+        index = WorkspaceIndex(import_paths=[resources])
+        index.update_file(main)
+        suite = index.entries[path_to_uri(main.resolve())].suite
+
+        resolution = index.resolve_import(main, suite.imports[0])
+
+        assert resolution.resolved_path == resource.resolve()
+
     def test_resolve_library_import(self, tmp_path):
         main, _resource, _variables = write_workspace(tmp_path)
         index = WorkspaceIndex()

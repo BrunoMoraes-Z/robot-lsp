@@ -2,7 +2,7 @@
 
 ## Stage
 
-Stage 09 — partially implemented
+Stage 09 — partially implemented, Stage 13 — configured paths
 
 ## LSP Methods
 
@@ -15,8 +15,8 @@ Resolver imports `Library`, `Resource`, `Variables` para encontrar arquivos reai
 ## Resolution Order
 
 1. Relativo ao diretório do arquivo atual
-2. Relativo aos diretórios do Python path (para libraries Python)
-3. Caminhos configurados pelo usuário (`robot.lsp.importPaths`)
+2. Caminhos configurados pelo usuário (`robot.lsp.importPaths`) para imports de arquivo
+3. Relativo aos diretórios do Python path (para libraries Python)
 
 ## Implementation Components
 
@@ -36,11 +36,11 @@ Resolver imports `Library`, `Resource`, `Variables` para encontrar arquivos reai
 
 - `Resource` relativo ao arquivo atual
 - `Variables` relativo ao arquivo atual
+- `Resource` e `Variables` via caminhos configurados em `robot.lsp.importPaths`
 - `Library` via `importlib.util.find_spec()`
 - Robot standard libraries via `robot.libraries.<name>`
 
 ## Future
 
-- Caminhos configurados pelo usuário
 - Libspec/libdoc completo para libraries
 - Resolução de variables files `.py`, `.yaml`, `.json` com extração semântica

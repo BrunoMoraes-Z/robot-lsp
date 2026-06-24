@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 13 — Configuration**
+**Stage 14 — Release Hardening**
 Status: `planned`
 
 ---
@@ -24,7 +24,7 @@ Status: `planned`
 | 10 | Refactoring | done |
 | 11 | Formatting & Code Actions | done |
 | 12 | Performance & Isolation | done |
-| 13 | Configuration | planned |
+| 13 | Configuration | done |
 | 14 | Release Hardening | planned |
 
 ---
@@ -425,7 +425,26 @@ Status: `planned`
 - Configuração por workspace folder
 - `didChangeConfiguration`
 
-**Status:** planned
+**Done**
+- Implementado `ConfigurationService` em `src/robot_lsp/application/configuration.py`
+- Implementado modelo `ServerConfig` com `importPaths`, `logLevel`, `diagnostics.enable` e `completion.snippets`
+- Implementado suporte a `initializationOptions`
+- Implementado handler `workspace/didChangeConfiguration`
+- Adicionada capability `workspace.didChangeConfiguration`
+- Integrado `diagnostics.enable` ao agendamento de diagnostics
+- Desabilitar diagnostics limpa diagnostics publicados de documentos abertos
+- Integrado `robot.lsp.importPaths` à resolução de imports de arquivos no `WorkspaceIndex`
+- Criados testes unitários para config service, handler LSP e import paths
+
+**Acceptance Criteria**
+- ✅ Defaults funcionam sem configuração
+- ✅ `initializationOptions` aplica configurações iniciais
+- ✅ `workspace/didChangeConfiguration` atualiza configurações em runtime
+- ✅ Diagnostics podem ser desabilitados por configuração
+- ✅ Desabilitar diagnostics limpa diagnostics existentes
+- ✅ `robot.lsp.importPaths` participa da resolução de `Resource` e `Variables`
+- ✅ Valores inválidos são ignorados sem quebrar configuração existente
+- ✅ `workspace/configuration` permanece como futuro server-to-client quando existir loop de request outbound
 
 ---
 

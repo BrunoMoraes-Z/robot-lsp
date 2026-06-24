@@ -2,14 +2,14 @@
 
 ## Stage
 
-**Planned** (Stage 13)
+**Done** (Stage 13)
 
 ## LSP Methods
 
 - `workspace/didChangeConfiguration`
-- `workspace/configuration`
+- `workspace/configuration` (deferred)
 
-## Configuration Options (future)
+## Configuration Options
 
 - `robot.lsp.importPaths`: caminhos adicionais para resolução de imports
 - `robot.lsp.logLevel`: nível de log
@@ -20,3 +20,18 @@
 
 - Configuração pode vir das `initializationOptions` ou `workspace/configuration`
 - Valores padrão sensíveis para funcionar sem configuração
+
+## Implemented
+
+- Configuração inicial via `initializationOptions`.
+- Atualização em runtime via `workspace/didChangeConfiguration`.
+- Settings aceitas em formato direto, `robot.lsp` ou `robot: { lsp: ... }`.
+- `diagnostics.enable` controla agendamento de diagnostics e limpa diagnostics publicados quando desligado.
+- `importPaths` é usado pelo `WorkspaceIndex` para resolver imports de arquivo.
+
+## Deferred
+
+- Request server-to-client `workspace/configuration`.
+- Configuração específica por workspace folder.
+- Aplicação de `completion.snippets` nos completion items.
+- Logging real baseado em `logLevel`.

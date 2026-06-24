@@ -4,6 +4,7 @@ from typing import Any
 
 from robot_lsp.application.completion_service import CompletionService
 from robot_lsp.application.code_action_service import CodeActionService
+from robot_lsp.application.configuration import ConfigurationService
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
 from robot_lsp.application.formatting_service import FormattingService
@@ -34,6 +35,7 @@ class LspServer:
         refactoring_service: RefactoringService | None = None,
         formatting_service: FormattingService | None = None,
         code_action_service: CodeActionService | None = None,
+        configuration_service: ConfigurationService | None = None,
     ) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
@@ -49,6 +51,7 @@ class LspServer:
         self.refactoring_service = refactoring_service
         self.formatting_service = formatting_service
         self.code_action_service = code_action_service
+        self.configuration_service = configuration_service or ConfigurationService()
         self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
@@ -71,6 +74,7 @@ class LspServer:
         self._dispatcher.register("textDocument/formatting", self._handle_formatting)
         self._dispatcher.register("textDocument/rangeFormatting", self._handle_range_formatting)
         self._dispatcher.register("textDocument/codeAction", self._handle_code_action)
+        self._dispatcher.register("workspace/didChangeConfiguration", self._handle_did_change_configuration)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.method == "exit":
@@ -111,6 +115,9 @@ class LspServer:
             self.root_uri = root_uri if isinstance(root_uri, str) else None
             capabilities = params.get("capabilities")
             self.client_capabilities = capabilities if isinstance(capabilities, dict) else {}
+            initialization_options = params.get("initializationOptions")
+            if isinstance(initialization_options, dict):
+                self.configuration_service.update(initialization_options)
 
         self.state = ServerState.RUNNING
         return initialize_result()
@@ -164,7 +171,7 @@ class LspServer:
             version=version if isinstance(version, int) else 0,
             language_id=language_id if isinstance(language_id, str) else "robotframework",
         )
-        if self.diagnostic_service is not None:
+        if self._diagnostics_enabled() and self.diagnostic_service is not None:
             self.diagnostic_service.schedule_diagnostics(uri)
         return None
 
@@ -198,7 +205,7 @@ class LspServer:
             text=text,
             version=version if isinstance(version, int) else 0,
         )
-        if self.diagnostic_service is not None:
+        if self._diagnostics_enabled() and self.diagnostic_service is not None:
             self.diagnostic_service.schedule_diagnostics(uri)
         return None
 
@@ -229,6 +236,26 @@ class LspServer:
                 },
             )
         )
+
+    def _handle_did_change_configuration(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> None:
+        if not isinstance(params, dict):
+            return None
+        settings = params.get("settings")
+        if not isinstance(settings, dict):
+            return None
+        old_diagnostics_enabled = self._diagnostics_enabled()
+        self.configuration_service.update(settings)
+        if old_diagnostics_enabled and not self._diagnostics_enabled() and self.diagnostic_service is not None:
+            for uri in self.document_store.get_open_uris():
+                self.diagnostic_service.clear(uri)
+        return None
+
+    def _diagnostics_enabled(self) -> bool:
+        return self.configuration_service.config.diagnostics.enable
 
     def _handle_completion(
         self,

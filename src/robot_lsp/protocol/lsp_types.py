@@ -43,6 +43,9 @@ def server_capabilities() -> dict[str, Any]:
             "codeActionKinds": ["quickfix"],
             "resolveProvider": False,
         },
+        "workspace": {
+            "didChangeConfiguration": {"dynamicRegistration": False},
+        },
     }
 
 

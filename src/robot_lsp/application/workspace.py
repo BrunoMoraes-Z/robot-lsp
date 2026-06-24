@@ -53,13 +53,21 @@ class WorkspaceEntry:
 class WorkspaceIndex:
     SUPPORTED_SUFFIXES = {".robot", ".resource"}
 
-    def __init__(self, parser: RobotFrameworkParser | None = None) -> None:
+    def __init__(self, parser: RobotFrameworkParser | None = None, import_paths: list[Path] | None = None) -> None:
         self._parser = parser or RobotFrameworkParser()
         self._entries: dict[str, WorkspaceEntry] = {}
+        self._import_paths = tuple(path.resolve() for path in import_paths or [])
 
     @property
     def entries(self) -> dict[str, WorkspaceEntry]:
         return dict(self._entries)
+
+    @property
+    def import_paths(self) -> tuple[Path, ...]:
+        return self._import_paths
+
+    def set_import_paths(self, import_paths: list[Path] | tuple[Path, ...]) -> None:
+        self._import_paths = tuple(path.resolve() for path in import_paths)
 
     def scan(self, root: Path) -> None:
         root = root.resolve()
@@ -170,14 +178,15 @@ class WorkspaceIndex:
         return locations
 
     def _resolve_file_import(self, source_path: Path, import_: RobotImport) -> Path | None:
-        candidate = (source_path.parent / import_.name).resolve()
-        if candidate.exists():
-            return candidate
-        if import_.type == "resource" and candidate.suffix == "":
-            for suffix in (".resource", ".robot"):
-                with_suffix = candidate.with_suffix(suffix)
-                if with_suffix.exists():
-                    return with_suffix
+        for base_path in (source_path.parent, *self._import_paths):
+            candidate = (base_path / import_.name).resolve()
+            if candidate.exists():
+                return candidate
+            if import_.type == "resource" and candidate.suffix == "":
+                for suffix in (".resource", ".robot"):
+                    with_suffix = candidate.with_suffix(suffix)
+                    if with_suffix.exists():
+                        return with_suffix
         return None
 
     def _resolve_library_import(self, import_: RobotImport) -> Path | None:
