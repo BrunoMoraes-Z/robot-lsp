@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 12 — Performance & Isolation**
+**Stage 13 — Configuration**
 Status: `planned`
 
 ---
@@ -23,7 +23,7 @@ Status: `planned`
 | 09 | Workspace Index | done |
 | 10 | Refactoring | done |
 | 11 | Formatting & Code Actions | done |
-| 12 | Performance & Isolation | planned |
+| 12 | Performance & Isolation | done |
 | 13 | Configuration | planned |
 | 14 | Release Hardening | planned |
 
@@ -397,7 +397,23 @@ Status: `planned`
 - Worker pool para operações pesadas
 - Subprocesso isolado para indexação (se necessário)
 
-**Status:** planned
+**Done**
+- Implementado cache LRU de parse em `ParseService`
+- Cache de parse usa URI, versão do documento e SHA-256 do texto
+- Cache é reaproveitado por diagnostics, completion, hover, navigation e refactoring via `ParseService`
+- Adicionados métodos `clear_uri` e `clear` para invalidação explícita
+- Adicionado limite configurável `max_cache_entries`, padrão 50
+- Mantido cache de workspace já implementado por mtime + hash de conteúdo
+- Worker pool e subprocesso permanecem fora do MVP até métricas justificarem a complexidade
+
+**Acceptance Criteria**
+- ✅ Documento inalterado não é parseado novamente
+- ✅ Mudança de texto invalida cache
+- ✅ Mudança de versão invalida cache
+- ✅ Cache respeita limite LRU configurável
+- ✅ Cache pode ser invalidado por URI
+- ✅ Workspace index mantém cache por mtime + hash
+- ✅ Subprocess isolation documentado como futuro, não necessário no MVP atual
 
 ---
 

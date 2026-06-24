@@ -2,7 +2,7 @@
 
 ## Stage
 
-**Planned** (Stage 12)
+**Deferred** (Stage 12 decision)
 
 ## Motivation
 
@@ -39,3 +39,4 @@ Main Process (LSP lifecycle, completion, hover)
 - Cancelamento entre processos é mais complexo
 - Comunicação via pipe com framing JSON-RPC reaproveita código existente
 - Subprocesso precisa de seu próprio `DocumentStore` (sincronizado via `didOpen`/`didChange`)
+- Stage 12 não implementa subprocesso porque o custo operacional ainda não é justificado por métricas.
