@@ -36,6 +36,7 @@ def server_capabilities() -> dict[str, Any]:
         "documentSymbolProvider": True,
         "foldingRangeProvider": True,
         "selectionRangeProvider": True,
+        "renameProvider": {"prepareProvider": True},
     }
 
 

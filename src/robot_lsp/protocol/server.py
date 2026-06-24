@@ -7,6 +7,7 @@ from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
 from robot_lsp.application.hover_service import HoverService
 from robot_lsp.application.navigation_service import NavigationService
+from robot_lsp.application.refactoring_service import RefactoringService
 from robot_lsp.domain.diagnostics import LspDiagnostic
 from robot_lsp.domain.models import LspPosition
 
@@ -28,6 +29,7 @@ class LspServer:
         completion_service: CompletionService | None = None,
         hover_service: HoverService | None = None,
         navigation_service: NavigationService | None = None,
+        refactoring_service: RefactoringService | None = None,
     ) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
@@ -40,6 +42,7 @@ class LspServer:
         self.completion_service = completion_service
         self.hover_service = hover_service
         self.navigation_service = navigation_service
+        self.refactoring_service = refactoring_service
         self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
@@ -57,6 +60,8 @@ class LspServer:
         self._dispatcher.register("textDocument/documentSymbol", self._handle_document_symbol)
         self._dispatcher.register("textDocument/foldingRange", self._handle_folding_range)
         self._dispatcher.register("textDocument/selectionRange", self._handle_selection_range)
+        self._dispatcher.register("textDocument/prepareRename", self._handle_prepare_rename)
+        self._dispatcher.register("textDocument/rename", self._handle_rename)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.method == "exit":
@@ -365,3 +370,28 @@ class LspServer:
             return None
         uri = text_document.get("uri")
         return uri if isinstance(uri, str) else None
+
+    def _handle_prepare_rename(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> dict[str, Any] | None:
+        parsed = self._text_document_position(params)
+        if self.refactoring_service is None or parsed is None:
+            return None
+        uri, position = parsed
+        return self.refactoring_service.prepare_rename(uri, position)
+
+    def _handle_rename(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> dict[str, Any] | None:
+        parsed = self._text_document_position(params)
+        if self.refactoring_service is None or parsed is None or not isinstance(params, dict):
+            return None
+        new_name = params.get("newName")
+        if not isinstance(new_name, str):
+            return None
+        uri, position = parsed
+        return self.refactoring_service.rename(uri, position, new_name)

@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 10 — Refactoring**
+**Stage 11 — Formatting & Code Actions**
 Status: `planned`
 
 ---
@@ -21,7 +21,7 @@ Status: `planned`
 | 07 | Hover | done |
 | 08 | Navigation | done |
 | 09 | Workspace Index | done |
-| 10 | Refactoring | planned |
+| 10 | Refactoring | done |
 | 11 | Formatting & Code Actions | planned |
 | 12 | Performance & Isolation | planned |
 | 13 | Configuration | planned |
@@ -339,7 +339,23 @@ Status: `planned`
 - `textDocument/prepareRename`
 - `workspace/workspaceEdit`
 
-**Status:** planned
+**Done**
+- Implementado `RefactoringService` em `src/robot_lsp/application/refactoring_service.py`
+- Implementado `textDocument/prepareRename`
+- Implementado `textDocument/rename`
+- Implementado `WorkspaceEdit` com `changes`
+- Implementado rename local de variables, keywords e test cases
+- Implementado rename textual em arquivos indexados quando `WorkspaceIndex` estiver disponível
+- Adicionada capability `renameProvider` com `prepareProvider: true`
+- Criados testes unitários para service e handlers LSP
+
+**Acceptance Criteria**
+- ✅ `prepareRename` retorna range e placeholder
+- ✅ `prepareRename` retorna `null` para símbolo desconhecido
+- ✅ `rename` retorna `WorkspaceEdit`
+- ✅ Rename local altera ocorrências do documento aberto
+- ✅ Rename com `WorkspaceIndex` inclui arquivos indexados
+- ✅ Handler retorna `null` quando service não está configurado
 
 ---
 
