@@ -5,13 +5,19 @@ from .models import LspPosition, LspRange
 
 def position_to_utf16_offset(text: str, line: int, character: int) -> int | None:
     """Convert an LSP position (0-based line, 0-based UTF-16 character) to a code-point offset in text."""
+    if line < 0 or character < 0:
+        return None
     lines = text.splitlines(keepends=True)
-    if line < 0 or line >= len(lines):
+    if not lines:
+        return 0 if line == 0 and character == 0 else None
+    if line >= len(lines):
         return None
     line_text = lines[line]
     utf16_offset = 0
     code_point_offset = 0
     for ch in line_text:
+        if ch in "\r\n":
+            break
         if utf16_offset >= character:
             break
         utf16_offset += 1 if ord(ch) < 0x10000 else 2
@@ -57,6 +63,8 @@ def calculate_lsp_range(
         end_col = max(0, end_col - 1)
 
     lines = text.splitlines()
+    if not lines:
+        lines = [""]
     clamped_end_col = end_col
     if end_line < len(lines):
         clamped_end_col = min(end_col, _utf16_len(lines[end_line]))
@@ -69,3 +77,11 @@ def calculate_lsp_range(
 
 def _utf16_len(text: str) -> int:
     return sum(1 if ord(ch) < 0x10000 else 2 for ch in text)
+
+
+def range_text(text: str, range: LspRange) -> str | None:
+    start = position_to_utf16_offset(text, range.start.line, range.start.character)
+    end = position_to_utf16_offset(text, range.end.line, range.end.character)
+    if start is None or end is None or end < start:
+        return None
+    return text[start:end]

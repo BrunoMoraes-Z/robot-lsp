@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 03 — Document Workspace**
+**Stage 04 — Robot Framework Model**
 Status: `planned`
 
 ---
@@ -14,7 +14,7 @@ Status: `planned`
 | 00 | Foundation | done |
 | 01 | JSON-RPC | done |
 | 02 | LSP Lifecycle | done |
-| 03 | Document Workspace | planned |
+| 03 | Document Workspace | done |
 | 04 | Robot Framework Model | planned |
 | 05 | Diagnostics | planned |
 | 06 | Completion | planned |
@@ -137,14 +137,21 @@ Status: `planned`
 - Ranges: 0-based line, 0-based UTF-16 column
 
 **Done**
-- _Nothing yet_
+- Corrigido e completado `DocumentStore` em `src/robot_lsp/application/document_store.py`
+- Implementado `Document` com `lines` e extração de texto por `LspRange`
+- Implementados helpers `uri_to_path` e `path_to_uri`
+- Aprimorada conversão UTF-16 em `src/robot_lsp/domain/positions.py`
+- Implementado `range_text` para extração por ranges LSP
+- Implementados handlers `textDocument/didOpen`, `textDocument/didChange`, `textDocument/didClose` no `LspServer`
+- Criados testes de `DocumentStore`, URI/path, posições UTF-16 e document sync
 
 **Acceptance Criteria**
-- Documento aberto via `didOpen` fica disponível no `DocumentStore`
-- `didChange` com texto completo substitui conteúdo
-- `didClose` remove documento
-- Conversões UTF-16 funcionam com caracteres multi-byte (acentos, emoji)
-- URI `file://` é convertida para path do sistema
+- ✅ Documento aberto via `didOpen` fica disponível no `DocumentStore`
+- ✅ `didChange` com texto completo substitui conteúdo
+- ✅ `didClose` remove documento
+- ✅ Conversões UTF-16 funcionam com caracteres multi-byte (acentos, emoji)
+- ✅ URI `file://` é convertida para path do sistema
+- ✅ `LspRange` calcula texto de um range corretamente
 
 ---
 

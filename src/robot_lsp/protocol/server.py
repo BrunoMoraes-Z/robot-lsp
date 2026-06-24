@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from robot_lsp.application.document_store import DocumentStore
+
 from .dispatch import CancelToken, MethodDispatcher
 from .jsonrpc import (
     SERVER_NOT_INITIALIZED,
@@ -20,12 +22,16 @@ class LspServer:
         self.client_capabilities: dict[str, Any] = {}
         self.exit_requested = False
         self.exit_code: int | None = None
+        self.document_store = DocumentStore()
 
         self._dispatcher = MethodDispatcher()
         self._dispatcher.register("initialize", self._handle_initialize)
         self._dispatcher.register("initialized", self._handle_initialized)
         self._dispatcher.register("shutdown", self._handle_shutdown)
         self._dispatcher.register("exit", self._handle_exit)
+        self._dispatcher.register("textDocument/didOpen", self._handle_did_open)
+        self._dispatcher.register("textDocument/didChange", self._handle_did_change)
+        self._dispatcher.register("textDocument/didClose", self._handle_did_close)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.method == "exit":
@@ -93,4 +99,77 @@ class LspServer:
         self.exit_requested = True
         self.exit_code = 0 if self.state == ServerState.SHUTTING_DOWN else 1
         self.state = ServerState.EXITED
+        return None
+
+    def _handle_did_open(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> None:
+        if not isinstance(params, dict):
+            return None
+        text_document = params.get("textDocument")
+        if not isinstance(text_document, dict):
+            return None
+
+        uri = text_document.get("uri")
+        language_id = text_document.get("languageId")
+        version = text_document.get("version")
+        text = text_document.get("text")
+        if not isinstance(uri, str) or not isinstance(text, str):
+            return None
+
+        self.document_store.open(
+            uri=uri,
+            text=text,
+            version=version if isinstance(version, int) else 0,
+            language_id=language_id if isinstance(language_id, str) else "robotframework",
+        )
+        return None
+
+    def _handle_did_change(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> None:
+        if not isinstance(params, dict):
+            return None
+
+        text_document = params.get("textDocument")
+        content_changes = params.get("contentChanges")
+        if not isinstance(text_document, dict) or not isinstance(content_changes, list):
+            return None
+
+        uri = text_document.get("uri")
+        version = text_document.get("version")
+        if not isinstance(uri, str):
+            return None
+
+        text = None
+        for change in content_changes:
+            if isinstance(change, dict) and isinstance(change.get("text"), str):
+                text = change["text"]
+        if text is None:
+            return None
+
+        self.document_store.change(
+            uri=uri,
+            text=text,
+            version=version if isinstance(version, int) else 0,
+        )
+        return None
+
+    def _handle_did_close(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> None:
+        if not isinstance(params, dict):
+            return None
+        text_document = params.get("textDocument")
+        if not isinstance(text_document, dict):
+            return None
+        uri = text_document.get("uri")
+        if isinstance(uri, str):
+            self.document_store.close(uri)
         return None

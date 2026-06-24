@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+done
 
 ## Goal
 
@@ -63,3 +63,10 @@ Implementar sincronização de documentos (didOpen, didChange, didClose) e o ger
 ## Dependencies
 
 - Stage 02
+
+## Notes
+
+- Stage concluída com `DocumentStore`, `Document`, URI helpers, conversão UTF-16 e handlers LSP de document sync.
+- `didChange` usa sync full conforme ADR-0005 e specs de sincronização.
+- `position_to_utf16_offset` trata texto vazio, acentos e emoji (2 UTF-16 code units).
+- Validação executada com `just test` e `uv run python -m compileall src tests`.

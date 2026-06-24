@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+
+from robot_lsp.domain.models import LspRange
+from robot_lsp.domain.positions import position_to_utf16_offset
 
 
 @dataclass
@@ -17,9 +20,25 @@ class Document:
     def lines(self) -> list[str]:
         return self.text.splitlines(keepends=True)
 
+    def text_for_range(self, range: LspRange) -> str | None:
+        start = position_to_utf16_offset(
+            self.text,
+            range.start.line,
+            range.start.character,
+        )
+        end = position_to_utf16_offset(
+            self.text,
+            range.end.line,
+            range.end.character,
+        )
+        if start is None or end is None or end < start:
+            return None
+        return self.text[start:end]
+
 
 class DocumentStore:
-    _documents: dict[str, Document] = field(default_factory=dict)
+    def __init__(self) -> None:
+        self._documents: dict[str, Document] = {}
 
     def open(self, uri: str, text: str, version: int, language_id: str) -> Document:
         doc = Document(
@@ -48,6 +67,9 @@ class DocumentStore:
 
     def get_open_uris(self) -> list[str]:
         return list(self._documents.keys())
+
+    def get_all(self) -> list[Document]:
+        return list(self._documents.values())
 
 
 def uri_to_path(uri: str) -> Path | None:
