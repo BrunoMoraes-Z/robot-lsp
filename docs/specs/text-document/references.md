@@ -8,6 +8,11 @@
 
 - `textDocument/references`
 
-## Notes
+## Scope Implemented
 
-Encontrar todas as referências a um símbolo (keyword, variável) no workspace.
+- Referências locais no documento atual
+- Suporte a `context.includeDeclaration`
+
+## Future Scope
+
+- Referências em todo o workspace após Stage 09 — Workspace Index.

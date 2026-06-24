@@ -8,6 +8,15 @@
 
 - `textDocument/documentSymbol`
 
-## Notes
+## Scope Implemented
 
-Retornar a estrutura hierárquica de symbols de um documento `.robot`: test cases, keywords, variables, sections.
+Retorna símbolos planos para:
+
+- Imports
+- Variables
+- Test cases
+- Keywords
+
+## Future Scope
+
+- Símbolos hierárquicos por sections.

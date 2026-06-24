@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 08 — Navigation**
+**Stage 09 — Workspace Index**
 Status: `planned`
 
 ---
@@ -19,7 +19,7 @@ Status: `planned`
 | 05 | Diagnostics | done |
 | 06 | Completion | done |
 | 07 | Hover | done |
-| 08 | Navigation | planned |
+| 08 | Navigation | done |
 | 09 | Workspace Index | planned |
 | 10 | Refactoring | planned |
 | 11 | Formatting & Code Actions | planned |
@@ -283,7 +283,23 @@ Status: `planned`
 - `textDocument/foldingRange`
 - `textDocument/selectionRange`
 
-**Status:** planned
+**Done**
+- Implementado `NavigationService` em `src/robot_lsp/application/navigation_service.py`
+- Implementado `textDocument/definition` para symbols locais
+- Implementado `textDocument/references` com suporte a `includeDeclaration`
+- Implementado `textDocument/documentSymbol` para imports, variables, test cases e keywords
+- Implementado `textDocument/foldingRange` para sections, test cases e keywords
+- Implementado `textDocument/selectionRange` com range de símbolo e parent de linha
+- Integradas capabilities de navigation no `initialize`
+- Criados testes unitários para service e handlers LSP
+
+**Acceptance Criteria**
+- ✅ `definition` retorna localizações locais
+- ✅ `references` retorna ocorrências locais e respeita `includeDeclaration`
+- ✅ `documentSymbol` retorna estrutura do documento
+- ✅ `foldingRange` retorna ranges dobráveis
+- ✅ `selectionRange` retorna ranges por posição
+- ✅ Handlers retornam listas vazias quando service/documento não existe
 
 ---
 

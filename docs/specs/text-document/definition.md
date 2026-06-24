@@ -8,8 +8,18 @@
 
 - `textDocument/definition`
 
-## Notes
+## Scope Implemented
 
-Retornar a definição (localização) de um símbolo: keyword, variável, import.
+- Keywords locais
+- Variables locais
+- Imports locais
+- Test cases locais
 
-MVP placeholder: esta spec será detalhada quando Stage 08 for iniciado.
+## Out Of Scope
+
+- Definitions em resources/libraries importados
+- Definitions cross-workspace
+
+## Result
+
+Retorna `Location[]`.

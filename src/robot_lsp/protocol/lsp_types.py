@@ -31,6 +31,11 @@ def server_capabilities() -> dict[str, Any]:
             "resolveProvider": False,
         },
         "hoverProvider": True,
+        "definitionProvider": True,
+        "referencesProvider": True,
+        "documentSymbolProvider": True,
+        "foldingRangeProvider": True,
+        "selectionRangeProvider": True,
     }
 
 

@@ -6,6 +6,7 @@ from robot_lsp.application.completion_service import CompletionService
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
 from robot_lsp.application.hover_service import HoverService
+from robot_lsp.application.navigation_service import NavigationService
 from robot_lsp.domain.diagnostics import LspDiagnostic
 from robot_lsp.domain.models import LspPosition
 
@@ -26,6 +27,7 @@ class LspServer:
         diagnostic_service: DiagnosticService | None = None,
         completion_service: CompletionService | None = None,
         hover_service: HoverService | None = None,
+        navigation_service: NavigationService | None = None,
     ) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
@@ -37,6 +39,7 @@ class LspServer:
         self.diagnostic_service = diagnostic_service
         self.completion_service = completion_service
         self.hover_service = hover_service
+        self.navigation_service = navigation_service
         self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
@@ -49,6 +52,11 @@ class LspServer:
         self._dispatcher.register("textDocument/didClose", self._handle_did_close)
         self._dispatcher.register("textDocument/completion", self._handle_completion)
         self._dispatcher.register("textDocument/hover", self._handle_hover)
+        self._dispatcher.register("textDocument/definition", self._handle_definition)
+        self._dispatcher.register("textDocument/references", self._handle_references)
+        self._dispatcher.register("textDocument/documentSymbol", self._handle_document_symbol)
+        self._dispatcher.register("textDocument/foldingRange", self._handle_folding_range)
+        self._dispatcher.register("textDocument/selectionRange", self._handle_selection_range)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.method == "exit":
@@ -262,3 +270,98 @@ class LspServer:
 
         hover = self.hover_service.compute_hover(uri, LspPosition(line=line, character=character))
         return hover.to_lsp() if hover is not None else None
+
+    def _handle_definition(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        parsed = self._text_document_position(params)
+        if self.navigation_service is None or parsed is None:
+            return []
+        uri, position = parsed
+        return self.navigation_service.definition(uri, position)
+
+    def _handle_references(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        parsed = self._text_document_position(params)
+        if self.navigation_service is None or parsed is None:
+            return []
+        uri, position = parsed
+        include_declaration = True
+        if isinstance(params, dict) and isinstance(params.get("context"), dict):
+            include_declaration = params["context"].get("includeDeclaration", True) is not False
+        return self.navigation_service.references(
+            uri,
+            position,
+            include_declaration=include_declaration,
+        )
+
+    def _handle_document_symbol(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        uri = self._text_document_uri(params)
+        if self.navigation_service is None or uri is None:
+            return []
+        return self.navigation_service.document_symbols(uri)
+
+    def _handle_folding_range(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        uri = self._text_document_uri(params)
+        if self.navigation_service is None or uri is None:
+            return []
+        return self.navigation_service.folding_ranges(uri)
+
+    def _handle_selection_range(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        uri = self._text_document_uri(params)
+        if self.navigation_service is None or uri is None or not isinstance(params, dict):
+            return []
+        raw_positions = params.get("positions")
+        if not isinstance(raw_positions, list):
+            return []
+        positions = []
+        for raw_position in raw_positions:
+            if not isinstance(raw_position, dict):
+                continue
+            line = raw_position.get("line")
+            character = raw_position.get("character")
+            if isinstance(line, int) and isinstance(character, int):
+                positions.append(LspPosition(line=line, character=character))
+        return self.navigation_service.selection_ranges(uri, positions)
+
+    def _text_document_position(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+    ) -> tuple[str, LspPosition] | None:
+        if not isinstance(params, dict):
+            return None
+        uri = self._text_document_uri(params)
+        position = params.get("position")
+        if uri is None or not isinstance(position, dict):
+            return None
+        line = position.get("line")
+        character = position.get("character")
+        if not isinstance(line, int) or not isinstance(character, int):
+            return None
+        return uri, LspPosition(line=line, character=character)
+
+    def _text_document_uri(self, params: dict[str, Any] | list[Any] | None) -> str | None:
+        if not isinstance(params, dict):
+            return None
+        text_document = params.get("textDocument")
+        if not isinstance(text_document, dict):
+            return None
+        uri = text_document.get("uri")
+        return uri if isinstance(uri, str) else None
