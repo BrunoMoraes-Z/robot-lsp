@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 06 — Completion**
+**Stage 07 — Hover**
 Status: `planned`
 
 ---
@@ -17,7 +17,7 @@ Status: `planned`
 | 03 | Document Workspace | done |
 | 04 | Robot Framework Model | done |
 | 05 | Diagnostics | done |
-| 06 | Completion | planned |
+| 06 | Completion | done |
 | 07 | Hover | planned |
 | 08 | Navigation | planned |
 | 09 | Workspace Index | planned |
@@ -228,14 +228,21 @@ Status: `planned`
 - `InsertTextFormat.PlainText` e `Snippet` simples
 
 **Done**
-- _Nothing yet_
+- Implementado `CompletionService` em `src/robot_lsp/application/completion_service.py`
+- Implementados tipos `CompletionItem`, `CompletionList`, `CompletionContext` e `CompletionItemKind`
+- Implementada completion de sections
+- Implementada completion de settings em `*** Settings ***`
+- Implementada completion de keywords locais em bodies de test cases/keywords
+- Implementada completion de variables locais com triggers `$`, `@`, `&`, `%`
+- Integrado handler `textDocument/completion` ao `LspServer`
+- Criados testes unitários para service e handler LSP
 
 **Acceptance Criteria**
-- Cursor após linha vazia completa sections
-- Cursor em `*** Settings ***` completa settings conhecidos
-- Cursor em `*** Keywords ***` completa keywords do arquivo
-- Cursor onde variável é esperada completa variáveis do arquivo
-- Completion items têm label, kind, detail, e textEdit/documentation quando aplicável
+- ✅ Cursor após linha vazia completa sections
+- ✅ Cursor em `*** Settings ***` completa settings conhecidos
+- ✅ Cursor em `*** Keywords ***` completa keywords do arquivo
+- ✅ Cursor onde variável é esperada completa variáveis do arquivo
+- ✅ Completion items têm label, kind, detail e documentation quando aplicável
 
 ---
 

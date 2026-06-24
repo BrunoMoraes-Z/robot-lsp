@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from robot_lsp.application.completion_service import CompletionService
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
 from robot_lsp.domain.diagnostics import LspDiagnostic
+from robot_lsp.domain.models import LspPosition
 
 from .dispatch import CancelToken, MethodDispatcher
 from .jsonrpc import (
@@ -18,7 +20,11 @@ from .lsp_types import ServerState, initialize_result
 
 
 class LspServer:
-    def __init__(self, diagnostic_service: DiagnosticService | None = None) -> None:
+    def __init__(
+        self,
+        diagnostic_service: DiagnosticService | None = None,
+        completion_service: CompletionService | None = None,
+    ) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
         self.root_uri: str | None = None
@@ -27,6 +33,7 @@ class LspServer:
         self.exit_code: int | None = None
         self.document_store = DocumentStore()
         self.diagnostic_service = diagnostic_service
+        self.completion_service = completion_service
         self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
@@ -37,6 +44,7 @@ class LspServer:
         self._dispatcher.register("textDocument/didOpen", self._handle_did_open)
         self._dispatcher.register("textDocument/didChange", self._handle_did_change)
         self._dispatcher.register("textDocument/didClose", self._handle_did_close)
+        self._dispatcher.register("textDocument/completion", self._handle_completion)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.method == "exit":
@@ -195,3 +203,36 @@ class LspServer:
                 },
             )
         )
+
+    def _handle_completion(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> dict[str, Any] | None:
+        if self.completion_service is None or not isinstance(params, dict):
+            return {"isIncomplete": False, "items": []}
+
+        text_document = params.get("textDocument")
+        position = params.get("position")
+        context = params.get("context")
+        if not isinstance(text_document, dict) or not isinstance(position, dict):
+            return {"isIncomplete": False, "items": []}
+
+        uri = text_document.get("uri")
+        line = position.get("line")
+        character = position.get("character")
+        if not isinstance(uri, str) or not isinstance(line, int) or not isinstance(character, int):
+            return {"isIncomplete": False, "items": []}
+
+        trigger_character = None
+        if isinstance(context, dict) and isinstance(context.get("triggerCharacter"), str):
+            trigger_character = context["triggerCharacter"]
+
+        completion = self.completion_service.compute_completion(
+            uri,
+            LspPosition(line=line, character=character),
+            trigger_character=trigger_character,
+        )
+        if completion is None:
+            return {"isIncomplete": False, "items": []}
+        return completion.to_lsp()

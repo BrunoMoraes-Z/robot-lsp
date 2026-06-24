@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+done
 
 ## Goal
 
@@ -60,3 +60,11 @@ Implementar completação de código para arquivos `.robot`: sections, settings,
 ## Dependencies
 
 - Stage 04 (modelo RF)
+
+## Notes
+
+- Stage concluída com completion inicial para sections, settings, keywords locais e variables locais.
+- `textDocument/completion` foi integrado ao `LspServer` como request LSP.
+- O serviço usa `DocumentStore` + `ParseService`, sem dependência direta do Robot Framework.
+- Completion ainda não resolve libraries/resources importados; isso permanece para Stage 09.
+- Validação executada com `just test` e `uv run python -m compileall src tests`.
