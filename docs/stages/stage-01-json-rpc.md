@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+done
 
 ## Goal
 
@@ -72,3 +72,5 @@ Implementar o protocolo JSON-RPC 2.0 e o transporte LSP sobre `stdio`, sem depen
 - Usar `json` da stdlib
 - Reader opera em `sys.stdin.buffer`, writer em `sys.stdout.buffer`
 - Logs vão para `stderr`
+- Stage concluída com 24 testes específicos de protocolo + teste geral de importação
+- Validação executada com `just test` e `uv run python -m compileall src tests`

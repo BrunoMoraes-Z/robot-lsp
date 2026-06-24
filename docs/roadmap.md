@@ -2,8 +2,8 @@
 
 ## Current Stage
 
-**Stage 00 — Foundation**
-Status: `done`
+**Stage 02 — LSP Lifecycle**
+Status: `planned`
 
 ---
 
@@ -12,7 +12,7 @@ Status: `done`
 | Stage | Name | Status |
 |---|---|---|
 | 00 | Foundation | done |
-| 01 | JSON-RPC | planned |
+| 01 | JSON-RPC | done |
 | 02 | LSP Lifecycle | planned |
 | 03 | Document Workspace | planned |
 | 04 | Robot Framework Model | planned |
@@ -76,14 +76,22 @@ Status: `done`
 - Testes unitários de framing e mensagens
 
 **Done**
-- _Nothing yet_
+- Implementado parser/serializer JSON-RPC 2.0 em `src/robot_lsp/protocol/jsonrpc.py`
+- Implementados modelos `JsonRpcMessage`, `JsonRpcError` e erro de protocolo `JsonRpcProtocolError`
+- Implementados helpers para request, notification, response e error response
+- Implementados error codes padrão JSON-RPC e códigos LSP internos iniciais
+- Implementado framing LSP `Content-Length` em `src/robot_lsp/protocol/transport_stdio.py`
+- Implementado reader/writer binário com escrita thread-safe
+- Implementado `MethodDispatcher` em `src/robot_lsp/protocol/dispatch.py`
+- Implementado cancelamento cooperativo via `$/cancelRequest`
+- Criados testes unitários para JSON-RPC, transporte e dispatcher
 
 **Acceptance Criteria**
-- Requests, notifications e responses serializam/deserializam corretamente
-- Erros padrão JSON-RPC são emitidos para mensagens inválidas
-- `Content-Length` header é lido/escrito corretamente
-- Mensagens maiores que buffer são lidas corretamente
-- Cancelamento de request funciona
+- ✅ Requests, notifications e responses serializam/deserializam corretamente
+- ✅ Erros padrão JSON-RPC são emitidos para mensagens inválidas
+- ✅ `Content-Length` header é lido/escrito corretamente
+- ✅ Mensagens maiores que buffer são lidas corretamente
+- ✅ Cancelamento de request funciona
 
 ---
 
