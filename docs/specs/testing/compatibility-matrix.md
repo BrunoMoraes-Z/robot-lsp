@@ -6,30 +6,30 @@ Stage 14 — Release Hardening
 
 ## RF Versions
 
-| RF Version | CI Status | Notes |
+| RF Version | Status | Notes |
 |---|---|---|
-| 7.0.1 | ✅ | Mínimo suportado |
-| 7.1.1 | ✅ | |
-| 7.2.2 | ✅ | Group/END |
-| 7.3.2 | ✅ | |
-| 7.4.2 | ✅ | Secret variables (default) |
+| 7.0.x | Target | Mínimo suportado |
+| 7.1.x | Target | |
+| 7.2.x | Target | Group/END |
+| 7.3.x | Target | |
+| 7.4.2 | Locally validated | Versão instalada no ambiente atual |
 
 ## Python Versions
 
-| Python | CI Status |
+| Python | Status |
 |---|---|
-| 3.10 | ✅ |
-| 3.11 | ✅ |
-| 3.12 | ✅ |
-| 3.13 | ✅ (quando suportado pelo RF) |
+| 3.10 | Locally validated |
+| 3.11 | CI target |
+| 3.12 | CI target |
+| 3.13 | Future |
 
 ## OS
 
-| OS | CI Status |
+| OS | Status |
 |---|---|
-| Windows | ✅ |
-| Linux | ✅ |
-| macOS | 🔄 (futuro) |
+| Windows | Locally validated + CI target |
+| Linux | CI target |
+| macOS | Future |
 
 ## Test Strategy por Versão
 
@@ -47,3 +47,9 @@ uv run pytest tests/ -v
 ## Feature Detection Tests
 
 Testes específicos para verificar que cada versão é detectada corretamente e que features ausentes não causam erro.
+
+## Current CI
+
+- `ubuntu-latest` and `windows-latest`
+- Python 3.10, 3.11 and 3.12
+- Installed Robot Framework version from project dependency resolution

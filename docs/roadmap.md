@@ -2,8 +2,8 @@
 
 ## Current Stage
 
-**Stage 14 — Release Hardening**
-Status: `planned`
+**MVP Complete**
+Status: `done`
 
 ---
 
@@ -25,7 +25,7 @@ Status: `planned`
 | 11 | Formatting & Code Actions | done |
 | 12 | Performance & Isolation | done |
 | 13 | Configuration | done |
-| 14 | Release Hardening | planned |
+| 14 | Release Hardening | done |
 
 ---
 
@@ -459,4 +459,25 @@ Status: `planned`
 - Documentação de uso
 - Changelog
 
-**Status:** planned
+**Done**
+- Implementado runner stdio real em `src/robot_lsp/main.py`
+- Implementada fábrica `create_server()` com todos os services do MVP conectados
+- Implementado `--version`
+- Implementado `--log-level` com logs em stderr
+- Protocol errors no loop stdio retornam JSON-RPC error response
+- Notifications pendentes são drenadas pelo runner
+- Diagnostics assíncronos podem publicar diretamente no transporte do runner
+- Adicionado workflow CI em `.github/workflows/ci.yml`
+- Adicionado `README.md`
+- Adicionado `docs/usage.md`
+- Adicionado `docs/changelog.md`
+- Atualizada matriz de compatibilidade com targets e validação local
+
+**Acceptance Criteria**
+- ✅ `python -m robot_lsp --version` retorna versão
+- ✅ Runner stdio responde sessão mínima LSP
+- ✅ Runner stdio retorna erro JSON-RPC para mensagem inválida
+- ✅ Logs usam stderr, preservando stdout para LSP
+- ✅ CI pipeline documentado em GitHub Actions
+- ✅ Documentação de uso e changelog inicial existem
+- ✅ Testes e compileall passam

@@ -43,3 +43,14 @@ def receive(proc) -> dict:
 - Documento com erro de sintaxe → diagnostics publicados
 - Documento corrigido → diagnostics limpos
 - Servidor é iniciado apenas com `python -m robot_lsp`
+
+## Implemented In Stage 14
+
+- Runner stdio testado em memória com framing real.
+- Sessão mínima `initialize` → `shutdown` → `exit` validada em `tests/unit/test_main.py`.
+- Resposta de erro para mensagem JSON-RPC inválida validada no runner.
+
+## Future
+
+- Teste de subprocesso real com `python -m robot_lsp`.
+- Teste end-to-end de diagnostics assíncronos via stdio.
