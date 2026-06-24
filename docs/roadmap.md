@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 11 — Formatting & Code Actions**
+**Stage 12 — Performance & Isolation**
 Status: `planned`
 
 ---
@@ -22,7 +22,7 @@ Status: `planned`
 | 08 | Navigation | done |
 | 09 | Workspace Index | done |
 | 10 | Refactoring | done |
-| 11 | Formatting & Code Actions | planned |
+| 11 | Formatting & Code Actions | done |
 | 12 | Performance & Isolation | planned |
 | 13 | Configuration | planned |
 | 14 | Release Hardening | planned |
@@ -367,7 +367,24 @@ Status: `planned`
 - `textDocument/codeAction`
 - Quick fixes para diagnostics comuns
 
-**Status:** planned
+**Done**
+- Implementado `FormattingService` em `src/robot_lsp/application/formatting_service.py`
+- Implementado `textDocument/formatting`
+- Implementado `textDocument/rangeFormatting`
+- Implementada normalização inicial de espaçamento entre células para 4 espaços
+- Implementada remoção de whitespace final por linha
+- Implementado `CodeActionService` em `src/robot_lsp/application/code_action_service.py`
+- Implementado `textDocument/codeAction`
+- Adicionadas capabilities `documentFormattingProvider`, `documentRangeFormattingProvider` e `codeActionProvider`
+- Criados testes unitários para services e handlers LSP
+
+**Acceptance Criteria**
+- ✅ `textDocument/formatting` retorna `TextEdit` de documento inteiro quando há mudanças
+- ✅ `textDocument/formatting` retorna lista vazia quando documento já está formatado
+- ✅ `textDocument/rangeFormatting` formata linhas tocadas pelo range
+- ✅ `textDocument/codeAction` retorna quick actions para diagnostics conhecidos
+- ✅ Capabilities de formatting e code action são anunciadas no `initialize`
+- ✅ Handlers retornam lista vazia quando services não estão configurados
 
 ---
 

@@ -3,13 +3,15 @@ from __future__ import annotations
 from typing import Any
 
 from robot_lsp.application.completion_service import CompletionService
+from robot_lsp.application.code_action_service import CodeActionService
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.document_store import DocumentStore
+from robot_lsp.application.formatting_service import FormattingService
 from robot_lsp.application.hover_service import HoverService
 from robot_lsp.application.navigation_service import NavigationService
 from robot_lsp.application.refactoring_service import RefactoringService
 from robot_lsp.domain.diagnostics import LspDiagnostic
-from robot_lsp.domain.models import LspPosition
+from robot_lsp.domain.models import LspPosition, LspRange
 
 from .dispatch import CancelToken, MethodDispatcher
 from .jsonrpc import (
@@ -30,6 +32,8 @@ class LspServer:
         hover_service: HoverService | None = None,
         navigation_service: NavigationService | None = None,
         refactoring_service: RefactoringService | None = None,
+        formatting_service: FormattingService | None = None,
+        code_action_service: CodeActionService | None = None,
     ) -> None:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
@@ -43,6 +47,8 @@ class LspServer:
         self.hover_service = hover_service
         self.navigation_service = navigation_service
         self.refactoring_service = refactoring_service
+        self.formatting_service = formatting_service
+        self.code_action_service = code_action_service
         self.outgoing_notifications: list[JsonRpcMessage] = []
 
         self._dispatcher = MethodDispatcher()
@@ -62,6 +68,9 @@ class LspServer:
         self._dispatcher.register("textDocument/selectionRange", self._handle_selection_range)
         self._dispatcher.register("textDocument/prepareRename", self._handle_prepare_rename)
         self._dispatcher.register("textDocument/rename", self._handle_rename)
+        self._dispatcher.register("textDocument/formatting", self._handle_formatting)
+        self._dispatcher.register("textDocument/rangeFormatting", self._handle_range_formatting)
+        self._dispatcher.register("textDocument/codeAction", self._handle_code_action)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.method == "exit":
@@ -395,3 +404,59 @@ class LspServer:
             return None
         uri, position = parsed
         return self.refactoring_service.rename(uri, position, new_name)
+
+    def _handle_formatting(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        uri = self._text_document_uri(params)
+        if self.formatting_service is None or uri is None or not isinstance(params, dict):
+            return []
+        options = params.get("options") if isinstance(params.get("options"), dict) else None
+        return self.formatting_service.format_document(uri, options)
+
+    def _handle_range_formatting(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        uri = self._text_document_uri(params)
+        if self.formatting_service is None or uri is None or not isinstance(params, dict):
+            return []
+        raw_range = params.get("range")
+        if not isinstance(raw_range, dict):
+            return []
+        range_ = self._parse_range(raw_range)
+        if range_ is None:
+            return []
+        options = params.get("options") if isinstance(params.get("options"), dict) else None
+        return self.formatting_service.format_range(uri, range_, options)
+
+    def _handle_code_action(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> list[dict[str, Any]]:
+        uri = self._text_document_uri(params)
+        if self.code_action_service is None or uri is None or not isinstance(params, dict):
+            return []
+        raw_range = params.get("range") if isinstance(params.get("range"), dict) else None
+        context = params.get("context") if isinstance(params.get("context"), dict) else None
+        return self.code_action_service.code_actions(uri, raw_range, context)
+
+    def _parse_range(self, raw_range: dict[str, Any]) -> LspRange | None:
+        start = raw_range.get("start")
+        end = raw_range.get("end")
+        if not isinstance(start, dict) or not isinstance(end, dict):
+            return None
+        start_line = start.get("line")
+        start_character = start.get("character")
+        end_line = end.get("line")
+        end_character = end.get("character")
+        if not all(isinstance(value, int) for value in [start_line, start_character, end_line, end_character]):
+            return None
+        return LspRange(
+            LspPosition(start_line, start_character),
+            LspPosition(end_line, end_character),
+        )

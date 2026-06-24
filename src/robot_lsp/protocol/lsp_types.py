@@ -37,6 +37,12 @@ def server_capabilities() -> dict[str, Any]:
         "foldingRangeProvider": True,
         "selectionRangeProvider": True,
         "renameProvider": {"prepareProvider": True},
+        "documentFormattingProvider": True,
+        "documentRangeFormattingProvider": True,
+        "codeActionProvider": {
+            "codeActionKinds": ["quickfix"],
+            "resolveProvider": False,
+        },
     }
 
 
