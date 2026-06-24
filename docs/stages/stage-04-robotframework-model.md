@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+done
 
 ## Goal
 
@@ -76,3 +76,11 @@ Implementar o detector de versão do Robot Framework, o parser via `robot.api.pa
 ## Dependencies
 
 - Stage 03 (precisa de `Document` e posições)
+
+## Notes
+
+- Stage concluída com parser e adapter base para Robot Framework >= 7.0.
+- O core (`domain`, `application`, `protocol`) não importa `robot.api.parsing` nem `robot.parsing`.
+- O adapter trabalha por modelos intermediários e tokens públicos do `robot.api.parsing`.
+- Erros de parse expostos como nós `Error` são convertidos para `RobotDiagnostic`.
+- Validação executada com `just test` e `uv run python -m compileall src tests`.

@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-**Stage 04 — Robot Framework Model**
+**Stage 05 — Diagnostics**
 Status: `planned`
 
 ---
@@ -15,7 +15,7 @@ Status: `planned`
 | 01 | JSON-RPC | done |
 | 02 | LSP Lifecycle | done |
 | 03 | Document Workspace | done |
-| 04 | Robot Framework Model | planned |
+| 04 | Robot Framework Model | done |
 | 05 | Diagnostics | planned |
 | 06 | Completion | planned |
 | 07 | Hover | planned |
@@ -166,15 +166,23 @@ Status: `planned`
 - Fixtures `.robot` para testes
 
 **Done**
-- _Nothing yet_
+- Implementados modelos intermediários faltantes: `RobotDocument`, `RobotDiagnostic`, `ParseResult`
+- Implementado detector de versão em `src/robot_lsp/infrastructure/robotframework/version.py`
+- Implementado `FeatureSet` para RF >= 7.0 com flags `has_group` e `has_secret_variables`
+- Implementado parser em `src/robot_lsp/infrastructure/robotframework/parser.py` usando apenas `robot.api.parsing`
+- Implementado adapter AST em `src/robot_lsp/infrastructure/robotframework/adapter.py`
+- Implementado visitor de coleta de erros em `visitors.py`
+- Extraídos settings, metadata, imports, variables, test cases, keywords, args e steps
+- Criadas fixtures `.robot` e `.resource` reais em `tests/integration/fixtures/`
+- Criados testes de versão, parser, adapter e isolamento de imports do RF
 
 **Acceptance Criteria**
-- Versão 7.0+ é detectada e reportada corretamente
-- `FeatureSet` reflete a versão instalada
-- Suite `.robot` é parseada para modelo intermediário
-- Core do LSP nunca importa `robot.parsing` diretamente
-- Erros de parse do RF são capturados sem crash
-- Testes com fixtures reais `.robot`
+- ✅ Versão 7.0+ é detectada e reportada corretamente
+- ✅ `FeatureSet` reflete a versão instalada
+- ✅ Suite `.robot` é parseada para modelo intermediário
+- ✅ Core do LSP nunca importa `robot.api.parsing` nem `robot.parsing` diretamente
+- ✅ Erros de parse do RF são capturados sem crash
+- ✅ Testes com fixtures reais `.robot`
 
 ---
 

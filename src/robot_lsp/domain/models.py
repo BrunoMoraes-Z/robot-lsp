@@ -94,3 +94,26 @@ class RobotSuite:
     imports: list[RobotImport]
     test_cases: list[RobotTestCase]
     keywords: list[RobotKeyword]
+
+
+@dataclass
+class RobotDiagnostic:
+    message: str
+    severity: Literal["error", "warning", "info"]
+    range: LspRange
+    code: str | None = None
+
+
+@dataclass
+class RobotDocument:
+    uri: str
+    version: int
+    text: str
+    suite: RobotSuite | None
+    errors: list[RobotDiagnostic]
+
+
+@dataclass
+class ParseResult:
+    suite: RobotSuite | None
+    errors: list[RobotDiagnostic] = field(default_factory=list)
