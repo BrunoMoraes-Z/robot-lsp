@@ -1,0 +1,29 @@
+[project]
+name = "robot-lsp"
+version = "0.1.0"
+description = "Robot Framework Language Server (LSP) - JSON-RPC implementation without pygls"
+requires-python = ">=3.10"
+dependencies = [
+    "robotframework>=7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+robot-lsp = "robot_lsp.__main__:main"
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
