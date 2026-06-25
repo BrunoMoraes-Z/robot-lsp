@@ -32,7 +32,7 @@ Supported levels: `debug`, `info`, `warning`, `error`.
 
 ## LSP Configuration
 
-Configuration can be passed through `initializationOptions` or `workspace/didChangeConfiguration`.
+Configuration can be passed through `initializationOptions`, `workspace/didChangeConfiguration`, or client responses to `workspace/configuration`.
 
 ```json
 {
@@ -53,3 +53,4 @@ Implemented behavior:
 - `diagnostics.enable` controls diagnostic scheduling and clears diagnostics when disabled.
 - `logLevel` updates the server logger during `initialize` and `workspace/didChangeConfiguration`.
 - `completion.snippets` controls whether section completions are returned as LSP snippets.
+- Workspace-folder-specific `diagnostics.enable` and `completion.snippets` are applied by document URI.

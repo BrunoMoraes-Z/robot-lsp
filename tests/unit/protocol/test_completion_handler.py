@@ -69,6 +69,26 @@ class TestCompletionHandler:
         assert first_item["kind"] == 1
         assert "insertTextFormat" not in first_item
 
+    def test_text_document_completion_applies_workspace_folder_snippets_config(self):
+        server, uri = make_server("")
+        server.configuration_service.update({"completion": {"snippets": False}}, scope_uri="file:///c:/projects")
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/completion",
+                id=2,
+                params={
+                    "textDocument": {"uri": uri},
+                    "position": {"line": 0, "character": 0},
+                },
+            )
+        )
+
+        first_item = response.result["items"][0]
+        assert first_item["label"] == "*** Settings ***"
+        assert first_item["kind"] == 1
+        assert "insertTextFormat" not in first_item
+
     def test_text_document_completion_without_service_returns_empty_list(self):
         server = LspServer()
         server.handle_message(create_request("initialize", id=1, params={"capabilities": {}}))

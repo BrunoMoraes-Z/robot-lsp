@@ -44,3 +44,30 @@ class TestConfigurationService:
 
         assert config.log_level == "debug"
         assert config.diagnostics.enable is False
+
+    def test_workspace_config_applies_to_matching_uri(self):
+        service = ConfigurationService()
+        service.update({"diagnostics": {"enable": False}}, scope_uri="file:///c:/projects/app")
+
+        assert service.config.diagnostics.enable is True
+        assert service.config_for_uri("file:///c:/projects/app/tests/example.robot").diagnostics.enable is False
+        assert service.config_for_uri("file:///c:/projects/other/example.robot").diagnostics.enable is True
+
+    def test_most_specific_workspace_config_wins(self):
+        service = ConfigurationService()
+        service.update({"completion": {"snippets": False}}, scope_uri="file:///c:/projects/app")
+        service.update({"completion": {"snippets": True}}, scope_uri="file:///c:/projects/app/nested")
+
+        config = service.config_for_uri("file:///c:/projects/app/nested/example.robot")
+
+        assert config.completion.snippets is True
+
+    def test_workspace_config_inherits_global_changes(self):
+        service = ConfigurationService()
+        service.update({"diagnostics": {"enable": False}}, scope_uri="file:///c:/projects/app")
+
+        service.update({"logLevel": "debug"})
+
+        config = service.config_for_uri("file:///c:/projects/app/example.robot")
+        assert config.log_level == "debug"
+        assert config.diagnostics.enable is False

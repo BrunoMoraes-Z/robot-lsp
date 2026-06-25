@@ -10,7 +10,7 @@ Status: `done`
 All 14 stages planned for the MVP have been implemented and validated by the current test suite.
 
 Most recent local validation:
-- `uv run pytest` — 171 tests passing
+- `uv run pytest` — 178 tests passing
 
 The items below do not block the MVP, but remain pending for post-MVP evolution because they were explicitly deferred in stage/spec documents or belong to release hardening beyond the first functional version.
 
@@ -22,7 +22,7 @@ The items below do not block the MVP, but remain pending for post-MVP evolution 
 | 02 | Automate release publishing/distribution, including build artifacts and PyPI if applicable | Stage 14 | done |
 | 03 | Implement structured logging applied to `robot.lsp.logLevel` at runtime | Stage 13 / Stage 14 | done |
 | 04 | Apply `robot.lsp.completion.snippets` to completion items and configurable snippets | Stage 13 | done |
-| 05 | Implement outbound `workspace/configuration` request and workspace-folder-specific configuration | Stage 13 / workspace configuration spec | pending |
+| 05 | Implement outbound `workspace/configuration` request and workspace-folder-specific configuration | Stage 13 / workspace configuration spec | done |
 | 06 | Add worker pool/real cancellation for long-running operations when metrics justify it | Stage 12 / performance specs | pending |
 | 07 | Evaluate subprocess isolation for indexing/heavy analysis with dedicated integration tests | Stage 12 / Stage 14 risks | pending |
 | 08 | Add progress reporting (`$/progress`, `window/workDoneProgress/create`) for long-running operations | protocol progress spec | pending |
@@ -468,7 +468,8 @@ The items below do not block the MVP, but remain pending for post-MVP evolution 
 - ✅ Disabling diagnostics clears existing diagnostics
 - ✅ `robot.lsp.importPaths` participates in `Resource` and `Variables` resolution
 - ✅ Invalid values are ignored without breaking existing configuration
-- ✅ `workspace/configuration` remains future server-to-client work when an outbound request loop exists
+- ✅ `workspace/configuration` is requested from clients that advertise `workspace.configuration`
+- ✅ Workspace-folder-specific `diagnostics.enable` and `completion.snippets` are applied by document URI
 
 ---
 

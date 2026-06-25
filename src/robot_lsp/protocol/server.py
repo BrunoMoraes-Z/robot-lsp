@@ -22,6 +22,7 @@ from .jsonrpc import (
     JsonRpcMessage,
     create_error_response,
     create_notification,
+    create_request,
 )
 from .lsp_types import ServerState, initialize_result
 
@@ -42,6 +43,7 @@ class LspServer:
         self.state = ServerState.UNINITIALIZED
         self.process_id: int | None = None
         self.root_uri: str | None = None
+        self.workspace_folders: list[dict[str, str]] = []
         self.client_capabilities: dict[str, Any] = {}
         self.exit_requested = False
         self.exit_code: int | None = None
@@ -56,6 +58,9 @@ class LspServer:
         self.configuration_service = configuration_service or ConfigurationService()
         self.log_level_applier = log_level_applier
         self.outgoing_notifications: list[JsonRpcMessage] = []
+        self.outgoing_requests: list[JsonRpcMessage] = []
+        self._next_outgoing_request_id = 1
+        self._pending_configuration_requests: dict[int, list[str | None]] = {}
 
         self._dispatcher = MethodDispatcher()
         self._dispatcher.register("initialize", self._handle_initialize)
@@ -80,6 +85,10 @@ class LspServer:
         self._dispatcher.register("workspace/didChangeConfiguration", self._handle_did_change_configuration)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
+        if message.is_response:
+            self._handle_response(message)
+            return None
+
         if message.method == "exit":
             return self._dispatcher.dispatch(message)
 
@@ -116,6 +125,7 @@ class LspServer:
             self.process_id = process_id if isinstance(process_id, int) else None
             root_uri = params.get("rootUri")
             self.root_uri = root_uri if isinstance(root_uri, str) else None
+            self.workspace_folders = _workspace_folders(params.get("workspaceFolders"), self.root_uri)
             capabilities = params.get("capabilities")
             self.client_capabilities = capabilities if isinstance(capabilities, dict) else {}
             initialization_options = params.get("initializationOptions")
@@ -132,7 +142,29 @@ class LspServer:
         params: dict[str, Any] | list[Any] | None,
         token: CancelToken,
     ) -> None:
+        self.request_workspace_configuration()
         return None
+
+    def request_workspace_configuration(self) -> JsonRpcMessage | None:
+        if not self._client_supports_workspace_configuration():
+            return None
+        scopes: list[str | None] = [None]
+        scopes.extend(folder["uri"] for folder in self.workspace_folders if isinstance(folder.get("uri"), str))
+        request_id = self._next_outgoing_request_id
+        self._next_outgoing_request_id += 1
+        self._pending_configuration_requests[request_id] = scopes
+        request = create_request(
+            "workspace/configuration",
+            id=request_id,
+            params={
+                "items": [
+                    ({"section": "robot.lsp"} if scope_uri is None else {"scopeUri": scope_uri, "section": "robot.lsp"})
+                    for scope_uri in scopes
+                ]
+            },
+        )
+        self.outgoing_requests.append(request)
+        return request
 
     def _handle_shutdown(
         self,
@@ -176,7 +208,7 @@ class LspServer:
             version=version if isinstance(version, int) else 0,
             language_id=language_id if isinstance(language_id, str) else "robotframework",
         )
-        if self._diagnostics_enabled() and self.diagnostic_service is not None:
+        if self._diagnostics_enabled(uri) and self.diagnostic_service is not None:
             self.diagnostic_service.schedule_diagnostics(uri)
         return None
 
@@ -210,7 +242,7 @@ class LspServer:
             text=text,
             version=version if isinstance(version, int) else 0,
         )
-        if self._diagnostics_enabled() and self.diagnostic_service is not None:
+        if self._diagnostics_enabled(uri) and self.diagnostic_service is not None:
             self.diagnostic_service.schedule_diagnostics(uri)
         return None
 
@@ -252,17 +284,18 @@ class LspServer:
         settings = params.get("settings")
         if not isinstance(settings, dict):
             return None
-        old_diagnostics_enabled = self._diagnostics_enabled()
+        old_diagnostics_enabled = {uri: self._diagnostics_enabled(uri) for uri in self.document_store.get_open_uris()}
         old_log_level = self.configuration_service.config.log_level
         self.configuration_service.update(settings)
         self._apply_log_level_if_changed(old_log_level)
-        if old_diagnostics_enabled and not self._diagnostics_enabled() and self.diagnostic_service is not None:
+        if self.diagnostic_service is not None:
             for uri in self.document_store.get_open_uris():
-                self.diagnostic_service.clear(uri)
+                if old_diagnostics_enabled.get(uri, True) and not self._diagnostics_enabled(uri):
+                    self.diagnostic_service.clear(uri)
         return None
 
-    def _diagnostics_enabled(self) -> bool:
-        return self.configuration_service.config.diagnostics.enable
+    def _diagnostics_enabled(self, uri: str | None = None) -> bool:
+        return self.configuration_service.config_for_uri(uri).diagnostics.enable
 
     def _apply_log_level_if_changed(self, old_log_level: LogLevel) -> None:
         new_log_level = self.configuration_service.config.log_level
@@ -297,11 +330,34 @@ class LspServer:
             uri,
             LspPosition(line=line, character=character),
             trigger_character=trigger_character,
-            snippets_enabled=self.configuration_service.config.completion.snippets,
+            snippets_enabled=self.configuration_service.config_for_uri(uri).completion.snippets,
         )
         if completion is None:
             return {"isIncomplete": False, "items": []}
         return completion.to_lsp()
+
+    def _handle_response(self, message: JsonRpcMessage) -> None:
+        if not isinstance(message.id, int):
+            return None
+        scopes = self._pending_configuration_requests.pop(message.id, None)
+        if scopes is None or message.error is not None or not isinstance(message.result, list):
+            return None
+
+        old_log_level = self.configuration_service.config.log_level
+        old_diagnostics_enabled = {uri: self._diagnostics_enabled(uri) for uri in self.document_store.get_open_uris()}
+        for scope_uri, raw_settings in zip(scopes, message.result):
+            if isinstance(raw_settings, dict):
+                self.configuration_service.update(raw_settings, scope_uri=scope_uri)
+        self._apply_log_level_if_changed(old_log_level)
+        if self.diagnostic_service is not None:
+            for uri in self.document_store.get_open_uris():
+                if old_diagnostics_enabled.get(uri, True) and not self._diagnostics_enabled(uri):
+                    self.diagnostic_service.clear(uri)
+        return None
+
+    def _client_supports_workspace_configuration(self) -> bool:
+        workspace = self.client_capabilities.get("workspace")
+        return isinstance(workspace, dict) and workspace.get("configuration") is True
 
     def _handle_hover(
         self,
@@ -500,3 +556,18 @@ class LspServer:
             LspPosition(start_line, start_character),
             LspPosition(end_line, end_character),
         )
+
+
+def _workspace_folders(raw: Any, root_uri: str | None) -> list[dict[str, str]]:
+    folders: list[dict[str, str]] = []
+    if isinstance(raw, list):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            uri = item.get("uri")
+            name = item.get("name")
+            if isinstance(uri, str):
+                folders.append({"uri": uri, "name": name if isinstance(name, str) else uri})
+    if not folders and root_uri is not None:
+        folders.append({"uri": root_uri, "name": root_uri})
+    return folders

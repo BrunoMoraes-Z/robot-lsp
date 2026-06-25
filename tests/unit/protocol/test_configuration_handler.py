@@ -1,7 +1,7 @@
 from robot_lsp.application.diagnostic_service import DiagnosticService
 from robot_lsp.application.parse_service import ParseService
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
-from robot_lsp.protocol.jsonrpc import create_notification, create_request
+from robot_lsp.protocol.jsonrpc import create_notification, create_request, create_response
 from robot_lsp.protocol.server import LspServer
 
 
@@ -25,6 +25,85 @@ class TestConfigurationHandler:
 
         assert server.configuration_service.config.diagnostics.enable is False
         assert capabilities["workspace"]["didChangeConfiguration"] == {"dynamicRegistration": False}
+        assert capabilities["workspace"]["workspaceFolders"] == {"supported": True, "changeNotifications": False}
+
+    def test_initialized_requests_workspace_configuration_when_supported(self):
+        server = LspServer()
+        server.handle_message(
+            create_request(
+                "initialize",
+                id=1,
+                params={
+                    "capabilities": {"workspace": {"configuration": True}},
+                    "workspaceFolders": [{"uri": "file:///c:/projects/app", "name": "app"}],
+                },
+            )
+        )
+
+        server.handle_message(create_notification("initialized", params={}))
+
+        assert len(server.outgoing_requests) == 1
+        request = server.outgoing_requests[0]
+        assert request.method == "workspace/configuration"
+        assert request.params == {
+            "items": [
+                {"section": "robot.lsp"},
+                {"scopeUri": "file:///c:/projects/app", "section": "robot.lsp"},
+            ]
+        }
+
+    def test_workspace_configuration_response_updates_global_and_folder_config(self):
+        log_levels = []
+        server = LspServer(log_level_applier=log_levels.append)
+        server.handle_message(
+            create_request(
+                "initialize",
+                id=1,
+                params={
+                    "capabilities": {"workspace": {"configuration": True}},
+                    "workspaceFolders": [{"uri": "file:///c:/projects/app", "name": "app"}],
+                },
+            )
+        )
+        server.handle_message(create_notification("initialized", params={}))
+        request_id = server.outgoing_requests[0].id
+
+        response = server.handle_message(
+            create_response(
+                request_id,
+                result=[
+                    {"logLevel": "debug"},
+                    {"diagnostics": {"enable": False}, "completion": {"snippets": False}},
+                ],
+            )
+        )
+
+        assert response is None
+        assert server.configuration_service.config.log_level == "debug"
+        assert log_levels == ["debug"]
+        folder_config = server.configuration_service.config_for_uri("file:///c:/projects/app/tests/example.robot")
+        assert folder_config.diagnostics.enable is False
+        assert folder_config.completion.snippets is False
+
+    def test_workspace_folder_diagnostics_config_is_used_on_did_open(self):
+        server, _capabilities = make_server()
+        server.configuration_service.update({"diagnostics": {"enable": False}}, scope_uri="file:///c:/projects/app")
+
+        server.handle_message(
+            create_notification(
+                "textDocument/didOpen",
+                params={
+                    "textDocument": {
+                        "uri": "file:///c:/projects/app/no-diagnostics.robot",
+                        "languageId": "robotframework",
+                        "version": 1,
+                        "text": "*** Test Cases ***\nBroken\n    ELSE\n",
+                    }
+                },
+            )
+        )
+
+        assert server.diagnostic_service.cancel_pending("file:///c:/projects/app/no-diagnostics.robot") is False
 
     def test_did_change_configuration_updates_settings(self):
         server, _capabilities = make_server()

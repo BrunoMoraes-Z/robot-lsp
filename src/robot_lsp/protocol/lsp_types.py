@@ -45,6 +45,7 @@ def server_capabilities() -> dict[str, Any]:
         },
         "workspace": {
             "didChangeConfiguration": {"dynamicRegistration": False},
+            "workspaceFolders": {"supported": True, "changeNotifications": False},
         },
     }
 

@@ -84,9 +84,9 @@ def run_lsp_loop(transport: TransportStdio | None = None, server: LspServer | No
 
         if response is not None:
             transport.write_message(encode_message(response))
-        _flush_outgoing_notifications(server, transport)
+        _flush_outgoing_messages(server, transport)
 
-    _flush_outgoing_notifications(server, transport)
+    _flush_outgoing_messages(server, transport)
     return server.exit_code if server.exit_code is not None else 0
 
 
@@ -109,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
     return run_lsp_loop()
 
 
-def _flush_outgoing_notifications(server: LspServer, transport: TransportStdio) -> None:
+def _flush_outgoing_messages(server: LspServer, transport: TransportStdio) -> None:
+    while server.outgoing_requests:
+        transport.write_message(encode_message(server.outgoing_requests.pop(0)))
     while server.outgoing_notifications:
         transport.write_message(encode_message(server.outgoing_notifications.pop(0)))

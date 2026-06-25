@@ -7,7 +7,7 @@
 ## LSP Methods
 
 - `workspace/didChangeConfiguration`
-- `workspace/configuration` (deferred)
+- `workspace/configuration`
 
 ## Configuration Options
 
@@ -20,6 +20,7 @@
 
 - Configuration may come from `initializationOptions` or `workspace/configuration`
 - Sensible defaults to work without configuration
+- `workspace/configuration` is requested after `initialized` when the client advertises `workspace.configuration: true`
 
 ## Implemented
 
@@ -30,8 +31,10 @@
 - `importPaths` is used by `WorkspaceIndex` to resolve file imports.
 - `logLevel` controls the `robot_lsp` logger during `initialize` and `workspace/didChangeConfiguration`.
 - `completion.snippets` controls whether section completions use `insertTextFormat: Snippet`.
+- Outbound `workspace/configuration` requests are queued and flushed through the stdio loop.
+- Client responses update global configuration and workspace-folder-specific configuration.
+- Workspace-folder-specific `diagnostics.enable` and `completion.snippets` are resolved by matching document URI to the most specific configured folder.
 
 ## Deferred
 
-- Request server-to-client `workspace/configuration`.
-- Workspace-folder-specific configuration.
+- Per-folder `importPaths` integration in `WorkspaceIndex` resolution.

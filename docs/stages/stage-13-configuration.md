@@ -19,17 +19,17 @@ Add server configuration through initialization options and runtime changes, wit
 
 ## Out Of Scope
 
-- Outbound `workspace/configuration` request
-- Workspace-folder-specific configuration
 - Configuration persistence
 - Structured logging based on `logLevel`
-- Configurable completion snippets in the LSP response
+- Per-folder `importPaths` integration in `WorkspaceIndex` resolution
 
 ## Deliverables
 
 - `src/robot_lsp/application/configuration.py`
 - `workspace/didChangeConfiguration` handler
 - `workspace.didChangeConfiguration` capability
+- Outbound `workspace/configuration` request support
+- Workspace folder configuration storage and URI-based lookup
 - `diagnostics.enable` integration in the server
 - `importPaths` integration in `WorkspaceIndex`
 - Unit tests for service, handler, and import resolution
@@ -39,6 +39,8 @@ Add server configuration through initialization options and runtime changes, wit
 - Defaults work without configuration
 - `initializationOptions` applies initial configuration
 - `workspace/didChangeConfiguration` updates configuration at runtime
+- `workspace/configuration` is requested when supported by the client
+- Workspace-folder-specific configuration is applied by document URI
 - Diagnostics can be disabled
 - Disabling diagnostics clears existing diagnostics for open documents
 - `robot.lsp.importPaths` resolves `Resource` and `Variables` imports
@@ -53,14 +55,16 @@ Add server configuration through initialization options and runtime changes, wit
 - `test_resolve_resource_import_from_configured_import_path`
 - `test_initialize_applies_initialization_options`
 - `test_did_change_configuration_updates_settings`
+- `test_initialized_requests_workspace_configuration_when_supported`
+- `test_workspace_configuration_response_updates_global_and_folder_config`
+- `test_workspace_config_applies_to_matching_uri`
 - `test_diagnostics_disabled_does_not_schedule_on_did_open`
 - `test_disabling_diagnostics_clears_open_document_diagnostics`
 
 ## Risks
 
-- `workspace/configuration` is not used yet because the server does not have an outbound request loop to the client.
 - `completion.snippets` only changes section completions, which are the only current snippets.
-- `importPaths` is global in the index, not workspace-folder-specific.
+- `importPaths` remains global in the index, not workspace-folder-specific.
 
 ## Dependencies
 
@@ -71,3 +75,4 @@ Add server configuration through initialization options and runtime changes, wit
 ## Notes
 
 - The accepted format is direct (`importPaths`) or nested (`robot.lsp` / `robot: { lsp: ... }`).
+- `workspace/configuration` requests use section `robot.lsp` for global and workspace-folder scoped items.
