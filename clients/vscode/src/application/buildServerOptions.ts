@@ -13,16 +13,17 @@ export interface PlannedServerCommand {
 export function planServerCommand(
   settings: RobotLspSettings,
   fallbackPython: string,
-  bundledLibPath: string,
+  bundledLibPath: string = "",
 ): PlannedServerCommand {
-  const extraEnv = buildEnvWithBundledPath(settings.languageServer.env, bundledLibPath);
+  const baseEnv = settings.languageServer.env;
+  const env = bundledLibPath.length > 0 ? withBundledPath(baseEnv, bundledLibPath) : { ...baseEnv };
 
   if (settings.languageServer.command.trim().length > 0) {
     return {
       command: settings.languageServer.command,
       args: settings.languageServer.args,
       cwd: settings.languageServer.cwd || undefined,
-      env: extraEnv,
+      env,
       initializationOptions: serverInitializationOptions(settings),
     };
   }
@@ -32,12 +33,12 @@ export function planServerCommand(
     command: python,
     args: ["-m", "robot_lsp", ...settings.languageServer.args],
     cwd: settings.languageServer.cwd || undefined,
-    env: extraEnv,
+    env,
     initializationOptions: serverInitializationOptions(settings),
   };
 }
 
-function buildEnvWithBundledPath(
+function withBundledPath(
   base: Readonly<Record<string, string>>,
   bundledLibPath: string,
 ): Record<string, string> {
