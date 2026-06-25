@@ -1,11 +1,12 @@
 import { execFile } from "child_process";
+import { delimiter } from "node:path";
 import type { PythonExecutable, PythonValidationResult } from "../../domain/models";
 import type { PythonValidator } from "../../application/ports";
 
 const validationScript = [
   "import json, sys",
   "try:",
-  "    import robot_lsp, robot",
+  "    import robot",
   "    from robot.version import VERSION",
   "    parts = [int(part) for part in VERSION.split('.')[:2]]",
   "    ok = tuple(parts) >= (7, 0)",
@@ -15,9 +16,17 @@ const validationScript = [
 ].join("\n");
 
 export class ProcessPythonValidator implements PythonValidator {
+  public constructor(private readonly bundledLibPath: string) {}
+
   public async validate(executable: PythonExecutable): Promise<PythonValidationResult> {
+    const existing = process.env["PYTHONPATH"] ?? "";
+    const pythonPath = existing
+      ? `${this.bundledLibPath}${delimiter}${existing}`
+      : this.bundledLibPath;
+    const env = { ...process.env, PYTHONPATH: pythonPath };
+
     return new Promise((resolve) => {
-      execFile(executable.path, ["-c", validationScript], { timeout: 8000 }, (error, stdout, stderr) => {
+      execFile(executable.path, ["-c", validationScript], { timeout: 8000, env }, (error, stdout, stderr) => {
         if (error !== null) {
           resolve({ ok: false, error: stderr.trim() || error.message });
           return;

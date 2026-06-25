@@ -37,8 +37,9 @@
   ],
   "main": "./out/extension.js",
   "scripts": {
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "bundle-server": "node -e \"const{cpSync}=require('fs');cpSync('../../src/robot_lsp','bundled/robot_lsp',{recursive:true,force:true})\"",
+    "compile": "npm run bundle-server && tsc -p ./",
+    "watch": "npm run bundle-server && tsc -watch -p ./",
     "check": "tsc -p ./ --noEmit",
     "test": "npm run compile && node ./tests/lsp-feature-smoke.cjs",
     "test:unit": "jest",

@@ -18,6 +18,7 @@ export class RobotLanguageClientAdapter implements LanguageServerController {
     private readonly pathPython: PythonCandidateProvider,
     private readonly pythonValidator: PythonValidator,
     private readonly configurationBridge: VsCodeConfigurationBridge,
+    private readonly bundledLibPath: string,
   ) {}
 
   public async start(): Promise<void> {
@@ -73,7 +74,7 @@ export class RobotLanguageClientAdapter implements LanguageServerController {
             pathFallback: this.pathPython,
             validator: this.pythonValidator,
           })).executable.path;
-      const planned = planServerCommand(settings, fallbackPython);
+      const planned = planServerCommand(settings, fallbackPython, this.bundledLibPath);
       this.logger.info(`Starting Robot LSP server: ${planned.command} ${planned.args.join(" ")}`);
       return planned;
     } catch (error) {

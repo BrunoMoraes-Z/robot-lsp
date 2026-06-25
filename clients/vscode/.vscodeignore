@@ -2,6 +2,8 @@
 src/**
 out/**/*.map
 tsconfig.json
+tsconfig.jest.json
+jest.config.cjs
 package-lock.json
 docs/**
 tests/**

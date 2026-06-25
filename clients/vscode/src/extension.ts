@@ -32,6 +32,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(testController);
     void testController.refresh();
   }
+  const bundledLibPath = context.asAbsolutePath("bundled");
   const configurationBridge = new VsCodeConfigurationBridge(settings);
   languageServer = new RobotLanguageClientAdapter(
     settings,
@@ -40,8 +41,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new VsCodePythonExtensionProvider(),
     new WorkspacePythonProvider(),
     new PathPythonProvider(),
-    new ProcessPythonValidator(),
+    new ProcessPythonValidator(bundledLibPath),
     configurationBridge,
+    bundledLibPath,
   );
 
   await activateExtension({
