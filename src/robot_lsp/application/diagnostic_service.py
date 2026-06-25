@@ -8,11 +8,13 @@ from importlib import import_module
 from robot_lsp.domain.diagnostics import DiagnosticSeverity, LspDiagnostic
 from robot_lsp.domain.models import LspRange, RobotDiagnostic, RobotStep, RobotSuite
 
+from .configuration import ServerConfig
 from .parse_service import ParseService
 from .workspace import WorkspaceIndex
 
 
 PublishDiagnostics = Callable[[str, list[LspDiagnostic]], None]
+ConfigProvider = Callable[[str | None], ServerConfig]
 
 
 class DiagnosticService:
@@ -24,11 +26,13 @@ class DiagnosticService:
         publisher: PublishDiagnostics,
         *,
         workspace_index: WorkspaceIndex | None = None,
+        config_provider: ConfigProvider | None = None,
         debounce_seconds: float | None = None,
     ) -> None:
         self._parse_service = parse_service
         self._publisher = publisher
         self._workspace_index = workspace_index
+        self._config_provider = config_provider
         self._debounce_seconds = (
             self.DEBOUNCE_SECONDS if debounce_seconds is None else debounce_seconds
         )
@@ -131,6 +135,7 @@ class DiagnosticService:
     def _variable_diagnostics(self, uri: str, suite: RobotSuite) -> list[LspDiagnostic]:
         defined = {_normalize_variable(variable.name) for variable in suite.variables}
         defined.update(_BUILTIN_VARIABLES)
+        defined.update(_normalize_variable(_robot_variable_name(name)) for name in self._configured_variables(uri))
         source_path = self._source_path(uri)
         if self._workspace_index is not None and source_path is not None:
             defined.update(
@@ -166,6 +171,11 @@ class DiagnosticService:
 
     def _source_path(self, uri: str):
         return self._parse_service.document_path(uri)
+
+    def _configured_variables(self, uri: str) -> list[str]:
+        if self._config_provider is None:
+            return []
+        return list(self._config_provider(uri).variables)
 
 
 def _to_lsp(diagnostic: RobotDiagnostic) -> LspDiagnostic:
@@ -268,6 +278,12 @@ def _body_events(steps, variables):
 
 def _normalize_variable(variable: str) -> str:
     return variable.rstrip("=").casefold()
+
+
+def _robot_variable_name(name: str) -> str:
+    if name.startswith(("${", "@{", "&{", "%{")) and name.endswith("}"):
+        return name
+    return f"${{{name}}}"
 
 
 def _is_control_keyword(keyword: str) -> bool:

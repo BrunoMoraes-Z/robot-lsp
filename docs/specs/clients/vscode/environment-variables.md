@@ -51,7 +51,8 @@ Expected run/debug command mapping:
 Expected LSP mapping:
 
 - Variables are sent through `workspace/configuration`.
-- The server uses them to avoid false undefined-variable diagnostics and to power completion/hover when supported.
+- The server uses them to avoid false undefined-variable diagnostics.
+- Completion/hover support for configured variables can be added later using the same configuration source.
 
 ## Expansion Rules
 

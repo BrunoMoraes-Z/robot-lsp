@@ -4,6 +4,7 @@ import { planServerCommand } from "../../application/buildServerOptions";
 import { robotDocumentSelector } from "../../application/buildClientOptions";
 import type { LanguageServerController, Logger, PythonCandidateProvider, PythonValidator, SettingsReader } from "../../application/ports";
 import { resolveLanguageServerPython } from "../../application/resolvePython";
+import type { VsCodeConfigurationBridge } from "./workspaceConfig";
 
 export class RobotLanguageClientAdapter implements LanguageServerController {
   private client: LanguageClient | undefined;
@@ -16,6 +17,7 @@ export class RobotLanguageClientAdapter implements LanguageServerController {
     private readonly workspacePython: PythonCandidateProvider,
     private readonly pathPython: PythonCandidateProvider,
     private readonly pythonValidator: PythonValidator,
+    private readonly configurationBridge: VsCodeConfigurationBridge,
   ) {}
 
   public async start(): Promise<void> {
@@ -38,8 +40,18 @@ export class RobotLanguageClientAdapter implements LanguageServerController {
 
     const clientOptions: LanguageClientOptions = {
       documentSelector: [...robotDocumentSelector],
-      initializationOptions: planned.initializationOptions,
+      initializationOptions: this.configurationBridge.robotLspConfiguration(undefined),
       outputChannel: this.outputChannel,
+      middleware: {
+        workspace: {
+          configuration: (params, _token, next) => {
+            if (params.items.every((item) => item.section === "robot.lsp")) {
+              return params.items.map((item) => this.configurationBridge.robotLspConfiguration(item.scopeUri));
+            }
+            return next(params, _token);
+          },
+        },
+      },
       synchronize: {
         configurationSection: "robot-lsp",
       },

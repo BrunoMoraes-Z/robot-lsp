@@ -1,4 +1,5 @@
 from robot_lsp.application.diagnostic_service import DiagnosticService
+from robot_lsp.application.configuration import ConfigurationService
 from robot_lsp.application.document_store import DocumentStore, path_to_uri
 from robot_lsp.application.parse_service import ParseService
 from robot_lsp.application.workspace import WorkspaceIndex
@@ -6,7 +7,7 @@ from robot_lsp.domain.diagnostics import DiagnosticSeverity
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
 
 
-def make_service(debounce_seconds: float = 10.0, workspace_index=None):
+def make_service(debounce_seconds: float = 10.0, workspace_index=None, config_service=None):
     store = DocumentStore()
     published = []
 
@@ -17,6 +18,7 @@ def make_service(debounce_seconds: float = 10.0, workspace_index=None):
         ParseService(store, RobotFrameworkParser()),
         publisher,
         workspace_index=workspace_index,
+        config_provider=None if config_service is None else config_service.config_for_uri,
         debounce_seconds=debounce_seconds,
     )
     return store, service, published
@@ -126,6 +128,22 @@ class TestDiagnosticService:
         assert diagnostic.severity == DiagnosticSeverity.WARNING
         assert diagnostic.code == "variable_not_found"
         assert diagnostic.message == "Variable not found: ${MISSING}"
+
+    def test_configured_variable_does_not_report_missing(self):
+        config_service = ConfigurationService()
+        config_service.update({"variables": {"RUNTIME_VALUE": "ok"}})
+        store, service, published = make_service(config_service=config_service)
+        uri = "file:///c:/projects/configured-variable.robot"
+        store.open(
+            uri=uri,
+            text="*** Test Cases ***\nT\n    Log    ${RUNTIME_VALUE}\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
 
     def test_step_assignment_defines_variable_for_later_steps(self):
         store, service, published = make_service()

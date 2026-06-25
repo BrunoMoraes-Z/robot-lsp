@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 04 - Configuration Bridge
+Stage 05 - Syntax Highlighting And Language Configuration
 
 Status: `pending`
 
@@ -14,7 +14,7 @@ Status: `pending`
 | 01 | VS Code Scaffold | done |
 | 02 | Language Client Startup | done |
 | 03 | Python Resolution | done |
-| 04 | Configuration Bridge | pending |
+| 04 | Configuration Bridge | done |
 | 05 | Syntax Highlighting And Language Configuration | pending |
 | 06 | LSP Feature Smoke Tests | pending |
 | 07 | Test Explorer MVP | pending |
@@ -59,3 +59,12 @@ Status: `pending`
 - Startup shows an actionable VS Code error when no valid Python is found.
 - Language client startup uses the resolved Python unless `robot-lsp.languageServer.command` is configured.
 - Domain and application layers remain free of VS Code API imports.
+
+## Stage 04 Acceptance Criteria
+
+- VS Code settings with `robot-lsp.*` prefix are mapped to the server's `robot.lsp` configuration shape.
+- `workspace/configuration` requests for `robot.lsp` are answered by the client.
+- Initialization options use the same configuration bridge as workspace configuration requests.
+- `${workspaceFolder}` is expanded in language server, runtime, env, python path, and Robot variable settings.
+- `robot-lsp.variables` reaches the core LSP and suppresses false undefined-variable diagnostics.
+- TypeScript compilation passes with `npm run compile`.

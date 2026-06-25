@@ -45,6 +45,7 @@ def create_server(publish_diagnostics: PublishDiagnostics | None = None) -> LspS
         parse_service,
         publish_diagnostics or server.publish_diagnostics,
         workspace_index=workspace_index,
+        config_provider=server.configuration_service.config_for_uri,
     )
     server.completion_service = CompletionService(server.document_store, parse_service, workspace_index)
     server.hover_service = HoverService(server.document_store, parse_service)

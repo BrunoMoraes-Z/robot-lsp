@@ -11,6 +11,7 @@ class TestConfigurationService:
         assert service.config.log_level == "info"
         assert service.config.diagnostics.enable is True
         assert service.config.completion.snippets is True
+        assert service.config.variables == {}
 
     def test_update_from_direct_settings(self):
         service = ConfigurationService()
@@ -21,6 +22,7 @@ class TestConfigurationService:
                 "logLevel": "debug",
                 "diagnostics": {"enable": False},
                 "completion": {"snippets": False},
+                "variables": {"EXECDIR": "/workspace", "ENV": "dev"},
             }
         )
 
@@ -28,6 +30,7 @@ class TestConfigurationService:
         assert config.log_level == "debug"
         assert config.diagnostics.enable is False
         assert config.completion.snippets is False
+        assert config.variables == {"EXECDIR": "/workspace", "ENV": "dev"}
 
     def test_update_from_nested_robot_lsp_settings(self):
         service = ConfigurationService()
@@ -71,3 +74,10 @@ class TestConfigurationService:
         config = service.config_for_uri("file:///c:/projects/app/example.robot")
         assert config.log_level == "debug"
         assert config.diagnostics.enable is False
+
+    def test_workspace_variables_apply_to_matching_uri(self):
+        service = ConfigurationService()
+        service.update({"variables": {"LOCAL": "value"}}, scope_uri="file:///c:/projects/app")
+
+        assert service.config_for_uri("file:///c:/projects/app/tests/example.robot").variables == {"LOCAL": "value"}
+        assert service.config_for_uri("file:///c:/projects/other/example.robot").variables == {}

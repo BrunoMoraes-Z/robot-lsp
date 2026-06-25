@@ -15,6 +15,7 @@
 - `robot.lsp.logLevel`: log level
 - `robot.lsp.diagnostics.enable`: enable/disable diagnostics
 - `robot.lsp.completion.snippets`: enable snippets
+- `robot.lsp.variables`: Robot variables available during static analysis
 
 ## Notes
 
@@ -31,6 +32,7 @@
 - `importPaths` is used by `WorkspaceIndex` to resolve file imports.
 - `logLevel` controls the `robot_lsp` logger during `initialize` and `workspace/didChangeConfiguration`.
 - `completion.snippets` controls whether section completions use `insertTextFormat: Snippet`.
+- `variables` is used by semantic diagnostics to avoid false undefined-variable diagnostics for runtime-provided Robot variables.
 - Outbound `workspace/configuration` requests are queued and flushed through the stdio loop.
 - Client responses update global configuration and workspace-folder-specific configuration.
 - Workspace-folder-specific `diagnostics.enable` and `completion.snippets` are resolved by matching document URI to the most specific configured folder.

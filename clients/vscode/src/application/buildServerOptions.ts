@@ -1,11 +1,12 @@
 import type { RobotLspSettings } from "../domain/settings";
+import { serverRobotLspConfiguration, type ServerRobotLspConfiguration } from "./configurationBridge";
 
 export interface PlannedServerCommand {
   readonly command: string;
   readonly args: readonly string[];
   readonly cwd?: string;
   readonly env: Readonly<Record<string, string>>;
-  readonly initializationOptions: Readonly<Record<string, unknown>>;
+  readonly initializationOptions: ServerRobotLspConfiguration;
 }
 
 export function planServerCommand(settings: RobotLspSettings, fallbackPython: string): PlannedServerCommand {
@@ -29,15 +30,6 @@ export function planServerCommand(settings: RobotLspSettings, fallbackPython: st
   };
 }
 
-export function serverInitializationOptions(settings: RobotLspSettings): Readonly<Record<string, unknown>> {
-  return {
-    diagnostics: {
-      enable: settings.diagnosticsEnable,
-    },
-    completion: {
-      snippets: settings.completionSnippets,
-    },
-    logLevel: settings.logLevel,
-    variables: settings.variables,
-  };
+export function serverInitializationOptions(settings: RobotLspSettings): ServerRobotLspConfiguration {
+  return serverRobotLspConfiguration(settings);
 }

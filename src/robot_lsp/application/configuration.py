@@ -26,6 +26,7 @@ class ServerConfig:
     log_level: LogLevel = "info"
     diagnostics: DiagnosticsConfig = field(default_factory=DiagnosticsConfig)
     completion: CompletionConfig = field(default_factory=CompletionConfig)
+    variables: dict[str, str] = field(default_factory=dict)
 
 
 class ConfigurationService:
@@ -104,11 +105,17 @@ def _apply_settings(config: ServerConfig, settings: dict[str, Any]) -> ServerCon
     if isinstance(raw_completion, dict) and isinstance(raw_completion.get("snippets"), bool):
         completion = replace(completion, snippets=raw_completion["snippets"])
 
+    variables = config.variables
+    raw_variables = settings.get("variables")
+    if isinstance(raw_variables, dict):
+        variables = {str(key): str(value) for key, value in raw_variables.items() if key and value is not None}
+
     return ServerConfig(
         import_paths=import_paths,
         log_level=log_level,
         diagnostics=diagnostics,
         completion=completion,
+        variables=variables,
     )
 
 
@@ -137,4 +144,4 @@ def _robot_lsp_settings(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 def _has_known_keys(raw: dict[str, Any]) -> bool:
-    return any(key in raw for key in ["importPaths", "logLevel", "diagnostics", "completion"])
+    return any(key in raw for key in ["importPaths", "logLevel", "diagnostics", "completion", "variables"])

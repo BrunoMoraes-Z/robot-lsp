@@ -58,3 +58,13 @@ The extension maps VS Code settings into the server's `robot.lsp` configuration 
   }
 }
 ```
+
+## Initial Implementation
+
+Stage 04 implements the configuration bridge in the VS Code client:
+
+- `robot-lsp.*` settings are normalized to the server's `robot.lsp` shape.
+- `workspace/configuration` requests for `robot.lsp` are handled by client middleware.
+- The same mapping is used for initialization options.
+- `${workspaceFolder}` is expanded before values are sent to the server.
+- `robot-lsp.variables` is consumed by the core LSP diagnostics engine.

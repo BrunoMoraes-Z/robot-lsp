@@ -7,7 +7,7 @@ import { PathPythonProvider } from "./infrastructure/vscode/pathPython";
 import { ProcessPythonValidator } from "./infrastructure/vscode/pythonValidator";
 import { VsCodePythonExtensionProvider } from "./infrastructure/vscode/pythonExtension";
 import { WorkspacePythonProvider } from "./infrastructure/vscode/workspacePython";
-import { VsCodeSettingsReader } from "./infrastructure/vscode/workspaceConfig";
+import { VsCodeConfigurationBridge, VsCodeSettingsReader } from "./infrastructure/vscode/workspaceConfig";
 
 let languageServer: RobotLanguageClientAdapter | undefined;
 
@@ -16,6 +16,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(output);
   const logger = new OutputChannelLogger(output);
   const settings = new VsCodeSettingsReader();
+  const configurationBridge = new VsCodeConfigurationBridge(settings);
   languageServer = new RobotLanguageClientAdapter(
     settings,
     logger,
@@ -24,6 +25,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new WorkspacePythonProvider(),
     new PathPythonProvider(),
     new ProcessPythonValidator(),
+    configurationBridge,
   );
 
   await activateExtension({
