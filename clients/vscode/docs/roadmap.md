@@ -2,9 +2,9 @@
 
 ## Current Stage
 
-Stage 11 - Packaging And Release
+VS Code Client MVP Complete
 
-Status: `pending`
+Status: `done`
 
 ## Stages
 
@@ -21,7 +21,7 @@ Status: `pending`
 | 08 | Run Support | done |
 | 09 | Debug Adapter Design | done |
 | 10 | Debug Adapter MVP | done |
-| 11 | Packaging And Release | pending |
+| 11 | Packaging And Release | done |
 
 ## Stage 00 Acceptance Criteria
 
@@ -130,3 +130,14 @@ Status: `pending`
 - Adapter emits exited and terminated events when Robot execution ends.
 - Non-`noDebug` sessions fail with an explicit MVP limitation message.
 - Smoke tests cover Robot command planning for the adapter runtime.
+
+## Stage 11 Acceptance Criteria
+
+- VS Code client has package metadata required by `vsce`, including repository and license file.
+- VSIX packaging excludes source, tests, docs, maps, and generated VSIX artifacts.
+- Runtime dependencies remain included in the VSIX.
+- README documents setup, validation, packaging, and the user-managed Python language server model.
+- Changelog exists for the initial `0.0.1` client package.
+- `npm run package:check` validates required package files after compilation.
+- `npm run package` compiles, runs smoke tests, and produces a VSIX with `vsce package`.
+- Packaging was locally verified with `npm run package`.

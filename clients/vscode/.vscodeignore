@@ -1,7 +1,8 @@
 .vscode/**
 src/**
-node_modules/**
 out/**/*.map
 tsconfig.json
 package-lock.json
 docs/**
+tests/**
+*.vsix

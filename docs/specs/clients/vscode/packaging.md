@@ -31,12 +31,36 @@ This keeps the extension small and respects project-specific environments.
 - Language configuration
 - TextMate grammar
 - README and changelog
+- License file
+- Runtime `node_modules` dependencies required by the extension
 - No Python virtual environment in MVP
+
+## Exclusions
+
+- TypeScript source files
+- Tests
+- Client docs
+- Source maps
+- Generated VSIX artifacts
+- Lockfile and TypeScript project files
 
 ## Release Checks
 
 - Compile TypeScript
 - Run extension unit tests
+- Run package smoke checks
 - Package VSIX
 - Smoke-test extension host startup
 - Verify startup error when Python dependencies are missing
+
+## Commands
+
+```powershell
+cd clients/vscode
+npm run check
+npm test
+npm run package:check
+npm run package
+```
+
+The generated `robot-lsp-vscode.vsix` is a release artifact and should not be committed.

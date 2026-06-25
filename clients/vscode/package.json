@@ -5,6 +5,11 @@
   "version": "0.0.1",
   "publisher": "robot-lsp",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BrunoMoraes-Z/robot-lsp.git",
+    "directory": "clients/vscode"
+  },
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -33,7 +38,9 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "check": "tsc -p ./ --noEmit",
-    "test": "npm run compile && node ./tests/lsp-feature-smoke.cjs"
+    "test": "npm run compile && node ./tests/lsp-feature-smoke.cjs",
+    "package": "npm run test && vsce package --out robot-lsp-vscode.vsix",
+    "package:check": "npm run compile && node ./tests/package-smoke.cjs"
   },
   "contributes": {
     "languages": [
@@ -276,6 +283,7 @@
   "devDependencies": {
     "@types/node": "^20.14.10",
     "@types/vscode": "^1.92.0",
+    "@vscode/vsce": "^3.2.2",
     "typescript": "^5.5.4"
   },
   "dependencies": {
