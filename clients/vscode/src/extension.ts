@@ -1,20 +1,27 @@
 import * as vscode from "vscode";
 import { activateExtension } from "./application/activateExtension";
 import { VsCodeCommandRegistry } from "./infrastructure/vscode/commandRegistry";
+import { RobotLanguageClientAdapter } from "./infrastructure/vscode/languageClient";
 import { OutputChannelLogger } from "./infrastructure/vscode/logging";
 import { VsCodeSettingsReader } from "./infrastructure/vscode/workspaceConfig";
 
-export function activate(context: vscode.ExtensionContext): void {
-  const output = vscode.window.createOutputChannel("Robot LSP");
-  context.subscriptions.push(output);
+let languageServer: RobotLanguageClientAdapter | undefined;
 
-  activateExtension({
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const output = vscode.window.createOutputChannel("Robot LSP", { log: true });
+  context.subscriptions.push(output);
+  const logger = new OutputChannelLogger(output);
+  const settings = new VsCodeSettingsReader();
+  languageServer = new RobotLanguageClientAdapter(settings, logger, output);
+
+  await activateExtension({
     commands: new VsCodeCommandRegistry(context.subscriptions),
-    logger: new OutputChannelLogger(output),
-    settings: new VsCodeSettingsReader(),
+    languageServer,
+    logger,
+    settings,
   });
 }
 
-export function deactivate(): void {
-  return undefined;
+export async function deactivate(): Promise<void> {
+  await languageServer?.stop();
 }

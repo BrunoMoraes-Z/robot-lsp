@@ -58,3 +58,15 @@ Restart is required when:
 - Critical environment variables change
 
 Regular settings such as diagnostics and snippets should be sent through configuration without restarting when possible.
+
+## Initial Implementation
+
+Stage 02 starts the language server over stdio using `vscode-languageclient`.
+
+Current default command:
+
+```text
+python -m robot_lsp
+```
+
+On Linux and macOS the fallback executable is `python3`. Full interpreter discovery is deferred to Stage 03.

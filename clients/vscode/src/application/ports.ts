@@ -13,3 +13,9 @@ export interface SettingsReader {
 export interface CommandRegistry {
   register(command: string, handler: () => void | Promise<void>): void;
 }
+
+export interface LanguageServerController {
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  restart(): Promise<void>;
+}

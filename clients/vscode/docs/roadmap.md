@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 02 - Language Client Startup
+Stage 03 - Python Resolution
 
 Status: `pending`
 
@@ -12,7 +12,7 @@ Status: `pending`
 |---|---|---|
 | 00 | Documentation And Architecture | done |
 | 01 | VS Code Scaffold | done |
-| 02 | Language Client Startup | pending |
+| 02 | Language Client Startup | done |
 | 03 | Python Resolution | pending |
 | 04 | Configuration Bridge | pending |
 | 05 | Syntax Highlighting And Language Configuration | pending |
@@ -39,4 +39,14 @@ Status: `pending`
 - `extension.ts` created as composition root.
 - Placeholder commands registered.
 - `robotframework` language contribution added for `.robot` and `.resource`.
+- TypeScript compilation passes with `npm run compile`.
+
+## Stage 02 Acceptance Criteria
+
+- `vscode-languageclient` dependency added.
+- Extension starts `robot-lsp` over stdio on activation.
+- Server command uses `robot-lsp.languageServer.*` overrides when configured.
+- Default startup uses `python -m robot_lsp` on Windows and `python3 -m robot_lsp` on Linux/macOS.
+- Restart command stops and starts the language client.
+- Deactivation stops the language client.
 - TypeScript compilation passes with `npm run compile`.
