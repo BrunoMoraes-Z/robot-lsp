@@ -8,7 +8,7 @@ const { collectRobotTestsFromText, findRobotTestAtLine } = require("../out/appli
 const { serverRobotLspConfiguration } = require("../out/application/configurationBridge.js");
 const { buildDebugLaunchConfiguration, buildRunLaunchConfiguration } = require("../out/application/resolveLaunchConfig.js");
 const { defaultRobotLspSettings } = require("../out/domain/settings.js");
-const { planRobotCommand } = require("../out/infrastructure/debugAdapterRuntime.js");
+const { planRobotCommand, robotRuntimeListenerArgument } = require("../out/infrastructure/debugAdapterRuntime.js");
 
 function settings(overrides = {}) {
   return {
@@ -177,6 +177,7 @@ function testDebugLaunchConfiguration() {
 function testDebugContribution() {
   const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8"));
   const debuggerContribution = manifest.contributes.debuggers.find((item) => item.type === "robot-lsp");
+  const commands = manifest.contributes.commands.map((item) => item.command);
 
   assert.ok(debuggerContribution);
   assert.equal(debuggerContribution.label, "Robot LSP");
@@ -184,9 +185,14 @@ function testDebugContribution() {
   assert.equal(debuggerContribution.initialConfigurations[0].type, "robot-lsp");
   assert.equal(debuggerContribution.initialConfigurations[0].target, "${file}");
   assert.equal(debuggerContribution.configurationSnippets[0].body.request, "launch");
+  assert.ok(commands.includes("robot-lsp.debugCurrentFile"));
+  assert.ok(commands.includes("robot-lsp.debugCurrentTest"));
+  assert.ok(manifest.activationEvents.includes("onCommand:robot-lsp.debugCurrentFile"));
+  assert.ok(manifest.activationEvents.includes("onCommand:robot-lsp.debugCurrentTest"));
 }
 
 function testDebugAdapterRobotCommandPlan() {
+  const endpoint = { port: 46123, token: "test-token" };
   const plan = planRobotCommand({
     type: "robot-lsp",
     request: "launch",
@@ -201,7 +207,7 @@ function testDebugAdapterRobotCommandPlan() {
     terminal: "integrated",
     makeSuite: true,
     noDebug: true,
-  });
+  }, endpoint);
 
   assert.equal(plan.command, "C:/Python/python.exe");
   assert.equal(plan.cwd, "C:/workspace");
@@ -209,6 +215,8 @@ function testDebugAdapterRobotCommandPlan() {
   assert.deepEqual(plan.args, [
     "-m",
     "robot",
+    "--listener",
+    "robot_lsp.debug.listener.RobotLspDebugListener:46123:test-token",
     "--pythonpath",
     "C:/workspace/libs",
     "--variable",
@@ -220,6 +228,10 @@ function testDebugAdapterRobotCommandPlan() {
     "C:/workspace/suite.robot",
     "C:/workspace/other.robot",
   ]);
+  assert.equal(
+    robotRuntimeListenerArgument(endpoint),
+    "robot_lsp.debug.listener.RobotLspDebugListener:46123:test-token",
+  );
 }
 
 testDocumentSelector();

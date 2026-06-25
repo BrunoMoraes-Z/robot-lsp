@@ -123,12 +123,15 @@ Status: `done`
 
 - VS Code registers a debug adapter descriptor factory for debug type `robot-lsp`.
 - Debug adapter runtime is compiled with the extension and launched as a Node process.
-- Debug adapter implements minimal DAP handling for `initialize`, `launch`, `disconnect`, and `terminate`.
-- Launch requests with `noDebug: true` execute Robot Framework through `python -m robot`.
+- Debug adapter implements DAP handling for launch, breakpoints, stack frames, scopes, variables, evaluate, continue, disconnect, and terminate.
+- Launch requests execute Robot Framework through `python -m robot`.
+- Debug adapter injects `robot_lsp.debug.listener.RobotLspDebugListener` to connect with the Robot Framework runtime.
 - Runtime settings map to Robot command arguments for python path, Robot variables, additional args, and targets.
 - Adapter forwards stdout and stderr as DAP output events.
+- Adapter forwards Robot listener events as DAP console output events.
+- Adapter emits stopped events for listener breakpoint hits and resumes with continue.
+- Adapter evaluates Robot variables while execution is paused.
 - Adapter emits exited and terminated events when Robot execution ends.
-- Non-`noDebug` sessions fail with an explicit MVP limitation message.
 - Smoke tests cover Robot command planning for the adapter runtime.
 
 ## Stage 11 Acceptance Criteria
@@ -141,3 +144,9 @@ Status: `done`
 - `npm run package:check` validates required package files after compilation.
 - `npm run package` compiles, runs smoke tests, and produces a VSIX with `vsce package`.
 - Packaging was locally verified with `npm run package`.
+- GitHub Actions workflow builds and uploads the VSIX artifact.
+
+## Explicitly Deferred
+
+- Step over/into/out.
+- Python breakpoints through `debugpy`.

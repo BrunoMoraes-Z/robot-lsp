@@ -16,7 +16,10 @@ export class RobotTestControllerAdapter implements TestControllerAdapter {
     this.controller.refreshHandler = async () => this.refresh();
     if (this.runController !== undefined) {
       this.controller.createRunProfile("Run", vscode.TestRunProfileKind.Run, async (request, token) => {
-        await this.runFromRequest(request, token);
+        await this.runFromRequest(request, token, false);
+      });
+      this.controller.createRunProfile("Debug", vscode.TestRunProfileKind.Debug, async (request, token) => {
+        await this.runFromRequest(request, token, true);
       });
     }
   }
@@ -58,7 +61,11 @@ export class RobotTestControllerAdapter implements TestControllerAdapter {
     return vscode.workspace.asRelativePath(file, false);
   }
 
-  private async runFromRequest(request: vscode.TestRunRequest, token: vscode.CancellationToken): Promise<void> {
+  private async runFromRequest(
+    request: vscode.TestRunRequest,
+    token: vscode.CancellationToken,
+    debug: boolean,
+  ): Promise<void> {
     if (this.runController === undefined) {
       return;
     }
@@ -71,13 +78,16 @@ export class RobotTestControllerAdapter implements TestControllerAdapter {
           continue;
         }
         run.started(item);
-        const started = await this.runController.runTest({
+        const test = {
           id: item.id,
           name: item.label,
           uri: item.uri?.toString() ?? "",
           line: item.range?.start.line ?? 0,
-        });
-        if (started === undefined) {
+        };
+        const started = debug
+          ? await this.runController.debugTest(test)
+          : await this.runController.runTest(test);
+        if (!started) {
           run.enqueued(item);
         }
       }

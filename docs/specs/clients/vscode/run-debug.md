@@ -56,3 +56,11 @@ When commands or Test Explorer trigger a run/debug session, the extension merges
 - Individual test runs add `--test <name>` to Robot Framework arguments.
 - Runtime Python, environment, Python path, and Robot variables come from `robot-lsp.runtime.*` and `robot-lsp.variables` settings.
 - Actual debug adapter execution and test result events are implemented in later stages.
+
+## Debug Support
+
+- `robot-lsp.debugCurrentFile` starts a debug launch for the active Robot Framework document.
+- `robot-lsp.debugCurrentTest` starts a debug launch for the nearest discovered test or task at the cursor line.
+- Test Explorer exposes a Debug profile for discovered test items.
+- Debug sessions use the `robot-lsp` debug adapter with `noDebug: false`.
+- The adapter injects a Robot Framework listener to connect with the runtime for breakpoints, continue, and variable evaluate.

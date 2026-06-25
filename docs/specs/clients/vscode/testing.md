@@ -49,10 +49,13 @@
 ### Debug Adapter MVP Smoke Tests
 
 - Verify the adapter maps launch `python` to the process command.
+- Verify the adapter injects the Robot Framework debug listener argument.
+- Verify debug commands are contributed and activate the extension.
 - Verify `pythonPath` entries become `--pythonpath` Robot arguments.
 - Verify Robot variables become `--variable name:value` arguments.
 - Verify launch args are preserved before target paths.
 - Verify string-array targets are appended to the Robot command.
+- Verify the Robot listener stores runtime breakpoints.
 
 ### Extension Host Tests
 

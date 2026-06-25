@@ -30,6 +30,8 @@
     "onDebug",
     "onCommand:robot-lsp.runCurrentFile",
     "onCommand:robot-lsp.runCurrentTest",
+    "onCommand:robot-lsp.debugCurrentFile",
+    "onCommand:robot-lsp.debugCurrentTest",
     "onCommand:robot-lsp.restartLanguageServer",
     "onCommand:robot-lsp.selectPythonInterpreter"
   ],
@@ -72,6 +74,14 @@
       {
         "command": "robot-lsp.runCurrentTest",
         "title": "Robot LSP: Run Current Test"
+      },
+      {
+        "command": "robot-lsp.debugCurrentFile",
+        "title": "Robot LSP: Debug Current File"
+      },
+      {
+        "command": "robot-lsp.debugCurrentTest",
+        "title": "Robot LSP: Debug Current Test"
       },
       {
         "command": "robot-lsp.restartLanguageServer",

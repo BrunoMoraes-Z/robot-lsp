@@ -24,6 +24,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand("robot-lsp.runCurrentFile", async () => runController.runCurrentFile()),
     vscode.commands.registerCommand("robot-lsp.runCurrentTest", async () => runController.runCurrentTest()),
+    vscode.commands.registerCommand("robot-lsp.debugCurrentFile", async () => runController.debugCurrentFile()),
+    vscode.commands.registerCommand("robot-lsp.debugCurrentTest", async () => runController.debugCurrentTest()),
   );
   if (settings.read().testExplorerEnabled) {
     const testController = new RobotTestControllerAdapter(runController);

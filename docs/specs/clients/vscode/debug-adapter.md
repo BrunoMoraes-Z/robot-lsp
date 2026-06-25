@@ -59,15 +59,44 @@ The Python debug adapter is not part of the Stage 10 MVP.
 ### Stage 10 Node Adapter MVP
 
 - Runs as a Node process launched by `DebugAdapterExecutable`.
-- Handles `initialize`, `launch`, `disconnect`, and `terminate` requests.
-- Supports `launch` only when `noDebug: true`.
+- Handles `initialize`, `launch`, `setBreakpoints`, `configurationDone`, `threads`, `stackTrace`, `scopes`, `variables`, `evaluate`, `continue`, `disconnect`, and `terminate` requests.
+- Supports run sessions with `noDebug: true` and debug sessions with `noDebug: false`.
 - Executes Robot Framework as `python -m robot` or with the launch-specific `python` executable.
+- Starts a localhost runtime bridge and injects a Robot Framework listener with `--listener`.
 - Maps `pythonPath` to `--pythonpath` arguments.
 - Maps `variables` to `--variable name:value` arguments.
 - Appends launch `args` before the target path or target list.
 - Forwards Robot stdout and stderr as DAP output events.
+- Forwards listener JSON events as DAP console output events.
+- Stops on Robot listener breakpoint events and emits DAP `stopped` events.
+- Continues paused Robot execution through the runtime bridge.
+- Evaluates Robot variables while execution is paused.
 - Emits `exited` and `terminated` when the process closes.
-- Rejects non-`noDebug` launches with an explicit limitation message.
+
+## Robot Runtime Listener
+
+Listener class:
+
+```text
+robot_lsp.debug.listener.RobotLspDebugListener
+```
+
+The adapter injects it as:
+
+```text
+--listener robot_lsp.debug.listener.RobotLspDebugListener:<port>:<token>
+```
+
+The listener connects back to the Node adapter over localhost and sends newline-delimited JSON events for suites, tests, and Robot log messages. The token prevents unrelated local connections from being accepted as Robot runtime events.
+
+This bridge is the runtime connection point for breakpoint suspension and evaluate support. The current adapter implements a minimal version based on listener callbacks: breakpoints are checked at Robot keyword start, execution blocks inside the listener, and `continue` resumes the Robot thread.
+
+## Current Limits
+
+- Breakpoints are keyword-line based and depend on Robot Framework listener source/line metadata.
+- Stepping is not implemented.
+- Evaluate supports Robot variable lookup while paused, not arbitrary keyword execution.
+- Python breakpoints through `debugpy` are not implemented.
 
 ### Robot Target Process
 

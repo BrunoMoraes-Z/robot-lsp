@@ -38,8 +38,14 @@ function testVsCodeIgnoreDoesNotExcludeRuntimeDependencies() {
   assert.equal(ignore.includes("tests/**"), true);
 }
 
+function testWorkflowExists() {
+  const workflow = path.join(root, "..", "..", ".github", "workflows", "vscode-extension.yml");
+  assert.equal(fs.existsSync(workflow), true);
+}
+
 testManifest();
 testRequiredFilesExistAfterCompile();
 testVsCodeIgnoreDoesNotExcludeRuntimeDependencies();
+testWorkflowExists();
 
 console.log("package smoke ok");

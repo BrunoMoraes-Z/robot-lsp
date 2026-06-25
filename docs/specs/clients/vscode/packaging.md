@@ -64,3 +64,13 @@ npm run package
 ```
 
 The generated `robot-lsp-vscode.vsix` is a release artifact and should not be committed.
+
+## CI Workflow
+
+The repository builds the VS Code extension with GitHub Actions:
+
+```text
+.github/workflows/vscode-extension.yml
+```
+
+The workflow installs dependencies with `npm ci`, runs TypeScript checks, smoke tests, package smoke checks, builds the VSIX, and uploads the VSIX as a workflow artifact.
