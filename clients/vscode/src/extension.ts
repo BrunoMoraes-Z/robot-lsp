@@ -6,6 +6,7 @@ import { OutputChannelLogger } from "./infrastructure/vscode/logging";
 import { PathPythonProvider } from "./infrastructure/vscode/pathPython";
 import { ProcessPythonValidator } from "./infrastructure/vscode/pythonValidator";
 import { VsCodePythonExtensionProvider } from "./infrastructure/vscode/pythonExtension";
+import { RobotRunController } from "./infrastructure/vscode/runController";
 import { RobotTestControllerAdapter } from "./infrastructure/vscode/testController";
 import { WorkspacePythonProvider } from "./infrastructure/vscode/workspacePython";
 import { VsCodeConfigurationBridge, VsCodeSettingsReader } from "./infrastructure/vscode/workspaceConfig";
@@ -17,8 +18,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(output);
   const logger = new OutputChannelLogger(output);
   const settings = new VsCodeSettingsReader();
+  const runController = new RobotRunController(settings);
+  context.subscriptions.push(
+    vscode.commands.registerCommand("robot-lsp.runCurrentFile", async () => runController.runCurrentFile()),
+    vscode.commands.registerCommand("robot-lsp.runCurrentTest", async () => runController.runCurrentTest()),
+  );
   if (settings.read().testExplorerEnabled) {
-    const testController = new RobotTestControllerAdapter();
+    const testController = new RobotTestControllerAdapter(runController);
     context.subscriptions.push(testController);
     void testController.refresh();
   }

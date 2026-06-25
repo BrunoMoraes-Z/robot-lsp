@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 08 - Run Support
+Stage 09 - Debug Adapter Design
 
 Status: `pending`
 
@@ -18,7 +18,7 @@ Status: `pending`
 | 05 | Syntax Highlighting And Language Configuration | done |
 | 06 | LSP Feature Smoke Tests | done |
 | 07 | Test Explorer MVP | done |
-| 08 | Run Support | pending |
+| 08 | Run Support | done |
 | 09 | Debug Adapter Design | pending |
 | 10 | Debug Adapter MVP | pending |
 | 11 | Packaging And Release | pending |
@@ -96,3 +96,14 @@ Status: `pending`
 - Test item ranges point at the discovered test declaration line.
 - Smoke tests cover the fallback scanner used by the Test Explorer MVP.
 - Run and debug execution are intentionally deferred to later stages.
+
+## Stage 08 Acceptance Criteria
+
+- Run commands are contributed for `robot-lsp.runCurrentFile` and `robot-lsp.runCurrentTest`.
+- Run commands build `robot-lsp` launch configurations with `noDebug: true`.
+- Current-file runs target the active Robot Framework document.
+- Current-test runs select the nearest discovered test or task at the active cursor line.
+- Generated run configurations include runtime Python, environment, Python path, and Robot variables from settings.
+- Test Explorer exposes a Run profile and starts selected test items through the same run controller.
+- Smoke tests cover generated file and test run configurations.
+- Debug adapter execution and final result reporting are intentionally deferred to later stages.

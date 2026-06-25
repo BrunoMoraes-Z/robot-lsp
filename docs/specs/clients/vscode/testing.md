@@ -32,6 +32,13 @@
 - Verify fallback discovery reads top-level tasks under `*** Tasks ***`.
 - Verify keyword definitions and indented steps are not exposed as tests.
 
+### Run Support Smoke Tests
+
+- Verify generated current-file run configurations use `noDebug: true`.
+- Verify runtime Python, environment, Python path, and Robot variables are copied into generated run configurations.
+- Verify generated current-test run configurations add `--test <name>` arguments.
+- Verify current-test lookup selects the nearest top-level test or task for a cursor line.
+
 ### Extension Host Tests
 
 - Extension activates for `.robot` files

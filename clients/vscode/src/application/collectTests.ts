@@ -36,6 +36,18 @@ export function collectRobotTestsFromText(uri: string, text: string): readonly R
   return tests;
 }
 
+export function findRobotTestAtLine(uri: string, text: string, line: number): RobotTestItem | undefined {
+  const tests = collectRobotTestsFromText(uri, text);
+  let current: RobotTestItem | undefined;
+  for (const test of tests) {
+    if (test.line > line) {
+      break;
+    }
+    current = test;
+  }
+  return current;
+}
+
 function normalizeSectionName(name: string): string {
   return name.trim().replace(/\s+/g, " ").toLowerCase();
 }

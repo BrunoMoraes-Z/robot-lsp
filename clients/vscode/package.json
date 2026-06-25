@@ -20,10 +20,12 @@
     "lsp",
     "language server"
   ],
-  "activationEvents": [
-    "onLanguage:robotframework",
-    "onCommand:robot-lsp.restartLanguageServer",
-    "onCommand:robot-lsp.selectPythonInterpreter"
+    "activationEvents": [
+      "onLanguage:robotframework",
+      "onCommand:robot-lsp.runCurrentFile",
+      "onCommand:robot-lsp.runCurrentTest",
+      "onCommand:robot-lsp.restartLanguageServer",
+      "onCommand:robot-lsp.selectPythonInterpreter"
   ],
   "main": "./out/extension.js",
   "scripts": {
@@ -55,6 +57,14 @@
       }
     ],
     "commands": [
+      {
+        "command": "robot-lsp.runCurrentFile",
+        "title": "Robot LSP: Run Current File"
+      },
+      {
+        "command": "robot-lsp.runCurrentTest",
+        "title": "Robot LSP: Run Current Test"
+      },
       {
         "command": "robot-lsp.restartLanguageServer",
         "title": "Robot LSP: Restart Language Server"

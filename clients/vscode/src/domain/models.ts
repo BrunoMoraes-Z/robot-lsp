@@ -21,6 +21,23 @@ export interface PythonValidationResult {
 export interface LaunchTarget {
   readonly target: string | readonly string[];
   readonly cwd: string;
+  readonly testName?: string;
+}
+
+export interface RobotLaunchConfiguration {
+  readonly type: "robot-lsp";
+  readonly request: "launch";
+  readonly name: string;
+  readonly target: string | readonly string[];
+  readonly cwd: string;
+  readonly args: readonly string[];
+  readonly env: Readonly<Record<string, string>>;
+  readonly variables: Readonly<Record<string, string>>;
+  readonly python: string;
+  readonly pythonPath: readonly string[];
+  readonly terminal: "integrated";
+  readonly makeSuite: boolean;
+  readonly noDebug: boolean;
 }
 
 export interface RobotTestItem {

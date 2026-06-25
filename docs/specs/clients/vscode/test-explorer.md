@@ -4,7 +4,7 @@
 
 Expose Robot Framework tests in the VS Code Test Explorer and support run/debug from the tree.
 
-The initial MVP covers discovery and tree population only. Run and debug execution are staged separately.
+The initial MVP covers discovery and tree population. Run support is added separately from debug execution.
 
 ## Test Controller
 
@@ -47,7 +47,7 @@ Workspace Folder
 - Run
 - Debug
 
-Run profiles are deferred until run support is implemented.
+The Run profile uses generated `robot-lsp` launch configurations with `noDebug: true`. The Debug profile is deferred until debug adapter support is implemented.
 
 ## Run Flow
 

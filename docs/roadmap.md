@@ -35,7 +35,7 @@ The core LSP MVP is complete. Editor clients are tracked separately so that clie
 
 | Client | Stage | Status | Docs |
 |---|---|---|---|
-| VS Code | Stage 08 - Run Support | pending | `clients/vscode/docs/roadmap.md` |
+| VS Code | Stage 09 - Debug Adapter Design | pending | `clients/vscode/docs/roadmap.md` |
 
 ---
 

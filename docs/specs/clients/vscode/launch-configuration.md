@@ -36,7 +36,8 @@
   "python": "",
   "pythonPath": [],
   "terminal": "integrated",
-  "makeSuite": true
+  "makeSuite": true,
+  "noDebug": true
 }
 ```
 
@@ -54,6 +55,7 @@
 | `pythonPath` | array | `[]` | Launch-specific Python path entries |
 | `terminal` | enum | `integrated` | Terminal mode |
 | `makeSuite` | boolean | `true` | Whether to execute using suite-oriented behavior |
+| `noDebug` | boolean | `true` for Run | Whether the generated launch is a run session rather than a debug session |
 
 ## Merge Order
 

@@ -2,8 +2,9 @@ const assert = require("node:assert/strict");
 
 const { robotDocumentSelector, robotFrameworkLanguageId } = require("../out/application/buildClientOptions.js");
 const { planServerCommand, serverInitializationOptions } = require("../out/application/buildServerOptions.js");
-const { collectRobotTestsFromText } = require("../out/application/collectTests.js");
+const { collectRobotTestsFromText, findRobotTestAtLine } = require("../out/application/collectTests.js");
 const { serverRobotLspConfiguration } = require("../out/application/configurationBridge.js");
+const { buildRunLaunchConfiguration } = require("../out/application/resolveLaunchConfig.js");
 const { defaultRobotLspSettings } = require("../out/domain/settings.js");
 
 function settings(overrides = {}) {
@@ -102,11 +103,70 @@ function testRobotTestCollection() {
   assert.ok(tests.every((test) => test.uri === "file:///workspace/suite.robot"));
 }
 
+function testFindRobotTestAtLine() {
+  const text = [
+    "*** Test Cases ***",
+    "First Test",
+    "    Log    hello",
+    "Second Test",
+    "    Log    world",
+  ].join("\n");
+
+  assert.equal(findRobotTestAtLine("file:///workspace/suite.robot", text, 2)?.name, "First Test");
+  assert.equal(findRobotTestAtLine("file:///workspace/suite.robot", text, 4)?.name, "Second Test");
+  assert.equal(findRobotTestAtLine("file:///workspace/suite.robot", text, 0), undefined);
+}
+
+function testRunLaunchConfigurationForFile() {
+  const config = buildRunLaunchConfiguration(settings({
+    runtime: {
+      python: "C:/Python/python.exe",
+      env: { ROBOT_ENV: "dev" },
+      pythonPath: ["C:/workspace/libs"],
+    },
+    variables: { EXECDIR: "C:/workspace" },
+  }), {
+    target: "C:/workspace/suite.robot",
+    cwd: "C:/workspace",
+  });
+
+  assert.deepEqual(config, {
+    type: "robot-lsp",
+    request: "launch",
+    name: "Robot Framework: Current File",
+    target: "C:/workspace/suite.robot",
+    cwd: "C:/workspace",
+    args: [],
+    env: { ROBOT_ENV: "dev" },
+    variables: { EXECDIR: "C:/workspace" },
+    python: "C:/Python/python.exe",
+    pythonPath: ["C:/workspace/libs"],
+    terminal: "integrated",
+    makeSuite: true,
+    noDebug: true,
+  });
+}
+
+function testRunLaunchConfigurationForTest() {
+  const config = buildRunLaunchConfiguration(settings(), {
+    target: "C:/workspace/suite.robot",
+    cwd: "C:/workspace",
+    testName: "Should Work",
+  });
+
+  assert.equal(config.name, "Robot Framework: Should Work");
+  assert.deepEqual(config.args, ["--test", "Should Work"]);
+  assert.equal(config.noDebug, true);
+}
+
 testDocumentSelector();
 testDefaultServerStartup();
 testServerCommandOverride();
 testConfigurationBridge();
 testInitializationOptionsUseServerConfigurationShape();
 testRobotTestCollection();
+testFindRobotTestAtLine();
+testRunLaunchConfigurationForFile();
+testRunLaunchConfigurationForTest();
 
 console.log("lsp feature smoke ok");

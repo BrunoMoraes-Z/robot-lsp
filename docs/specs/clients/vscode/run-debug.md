@@ -46,3 +46,13 @@ When commands or Test Explorer trigger a run/debug session, the extension merges
 - Runtime python path
 - Robot variables
 - Additional Robot arguments
+
+## Run Support MVP
+
+- `robot-lsp.runCurrentFile` uses the active Robot Framework document as the launch target.
+- `robot-lsp.runCurrentTest` uses the nearest discovered top-level test or task at the cursor line.
+- Test Explorer Run profile uses the same generated launch configuration path.
+- Generated run configurations use `type: "robot-lsp"`, `request: "launch"`, and `noDebug: true`.
+- Individual test runs add `--test <name>` to Robot Framework arguments.
+- Runtime Python, environment, Python path, and Robot variables come from `robot-lsp.runtime.*` and `robot-lsp.variables` settings.
+- Actual debug adapter execution and test result events are implemented in later stages.
