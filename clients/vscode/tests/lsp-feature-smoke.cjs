@@ -8,6 +8,7 @@ const { collectRobotTestsFromText, findRobotTestAtLine } = require("../out/appli
 const { serverRobotLspConfiguration } = require("../out/application/configurationBridge.js");
 const { buildDebugLaunchConfiguration, buildRunLaunchConfiguration } = require("../out/application/resolveLaunchConfig.js");
 const { defaultRobotLspSettings } = require("../out/domain/settings.js");
+const { planRobotCommand } = require("../out/infrastructure/debugAdapterRuntime.js");
 
 function settings(overrides = {}) {
   return {
@@ -185,6 +186,42 @@ function testDebugContribution() {
   assert.equal(debuggerContribution.configurationSnippets[0].body.request, "launch");
 }
 
+function testDebugAdapterRobotCommandPlan() {
+  const plan = planRobotCommand({
+    type: "robot-lsp",
+    request: "launch",
+    name: "Robot Framework: Run",
+    target: ["C:/workspace/suite.robot", "C:/workspace/other.robot"],
+    cwd: "C:/workspace",
+    args: ["--test", "Should Work"],
+    env: { ROBOT_ENV: "dev" },
+    variables: { ENV: "dev", ROOT: "C:/workspace" },
+    python: "C:/Python/python.exe",
+    pythonPath: ["C:/workspace/libs"],
+    terminal: "integrated",
+    makeSuite: true,
+    noDebug: true,
+  });
+
+  assert.equal(plan.command, "C:/Python/python.exe");
+  assert.equal(plan.cwd, "C:/workspace");
+  assert.equal(plan.env.ROBOT_ENV, "dev");
+  assert.deepEqual(plan.args, [
+    "-m",
+    "robot",
+    "--pythonpath",
+    "C:/workspace/libs",
+    "--variable",
+    "ENV:dev",
+    "--variable",
+    "ROOT:C:/workspace",
+    "--test",
+    "Should Work",
+    "C:/workspace/suite.robot",
+    "C:/workspace/other.robot",
+  ]);
+}
+
 testDocumentSelector();
 testDefaultServerStartup();
 testServerCommandOverride();
@@ -196,5 +233,6 @@ testRunLaunchConfigurationForFile();
 testRunLaunchConfigurationForTest();
 testDebugLaunchConfiguration();
 testDebugContribution();
+testDebugAdapterRobotCommandPlan();
 
 console.log("lsp feature smoke ok");

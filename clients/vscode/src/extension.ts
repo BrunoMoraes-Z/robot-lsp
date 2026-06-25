@@ -20,7 +20,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const logger = new OutputChannelLogger(output);
   const settings = new VsCodeSettingsReader();
   const runController = new RobotRunController(settings);
-  context.subscriptions.push(new RobotDebugAdapterRegistration(settings));
+  context.subscriptions.push(new RobotDebugAdapterRegistration(context, settings));
   context.subscriptions.push(
     vscode.commands.registerCommand("robot-lsp.runCurrentFile", async () => runController.runCurrentFile()),
     vscode.commands.registerCommand("robot-lsp.runCurrentTest", async () => runController.runCurrentTest()),

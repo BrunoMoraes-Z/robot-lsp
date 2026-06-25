@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 10 - Debug Adapter MVP
+Stage 11 - Packaging And Release
 
 Status: `pending`
 
@@ -20,7 +20,7 @@ Status: `pending`
 | 07 | Test Explorer MVP | done |
 | 08 | Run Support | done |
 | 09 | Debug Adapter Design | done |
-| 10 | Debug Adapter MVP | pending |
+| 10 | Debug Adapter MVP | done |
 | 11 | Packaging And Release | pending |
 
 ## Stage 00 Acceptance Criteria
@@ -118,3 +118,15 @@ Status: `pending`
 - Debug configuration provider normalizes missing launch values using the active Robot document or workspace defaults.
 - Application layer can build debug launch configurations with `noDebug: false`.
 - Smoke tests cover the debug launch configuration contract and package contribution.
+
+## Stage 10 Acceptance Criteria
+
+- VS Code registers a debug adapter descriptor factory for debug type `robot-lsp`.
+- Debug adapter runtime is compiled with the extension and launched as a Node process.
+- Debug adapter implements minimal DAP handling for `initialize`, `launch`, `disconnect`, and `terminate`.
+- Launch requests with `noDebug: true` execute Robot Framework through `python -m robot`.
+- Runtime settings map to Robot command arguments for python path, Robot variables, additional args, and targets.
+- Adapter forwards stdout and stderr as DAP output events.
+- Adapter emits exited and terminated events when Robot execution ends.
+- Non-`noDebug` sessions fail with an explicit MVP limitation message.
+- Smoke tests cover Robot command planning for the adapter runtime.

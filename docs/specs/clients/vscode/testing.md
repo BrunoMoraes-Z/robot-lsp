@@ -46,6 +46,14 @@
 - Verify the VS Code manifest contributes debug type `robot-lsp` for `robotframework` files.
 - Verify initial debug configuration and snippet target the current file.
 
+### Debug Adapter MVP Smoke Tests
+
+- Verify the adapter maps launch `python` to the process command.
+- Verify `pythonPath` entries become `--pythonpath` Robot arguments.
+- Verify Robot variables become `--variable name:value` arguments.
+- Verify launch args are preserved before target paths.
+- Verify string-array targets are appended to the Robot command.
+
 ### Extension Host Tests
 
 - Extension activates for `.robot` files

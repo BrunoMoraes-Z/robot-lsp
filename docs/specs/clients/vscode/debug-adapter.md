@@ -24,7 +24,7 @@ Python Debug Adapter
 - Starts the Python debug adapter.
 - Maps custom DAP test events to Test Explorer results.
 
-Stage 09 covers the extension-side debug type, launch snippets, and debug configuration provider contract. Starting the Python debug adapter is implemented in the Debug Adapter MVP stage.
+Stage 09 covers the extension-side debug type, launch snippets, and debug configuration provider contract. Stage 10 adds a minimal Node-based debug adapter runtime for no-debug Robot execution. A Python debug adapter with breakpoints is deferred.
 
 ## VS Code Contribution
 
@@ -53,6 +53,21 @@ The provider normalizes launch configurations before VS Code starts a session:
 - Routes `.robot` and `.resource` breakpoints to Robot-aware breakpoint handling.
 - Routes `.py` breakpoints to `debugpy`.
 - Provides stack traces, scopes, variables, stepping, continue, pause, and evaluate.
+
+The Python debug adapter is not part of the Stage 10 MVP.
+
+### Stage 10 Node Adapter MVP
+
+- Runs as a Node process launched by `DebugAdapterExecutable`.
+- Handles `initialize`, `launch`, `disconnect`, and `terminate` requests.
+- Supports `launch` only when `noDebug: true`.
+- Executes Robot Framework as `python -m robot` or with the launch-specific `python` executable.
+- Maps `pythonPath` to `--pythonpath` arguments.
+- Maps `variables` to `--variable name:value` arguments.
+- Appends launch `args` before the target path or target list.
+- Forwards Robot stdout and stderr as DAP output events.
+- Emits `exited` and `terminated` when the process closes.
+- Rejects non-`noDebug` launches with an explicit limitation message.
 
 ### Robot Target Process
 

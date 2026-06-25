@@ -7,17 +7,29 @@ export interface DebugAdapterRegistration {
 }
 
 export class RobotDebugAdapterRegistration implements DebugAdapterRegistration {
-  private readonly registration: vscode.Disposable;
+  private readonly registrations: readonly vscode.Disposable[];
 
-  public constructor(settings: SettingsReader) {
-    this.registration = vscode.debug.registerDebugConfigurationProvider(
-      "robot-lsp",
-      new RobotDebugConfigurationProvider(settings),
-    );
+  public constructor(context: vscode.ExtensionContext, settings: SettingsReader) {
+    this.registrations = [
+      vscode.debug.registerDebugConfigurationProvider("robot-lsp", new RobotDebugConfigurationProvider(settings)),
+      vscode.debug.registerDebugAdapterDescriptorFactory("robot-lsp", new RobotDebugAdapterDescriptorFactory(context)),
+    ];
   }
 
   public dispose(): void {
-    this.registration.dispose();
+    for (const registration of this.registrations) {
+      registration.dispose();
+    }
+  }
+}
+
+class RobotDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+  public constructor(private readonly context: vscode.ExtensionContext) {}
+
+  public createDebugAdapterDescriptor(): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+    return new vscode.DebugAdapterExecutable(process.execPath, [
+      this.context.asAbsolutePath("out/infrastructure/debugAdapterRuntime.js"),
+    ]);
   }
 }
 
