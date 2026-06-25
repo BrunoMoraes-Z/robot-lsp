@@ -39,6 +39,10 @@ class ParseService:
             return None
         return self.parse_document(document)
 
+    def document_path(self, uri: str):
+        document = self._document_store.get(uri)
+        return document.path if document is not None else None
+
     def parse_document(self, document: Document) -> ParseResult:
         content_hash = _content_hash(document.text)
         cached = self._cache.get(document.uri)

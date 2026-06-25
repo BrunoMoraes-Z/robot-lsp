@@ -44,6 +44,7 @@ def create_server(publish_diagnostics: PublishDiagnostics | None = None) -> LspS
     server.diagnostic_service = DiagnosticService(
         parse_service,
         publish_diagnostics or server.publish_diagnostics,
+        workspace_index=workspace_index,
     )
     server.completion_service = CompletionService(server.document_store, parse_service, workspace_index)
     server.hover_service = HoverService(server.document_store, parse_service)

@@ -76,6 +76,30 @@ class TestPublishDiagnostics:
         assert len(server.outgoing_notifications) == 2
         assert server.outgoing_notifications[1].params["diagnostics"] == []
 
+    def test_did_open_publishes_semantic_warning_when_flushed(self):
+        server = make_server()
+        uri = "file:///c:/projects/missing-keyword.robot"
+
+        server.handle_message(
+            create_notification(
+                "textDocument/didOpen",
+                params={
+                    "textDocument": {
+                        "uri": uri,
+                        "languageId": "robotframework",
+                        "version": 1,
+                        "text": "*** Test Cases ***\nT\n    Missing Keyword\n",
+                    }
+                },
+            )
+        )
+        server.diagnostic_service.flush(uri)
+
+        diagnostic = server.outgoing_notifications[0].params["diagnostics"][0]
+        assert diagnostic["severity"] == 2
+        assert diagnostic["code"] == "keyword_not_found"
+        assert diagnostic["message"] == "Keyword not found: Missing Keyword"
+
     def test_did_close_clears_diagnostics(self):
         server = make_server()
         uri = "file:///c:/projects/closed.robot"

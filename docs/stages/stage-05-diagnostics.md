@@ -63,6 +63,7 @@ Implement diagnostic generation from Robot Framework parsing and publication thr
 ## Notes
 
 - Stage completed with `ParseService`, `DiagnosticService`, and optional integration with `LspServer`.
+- Post-MVP semantic diagnostics now cover missing imports, unknown keywords, and undefined variables.
 - The server keeps outgoing notifications in `outgoing_notifications` until the full transport loop exists.
 - `didOpen` and `didChange` schedule diagnostics; `didClose` clears diagnostics.
 - `DiagnosticService.flush(uri)` was added for deterministic tests and controlled usage.

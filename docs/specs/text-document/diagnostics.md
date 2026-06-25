@@ -11,6 +11,7 @@ Stage 05 — Diagnostics
 ## Initial Scope
 
 - Parse/syntax diagnostics from Robot Framework
+- Semantic diagnostics for missing imports, unknown keywords, and undefined variables
 - 300 ms debounce
 - Pending diagnostic cancellation by URI
 - Error range when available; fallback to the whole line
@@ -61,10 +62,9 @@ class DiagnosticService:
 
 ## Future Scope
 
-- Semantic analysis (broken imports, keywords not found)
 - Integration with robocop or external linter
-- Diagnostics with code for code actions
 - Diagnostic tags (unnecessary, deprecated)
+- Additional semantic rules such as argument ordering and template validation
 
 ## Tests
 
@@ -73,3 +73,6 @@ class DiagnosticService:
 - Debounce -> does not publish if timer has not expired yet
 - Cancellation -> old timer does not publish
 - Range 1-based → 0-based
+- Missing import -> `import_not_found`
+- Missing keyword -> `keyword_not_found`
+- Missing variable -> `variable_not_found`

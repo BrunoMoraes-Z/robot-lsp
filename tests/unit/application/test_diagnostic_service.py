@@ -1,11 +1,12 @@
 from robot_lsp.application.diagnostic_service import DiagnosticService
-from robot_lsp.application.document_store import DocumentStore
+from robot_lsp.application.document_store import DocumentStore, path_to_uri
 from robot_lsp.application.parse_service import ParseService
+from robot_lsp.application.workspace import WorkspaceIndex
 from robot_lsp.domain.diagnostics import DiagnosticSeverity
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
 
 
-def make_service(debounce_seconds: float = 10.0):
+def make_service(debounce_seconds: float = 10.0, workspace_index=None):
     store = DocumentStore()
     published = []
 
@@ -15,6 +16,7 @@ def make_service(debounce_seconds: float = 10.0):
     service = DiagnosticService(
         ParseService(store, RobotFrameworkParser()),
         publisher,
+        workspace_index=workspace_index,
         debounce_seconds=debounce_seconds,
     )
     return store, service, published
@@ -90,3 +92,99 @@ class TestDiagnosticService:
         service.flush("file:///c:/projects/missing.robot")
 
         assert published == [("file:///c:/projects/missing.robot", [])]
+
+    def test_semantic_diagnostic_for_missing_keyword(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/missing-keyword.robot"
+        store.open(
+            uri=uri,
+            text="*** Test Cases ***\nT\n    Missing Keyword\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        diagnostic = published[0][1][0]
+        assert diagnostic.severity == DiagnosticSeverity.WARNING
+        assert diagnostic.code == "keyword_not_found"
+        assert diagnostic.message == "Keyword not found: Missing Keyword"
+
+    def test_semantic_diagnostic_for_missing_variable(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/missing-variable.robot"
+        store.open(
+            uri=uri,
+            text="*** Test Cases ***\nT\n    Log    ${MISSING}\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        diagnostic = published[0][1][0]
+        assert diagnostic.severity == DiagnosticSeverity.WARNING
+        assert diagnostic.code == "variable_not_found"
+        assert diagnostic.message == "Variable not found: ${MISSING}"
+
+    def test_step_assignment_defines_variable_for_later_steps(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/local-variable.robot"
+        store.open(
+            uri=uri,
+            text="*** Test Cases ***\nT\n    ${value}=    Set Variable    ok\n    Log    ${value}\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
+
+    def test_semantic_diagnostic_for_missing_import(self, tmp_path):
+        index = WorkspaceIndex()
+        store, service, published = make_service(workspace_index=index)
+        path = tmp_path / "missing-import.robot"
+        uri = path_to_uri(path)
+        store.open(
+            uri=uri,
+            text="*** Settings ***\nResource    missing.resource\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        diagnostic = published[0][1][0]
+        assert diagnostic.severity == DiagnosticSeverity.ERROR
+        assert diagnostic.code == "import_not_found"
+        assert diagnostic.message == "Import not found: missing.resource"
+
+    def test_imported_resource_symbols_do_not_report_missing(self, tmp_path):
+        main = tmp_path / "main.robot"
+        resource = tmp_path / "keywords.resource"
+        main.write_text(
+            "*** Settings ***\n"
+            "Resource    keywords.resource\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Resource Keyword    ${RESOURCE_VAR}\n",
+            encoding="utf-8",
+        )
+        resource.write_text(
+            "*** Variables ***\n"
+            "${RESOURCE_VAR}    ok\n"
+            "*** Keywords ***\n"
+            "Resource Keyword\n"
+            "    Log    ${RESOURCE_VAR}\n",
+            encoding="utf-8",
+        )
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        store, service, published = make_service(workspace_index=index)
+        uri = path_to_uri(main)
+        store.open(uri=uri, text=main.read_text(encoding="utf-8"), version=1, language_id="robotframework")
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
