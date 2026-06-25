@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 06 - LSP Feature Smoke Tests
+Stage 07 - Test Explorer MVP
 
 Status: `pending`
 
@@ -16,7 +16,7 @@ Status: `pending`
 | 03 | Python Resolution | done |
 | 04 | Configuration Bridge | done |
 | 05 | Syntax Highlighting And Language Configuration | done |
-| 06 | LSP Feature Smoke Tests | pending |
+| 06 | LSP Feature Smoke Tests | done |
 | 07 | Test Explorer MVP | pending |
 | 08 | Run Support | pending |
 | 09 | Debug Adapter Design | pending |
@@ -76,3 +76,13 @@ Status: `pending`
 - Language configuration includes comments, brackets, auto-closing pairs, surrounding pairs, folding markers, indentation rules, and Robot-aware word pattern.
 - Syntax highlighting works independently from the Python language server.
 - TypeScript compilation passes with `npm run compile`.
+
+## Stage 06 Acceptance Criteria
+
+- `npm test` exists for VS Code client smoke validation.
+- Smoke tests compile the extension before executing runtime checks.
+- Smoke tests verify the Robot Framework document selector used by the language client.
+- Smoke tests verify default language server startup uses `python -m robot_lsp` style arguments.
+- Smoke tests verify `robot-lsp.languageServer.command` overrides the default server command.
+- Smoke tests verify VS Code settings map to the server `robot.lsp` configuration shape.
+- Smoke tests verify initialization options use the same configuration shape as workspace configuration.

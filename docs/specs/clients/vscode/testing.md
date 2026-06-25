@@ -17,6 +17,15 @@
 - Test explorer tree creation
 - Debug configuration provider
 
+### LSP Feature Smoke Tests
+
+- Compile the VS Code client before execution.
+- Verify the `robotframework` document selector includes file and untitled documents.
+- Verify default server startup uses `python -m robot_lsp` style arguments.
+- Verify explicit `robot-lsp.languageServer.command` bypasses default Python startup.
+- Verify client settings map to the server `robot.lsp` configuration shape.
+- Verify initialization options and workspace configuration use the same configuration bridge.
+
 ### Extension Host Tests
 
 - Extension activates for `.robot` files
@@ -38,7 +47,7 @@
 
 ## CI Commands
 
-Expected future commands:
+VS Code client validation:
 
 ```powershell
 cd clients/vscode
