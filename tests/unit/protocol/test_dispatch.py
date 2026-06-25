@@ -1,3 +1,5 @@
+from threading import Event, Thread
+
 from robot_lsp.protocol.dispatch import MethodDispatcher
 from robot_lsp.protocol.jsonrpc import METHOD_NOT_FOUND, create_notification, create_request
 
@@ -81,3 +83,46 @@ class TestMethodDispatcher:
         assert response.error is not None
         assert response.error.message == "Internal error"
         assert response.error.data == "boom"
+
+    def test_cancel_token_raise_if_canceled_suppresses_response(self):
+        dispatcher = MethodDispatcher()
+
+        def handler(params, token):
+            dispatcher.dispatch(create_notification("$/cancelRequest", params={"id": 1}))
+            token.raise_if_canceled()
+            return "ignored"
+
+        dispatcher.register("test/cancelable", handler)
+
+        response = dispatcher.dispatch(create_request("test/cancelable", id=1))
+
+        assert response is None
+
+    def test_worker_request_can_be_canceled_while_running(self):
+        dispatcher = MethodDispatcher(max_workers=1)
+        started = Event()
+        proceed = Event()
+        finished = Event()
+        responses = []
+
+        def handler(params, token):
+            started.set()
+            proceed.wait(timeout=1.0)
+            token.raise_if_canceled()
+            finished.set()
+            return "ignored"
+
+        dispatcher.register("test/worker", handler, run_in_worker=True)
+
+        thread = Thread(target=lambda: responses.append(dispatcher.dispatch(create_request("test/worker", id=1))))
+        thread.start()
+        assert started.wait(timeout=1.0)
+
+        dispatcher.dispatch(create_notification("$/cancelRequest", params={"id": 1}))
+        proceed.set()
+
+        thread.join(timeout=1.0)
+        dispatcher.shutdown()
+
+        assert not finished.is_set()
+        assert responses == [None]

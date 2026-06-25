@@ -182,6 +182,7 @@ class LspServer:
         self.exit_requested = True
         self.exit_code = 0 if self.state == ServerState.SHUTTING_DOWN else 1
         self.state = ServerState.EXITED
+        self._dispatcher.shutdown()
         return None
 
     def _handle_did_open(

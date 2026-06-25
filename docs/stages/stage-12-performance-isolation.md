@@ -18,7 +18,7 @@ Reduce repeated work in common requests and record isolation decisions before ad
 
 ## Out Of Scope
 
-- Worker pool for LSP handlers
+- Moving existing LSP handlers to worker execution without metrics
 - Subprocess for indexing
 - Persistent disk cache
 - Detailed telemetry or profiling
@@ -26,6 +26,7 @@ Reduce repeated work in common requests and record isolation decisions before ad
 ## Deliverables
 
 - LRU cache in `src/robot_lsp/application/parse_service.py`
+- Optional worker execution support in `src/robot_lsp/protocol/dispatch.py`
 - Unit tests for cache and invalidation
 - Performance spec updates
 
@@ -37,6 +38,7 @@ Reduce repeated work in common requests and record isolation decisions before ad
 - Cache respects the configurable LRU limit
 - Cache can be cleared by URI
 - Workspace index keeps cache by mtime + hash
+- Dispatcher can run explicitly registered methods in a worker pool and suppress cancelled responses
 - Subprocess isolation remains documented as a future metrics-based decision
 
 ## Tests
@@ -47,11 +49,12 @@ Reduce repeated work in common requests and record isolation decisions before ad
 - `test_parse_cache_evicts_least_recently_used_entry`
 - `test_clear_uri_removes_cached_entry`
 - `test_update_file_reuses_cache_when_unchanged`
+- `test_worker_request_can_be_canceled_while_running`
 
 ## Risks
 
 - The cache stores `ParseResult` in memory and may retain large document models until eviction.
-- Since handlers are still synchronous, truly long operations can still block until future stages.
+- Existing LSP handlers remain synchronous until a measured hot path justifies opt-in worker execution.
 - There is no disk cache; large workspaces still depend on in-memory cache.
 
 ## Dependencies
@@ -63,4 +66,5 @@ Reduce repeated work in common requests and record isolation decisions before ad
 ## Notes
 
 - The optimization was applied in `ParseService`, so diagnostics, completion, hover, navigation, and refactoring benefit without local changes.
-- Worker pool and subprocesses were postponed to avoid premature complexity.
+- Worker pool infrastructure exists in `MethodDispatcher`, but current LSP handlers are not moved to it to avoid premature thread-safety complexity.
+- Subprocesses remain postponed until metrics justify them.

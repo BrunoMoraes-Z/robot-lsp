@@ -43,7 +43,7 @@ class WorkspaceIndex:
 
 - Workspace index is the foundation for navigation (definition, references)
 - Required to support multiple files and imports
-- Performance: pode exigir worker separado se workspace grande
+- Performance: may require a separate worker if the workspace is large
 
 ## Implemented
 
@@ -57,7 +57,7 @@ class WorkspaceIndex:
 
 ## Future
 
-- Cache em disco
+- Disk cache
 - File watching
 - Asynchronous indexing
-- References globais
+- Global references
