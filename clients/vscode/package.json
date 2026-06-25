@@ -1,0 +1,162 @@
+{
+  "name": "robot-lsp-vscode",
+  "displayName": "Robot LSP",
+  "description": "VS Code client for the Robot LSP language server.",
+  "version": "0.0.1",
+  "publisher": "robot-lsp",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Debuggers",
+    "Testing"
+  ],
+  "keywords": [
+    "robotframework",
+    "robot framework",
+    "lsp",
+    "language server"
+  ],
+  "activationEvents": [
+    "onLanguage:robotframework",
+    "onCommand:robot-lsp.restartLanguageServer",
+    "onCommand:robot-lsp.selectPythonInterpreter"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "check": "tsc -p ./ --noEmit"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "robotframework",
+        "aliases": [
+          "Robot Framework",
+          "Robot"
+        ],
+        "extensions": [
+          ".robot",
+          ".resource"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "robot-lsp.restartLanguageServer",
+        "title": "Robot LSP: Restart Language Server"
+      },
+      {
+        "command": "robot-lsp.selectPythonInterpreter",
+        "title": "Robot LSP: Select Python Interpreter"
+      }
+    ],
+    "configuration": {
+      "title": "Robot LSP",
+      "properties": {
+        "robot-lsp.languageServer.python": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Explicit Python executable used to start the Robot LSP language server. When empty, the extension resolves the selected workspace Python."
+        },
+        "robot-lsp.languageServer.command": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Full command override used to start the language server. When set, this bypasses Python interpreter resolution."
+        },
+        "robot-lsp.languageServer.args": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "Additional or override arguments for the language server process."
+        },
+        "robot-lsp.languageServer.cwd": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Working directory for the language server process. Supports `${workspaceFolder}`."
+        },
+        "robot-lsp.languageServer.env": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "Environment variables injected into the language server process."
+        },
+        "robot-lsp.runtime.python": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Python executable used for future run/debug execution."
+        },
+        "robot-lsp.runtime.env": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "Environment variables injected into future run/debug execution."
+        },
+        "robot-lsp.runtime.pythonPath": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "Entries added to PYTHONPATH or Robot Framework --pythonpath during future run/debug execution."
+        },
+        "robot-lsp.variables": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "Robot variables injected into static analysis and future run/debug execution. Example: `{ \"EXECDIR\": \"${workspaceFolder}\" }`."
+        },
+        "robot-lsp.diagnostics.enable": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enable Robot LSP diagnostics."
+        },
+        "robot-lsp.completion.snippets": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enable snippet completions from Robot LSP."
+        },
+        "robot-lsp.logLevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warning",
+            "error"
+          ],
+          "default": "warning",
+          "markdownDescription": "Robot LSP server log level."
+        },
+        "robot-lsp.testExplorer.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enable future Robot LSP Test Explorer integration."
+        },
+        "robot-lsp.debug.allowKeywordEvaluate": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Allow future debug console evaluation that can execute Robot Framework keywords."
+        },
+        "robot-lsp.debug.breakOnFailure": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Break on Robot Framework failure events in future debug sessions."
+        },
+        "robot-lsp.debug.breakOnError": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Break on Robot Framework error events in future debug sessions."
+        }
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/vscode": "^1.92.0",
+    "typescript": "^5.5.4"
+  }
+}

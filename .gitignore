@@ -17,6 +17,11 @@ build/
 *.swp
 *.swo
 
+# Node / VS Code clients
+node_modules/
+out/
+*.vsix
+
 # OS
 .DS_Store
 Thumbs.db
