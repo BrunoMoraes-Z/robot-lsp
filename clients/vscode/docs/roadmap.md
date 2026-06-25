@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 09 - Debug Adapter Design
+Stage 10 - Debug Adapter MVP
 
 Status: `pending`
 
@@ -19,7 +19,7 @@ Status: `pending`
 | 06 | LSP Feature Smoke Tests | done |
 | 07 | Test Explorer MVP | done |
 | 08 | Run Support | done |
-| 09 | Debug Adapter Design | pending |
+| 09 | Debug Adapter Design | done |
 | 10 | Debug Adapter MVP | pending |
 | 11 | Packaging And Release | pending |
 
@@ -107,3 +107,14 @@ Status: `pending`
 - Test Explorer exposes a Run profile and starts selected test items through the same run controller.
 - Smoke tests cover generated file and test run configurations.
 - Debug adapter execution and final result reporting are intentionally deferred to later stages.
+
+## Stage 09 Acceptance Criteria
+
+- VS Code manifest contributes debug type `robot-lsp` with label `Robot LSP`.
+- Debug contribution is scoped to the `robotframework` language.
+- Launch configuration attributes document target, cwd, args, env, variables, python, pythonPath, terminal, and makeSuite.
+- Initial launch configuration and snippet are provided for the current Robot Framework file.
+- Extension activates for debug sessions and registers a debug configuration provider.
+- Debug configuration provider normalizes missing launch values using the active Robot document or workspace defaults.
+- Application layer can build debug launch configurations with `noDebug: false`.
+- Smoke tests cover the debug launch configuration contract and package contribution.

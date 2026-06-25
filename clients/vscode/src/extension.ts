@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { activateExtension } from "./application/activateExtension";
 import { VsCodeCommandRegistry } from "./infrastructure/vscode/commandRegistry";
+import { RobotDebugAdapterRegistration } from "./infrastructure/vscode/debugAdapter";
 import { RobotLanguageClientAdapter } from "./infrastructure/vscode/languageClient";
 import { OutputChannelLogger } from "./infrastructure/vscode/logging";
 import { PathPythonProvider } from "./infrastructure/vscode/pathPython";
@@ -19,6 +20,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const logger = new OutputChannelLogger(output);
   const settings = new VsCodeSettingsReader();
   const runController = new RobotRunController(settings);
+  context.subscriptions.push(new RobotDebugAdapterRegistration(settings));
   context.subscriptions.push(
     vscode.commands.registerCommand("robot-lsp.runCurrentFile", async () => runController.runCurrentFile()),
     vscode.commands.registerCommand("robot-lsp.runCurrentTest", async () => runController.runCurrentTest()),

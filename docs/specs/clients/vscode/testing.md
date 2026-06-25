@@ -39,6 +39,13 @@
 - Verify generated current-test run configurations add `--test <name>` arguments.
 - Verify current-test lookup selects the nearest top-level test or task for a cursor line.
 
+### Debug Adapter Design Smoke Tests
+
+- Verify generated debug launch configurations use `type: "robot-lsp"` and `request: "launch"`.
+- Verify generated debug launch configurations use `noDebug: false`.
+- Verify the VS Code manifest contributes debug type `robot-lsp` for `robotframework` files.
+- Verify initial debug configuration and snippet target the current file.
+
 ### Extension Host Tests
 
 - Extension activates for `.robot` files

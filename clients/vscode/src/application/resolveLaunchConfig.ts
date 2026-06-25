@@ -32,3 +32,14 @@ export function buildRunLaunchConfiguration(
     noDebug: true,
   };
 }
+
+export function buildDebugLaunchConfiguration(
+  settings: RobotLspSettings,
+  target: LaunchTarget,
+): RobotLaunchConfiguration {
+  return {
+    ...buildRunLaunchConfiguration(settings, target),
+    name: target.testName === undefined ? "Robot Framework: Debug Current File" : `Robot Framework: Debug ${target.testName}`,
+    noDebug: false,
+  };
+}

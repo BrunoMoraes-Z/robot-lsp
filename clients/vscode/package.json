@@ -20,12 +20,13 @@
     "lsp",
     "language server"
   ],
-    "activationEvents": [
-      "onLanguage:robotframework",
-      "onCommand:robot-lsp.runCurrentFile",
-      "onCommand:robot-lsp.runCurrentTest",
-      "onCommand:robot-lsp.restartLanguageServer",
-      "onCommand:robot-lsp.selectPythonInterpreter"
+  "activationEvents": [
+    "onLanguage:robotframework",
+    "onDebug",
+    "onCommand:robot-lsp.runCurrentFile",
+    "onCommand:robot-lsp.runCurrentTest",
+    "onCommand:robot-lsp.restartLanguageServer",
+    "onCommand:robot-lsp.selectPythonInterpreter"
   ],
   "main": "./out/extension.js",
   "scripts": {
@@ -72,6 +73,106 @@
       {
         "command": "robot-lsp.selectPythonInterpreter",
         "title": "Robot LSP: Select Python Interpreter"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "robot-lsp",
+        "label": "Robot LSP",
+        "languages": [
+          "robotframework"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "markdownDescription": "Robot Framework file, folder, suite, or test target."
+              },
+              "cwd": {
+                "type": "string",
+                "default": "${workspaceFolder}",
+                "markdownDescription": "Runtime working directory."
+              },
+              "args": {
+                "type": "array",
+                "default": [],
+                "items": {
+                  "type": "string"
+                },
+                "markdownDescription": "Additional Robot Framework command-line arguments."
+              },
+              "env": {
+                "type": "object",
+                "default": {},
+                "markdownDescription": "Environment variables for Robot execution."
+              },
+              "variables": {
+                "type": "object",
+                "default": {},
+                "markdownDescription": "Robot variables for execution."
+              },
+              "python": {
+                "type": "string",
+                "default": "",
+                "markdownDescription": "Python executable used for Robot execution."
+              },
+              "pythonPath": {
+                "type": "array",
+                "default": [],
+                "items": {
+                  "type": "string"
+                },
+                "markdownDescription": "Entries added to Robot/Python import resolution."
+              },
+              "terminal": {
+                "type": "string",
+                "enum": [
+                  "integrated"
+                ],
+                "default": "integrated",
+                "markdownDescription": "Terminal mode used for execution."
+              },
+              "makeSuite": {
+                "type": "boolean",
+                "default": true,
+                "markdownDescription": "Whether to execute using suite-oriented behavior."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "robot-lsp",
+            "request": "launch",
+            "name": "Robot Framework: Current File",
+            "target": "${file}",
+            "cwd": "${workspaceFolder}",
+            "terminal": "integrated",
+            "makeSuite": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Robot Framework: Current File",
+            "description": "Debug the current Robot Framework file.",
+            "body": {
+              "type": "robot-lsp",
+              "request": "launch",
+              "name": "Robot Framework: Current File",
+              "target": "${file}",
+              "cwd": "${workspaceFolder}",
+              "terminal": "integrated",
+              "makeSuite": true
+            }
+          }
+        ]
       }
     ],
     "configuration": {

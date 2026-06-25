@@ -1,10 +1,12 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const { robotDocumentSelector, robotFrameworkLanguageId } = require("../out/application/buildClientOptions.js");
 const { planServerCommand, serverInitializationOptions } = require("../out/application/buildServerOptions.js");
 const { collectRobotTestsFromText, findRobotTestAtLine } = require("../out/application/collectTests.js");
 const { serverRobotLspConfiguration } = require("../out/application/configurationBridge.js");
-const { buildRunLaunchConfiguration } = require("../out/application/resolveLaunchConfig.js");
+const { buildDebugLaunchConfiguration, buildRunLaunchConfiguration } = require("../out/application/resolveLaunchConfig.js");
 const { defaultRobotLspSettings } = require("../out/domain/settings.js");
 
 function settings(overrides = {}) {
@@ -159,6 +161,30 @@ function testRunLaunchConfigurationForTest() {
   assert.equal(config.noDebug, true);
 }
 
+function testDebugLaunchConfiguration() {
+  const config = buildDebugLaunchConfiguration(settings(), {
+    target: "C:/workspace/suite.robot",
+    cwd: "C:/workspace",
+  });
+
+  assert.equal(config.type, "robot-lsp");
+  assert.equal(config.request, "launch");
+  assert.equal(config.name, "Robot Framework: Debug Current File");
+  assert.equal(config.noDebug, false);
+}
+
+function testDebugContribution() {
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8"));
+  const debuggerContribution = manifest.contributes.debuggers.find((item) => item.type === "robot-lsp");
+
+  assert.ok(debuggerContribution);
+  assert.equal(debuggerContribution.label, "Robot LSP");
+  assert.deepEqual(debuggerContribution.languages, ["robotframework"]);
+  assert.equal(debuggerContribution.initialConfigurations[0].type, "robot-lsp");
+  assert.equal(debuggerContribution.initialConfigurations[0].target, "${file}");
+  assert.equal(debuggerContribution.configurationSnippets[0].body.request, "launch");
+}
+
 testDocumentSelector();
 testDefaultServerStartup();
 testServerCommandOverride();
@@ -168,5 +194,7 @@ testRobotTestCollection();
 testFindRobotTestAtLine();
 testRunLaunchConfigurationForFile();
 testRunLaunchConfigurationForTest();
+testDebugLaunchConfiguration();
+testDebugContribution();
 
 console.log("lsp feature smoke ok");

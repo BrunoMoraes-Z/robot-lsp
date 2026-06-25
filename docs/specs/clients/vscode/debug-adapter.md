@@ -24,6 +24,28 @@ Python Debug Adapter
 - Starts the Python debug adapter.
 - Maps custom DAP test events to Test Explorer results.
 
+Stage 09 covers the extension-side debug type, launch snippets, and debug configuration provider contract. Starting the Python debug adapter is implemented in the Debug Adapter MVP stage.
+
+## VS Code Contribution
+
+- Debug type: `robot-lsp`
+- Label: `Robot LSP`
+- Language: `robotframework`
+- Activation: debug sessions activate the extension through `onDebug`
+- Initial configuration: current Robot Framework file with `${file}` target and `${workspaceFolder}` cwd
+- Configuration snippet: `Robot Framework: Current File`
+
+## Debug Configuration Provider
+
+The provider normalizes launch configurations before VS Code starts a session:
+
+- `type` is forced to `robot-lsp`.
+- `request` is forced to `launch`.
+- Missing `name` uses a Robot Framework default.
+- Missing `target` uses the active Robot Framework editor when available, otherwise `${file}`.
+- Missing `cwd` uses the workspace folder when available, otherwise `${workspaceFolder}`.
+- Missing `noDebug` defaults to `false` for debug sessions.
+
 ### Python Debug Adapter
 
 - Implements DAP request/response/event handling.
