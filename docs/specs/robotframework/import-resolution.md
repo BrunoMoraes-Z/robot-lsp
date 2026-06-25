@@ -37,8 +37,8 @@ Resolve `Library`, `Resource`, and `Variables` imports to find real files on the
 - `Resource` relative to the current file
 - `Variables` relative to the current file
 - `Resource` and `Variables` through paths configured in `robot.lsp.importPaths`
-- `Library` via `importlib.util.find_spec()`
-- Robot standard libraries via `robot.libraries.<name>`
+- `Library` through `importlib.util.find_spec()`
+- Robot standard libraries through `robot.libraries.<name>`
 
 ## Future
 

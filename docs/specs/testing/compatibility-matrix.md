@@ -23,7 +23,7 @@ Post-MVP 01 — Robot Framework 7.x compatibility matrix
 | 3.10 | Locally validated |
 | 3.11 | CI target |
 | 3.12 | CI target |
-| 3.13 | Future |
+| 3.13 | CI target |
 
 ## OS
 
@@ -31,7 +31,7 @@ Post-MVP 01 — Robot Framework 7.x compatibility matrix
 |---|---|
 | Windows | Locally validated + CI target |
 | Linux | CI target |
-| macOS | Future |
+| macOS | CI target |
 
 ## Test Strategy by Version
 
@@ -52,7 +52,7 @@ Specific tests to verify that each version is detected correctly and that missin
 
 ## Current CI
 
-- `ubuntu-latest` and `windows-latest`
-- Python 3.10, 3.11 and 3.12
+- `ubuntu-latest`, `windows-latest` and `macos-latest`
+- Python 3.10, 3.11, 3.12 and 3.13
 - Installed Robot Framework version from project dependency resolution for OS/Python coverage
 - Fixed Robot Framework compatibility matrix on Ubuntu/Python 3.12: 7.0.1, 7.1.1, 7.2.2, 7.3.2 and 7.4.2

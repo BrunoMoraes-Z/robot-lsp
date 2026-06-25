@@ -31,8 +31,8 @@ def send(proc, message: dict):
     proc.stdin.flush()
 
 def receive(proc) -> dict:
-    # Ler Content-Length header
-    # Ler body
+    # Read Content-Length header
+    # Read body
     pass
 ```
 

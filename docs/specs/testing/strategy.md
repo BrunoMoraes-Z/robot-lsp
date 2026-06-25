@@ -21,15 +21,15 @@ All stages
 - Test LSP session through in-memory transport
 - Moderate execution time (minutes)
 
-### Protocol Tests (dentro de `tests/unit/protocol/`)
+### Protocol Tests (inside `tests/unit/protocol/`)
 
 - Test JSON-RPC and framing against the specification
-- Testam lifecycle LSP
+- Test LSP lifecycle
 - Use in-memory transport (not real stdio)
 
 ## Test Framework
 
-- `pytest` como framework principal
+- `pytest` as the main framework
 - `conftest.py` for shared fixtures
 - `pytest-cov` for coverage (optional)
 - `unittest.mock` for mocks
@@ -45,7 +45,7 @@ All stages
 - `syntax_error.robot`: file with syntax errors
 - `resource.robot`: resource file for import tests
 - `group_rf72.robot`: file using GROUP/END (RF 7.2+)
-- `secret_variable.robot`: uso de secret variable (RF 7.4+)
+- `secret_variable.robot`: secret variable usage (RF 7.4+)
 
 ### In-Memory Transport
 

@@ -10,9 +10,9 @@
 
 ## Commands (future)
 
-- `robot.runTest`: executar teste sob o cursor
+- `robot.runTest`: run test under the cursor
 - `robot.runSuite`: run current suite
-- `robot.debug`: iniciar debug
+- `robot.debug`: start debug
 
 ## Notes
 

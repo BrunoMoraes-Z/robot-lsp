@@ -10,7 +10,7 @@ Status: `done`
 All 14 stages planned for the MVP have been implemented and validated by the current test suite.
 
 Most recent local validation:
-- `uv run pytest` — 180 tests passing
+- `uv run pytest` — 183 tests passing
 
 The items below do not block the MVP, but remain pending for post-MVP evolution because they were explicitly deferred in stage/spec documents or belong to release hardening beyond the first functional version.
 
@@ -24,9 +24,9 @@ The items below do not block the MVP, but remain pending for post-MVP evolution 
 | 04 | Apply `robot.lsp.completion.snippets` to completion items and configurable snippets | Stage 13 | done |
 | 05 | Implement outbound `workspace/configuration` request and workspace-folder-specific configuration | Stage 13 / workspace configuration spec | done |
 | 06 | Add worker pool/real cancellation for long-running operations when metrics justify it | Stage 12 / performance specs | done |
-| 07 | Evaluate subprocess isolation for indexing/heavy analysis with dedicated integration tests | Stage 12 / Stage 14 risks | pending |
-| 08 | Add progress reporting (`$/progress`, `window/workDoneProgress/create`) for long-running operations | protocol progress spec | pending |
-| 09 | Expand CI to new targets when needed, such as macOS and Python 3.13 | compatibility matrix | pending |
+| 07 | Evaluate subprocess isolation for indexing/heavy analysis with dedicated integration tests | Stage 12 / Stage 14 risks | done |
+| 08 | Add progress reporting (`$/progress`, `window/workDoneProgress/create`) for long-running operations | protocol progress spec | done |
+| 09 | Expand CI to new targets when needed, such as macOS and Python 3.13 | compatibility matrix | done |
 | 10 | Implement semantic diagnostics/warnings beyond Robot Framework parse errors | diagnostics rules spec | pending |
 
 ---
@@ -249,7 +249,7 @@ The items below do not block the MVP, but remain pending for post-MVP evolution 
 - Complete settings (`Library`, `Resource`, `Suite Setup`, etc.)
 - Complete local keywords (same file)
 - Complete local variables
-- `InsertTextFormat.PlainText` e `Snippet` simples
+- Simple `InsertTextFormat.PlainText` and `Snippet`
 
 **Done**
 - Implemented `CompletionService` in `src/robot_lsp/application/completion_service.py`

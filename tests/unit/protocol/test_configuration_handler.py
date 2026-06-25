@@ -52,6 +52,41 @@ class TestConfigurationHandler:
             ]
         }
 
+    def test_workspace_configuration_reports_progress_when_supported(self):
+        server = LspServer()
+        server.handle_message(
+            create_request(
+                "initialize",
+                id=1,
+                params={
+                    "capabilities": {
+                        "workspace": {"configuration": True},
+                        "window": {"workDoneProgress": True},
+                    },
+                    "workspaceFolders": [{"uri": "file:///c:/projects/app", "name": "app"}],
+                },
+            )
+        )
+
+        server.handle_message(create_notification("initialized", params={}))
+
+        assert [request.method for request in server.outgoing_requests] == [
+            "window/workDoneProgress/create",
+            "workspace/configuration",
+        ]
+        token = server.outgoing_requests[0].params["token"]
+        assert [notification.method for notification in server.outgoing_notifications] == [
+            "$/progress",
+            "$/progress",
+            "$/progress",
+        ]
+        assert [notification.params["value"]["kind"] for notification in server.outgoing_notifications] == [
+            "begin",
+            "report",
+            "end",
+        ]
+        assert all(notification.params["token"] == token for notification in server.outgoing_notifications)
+
     def test_workspace_configuration_response_updates_global_and_folder_config(self):
         log_levels = []
         server = LspServer(log_level_applier=log_levels.append)

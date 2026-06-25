@@ -60,6 +60,7 @@ class LspServer:
         self.outgoing_notifications: list[JsonRpcMessage] = []
         self.outgoing_requests: list[JsonRpcMessage] = []
         self._next_outgoing_request_id = 1
+        self._next_progress_token_id = 1
         self._pending_configuration_requests: dict[int, list[str | None]] = {}
 
         self._dispatcher = MethodDispatcher()
@@ -148,10 +149,13 @@ class LspServer:
     def request_workspace_configuration(self) -> JsonRpcMessage | None:
         if not self._client_supports_workspace_configuration():
             return None
+        progress_token = self.start_work_done_progress(
+            "Load Robot Framework configuration",
+            "Requesting workspace configuration",
+        )
         scopes: list[str | None] = [None]
         scopes.extend(folder["uri"] for folder in self.workspace_folders if isinstance(folder.get("uri"), str))
-        request_id = self._next_outgoing_request_id
-        self._next_outgoing_request_id += 1
+        request_id = self._next_outgoing_id()
         self._pending_configuration_requests[request_id] = scopes
         request = create_request(
             "workspace/configuration",
@@ -164,7 +168,47 @@ class LspServer:
             },
         )
         self.outgoing_requests.append(request)
+        if progress_token is not None:
+            self.report_work_done_progress(progress_token, "Waiting for client settings")
+            self.end_work_done_progress(progress_token, "Configuration request sent")
         return request
+
+    def start_work_done_progress(self, title: str, message: str | None = None) -> str | None:
+        if not self._client_supports_work_done_progress():
+            return None
+        token = f"robot-lsp-progress-{self._next_progress_token_id}"
+        self._next_progress_token_id += 1
+        self.outgoing_requests.append(
+            create_request(
+                "window/workDoneProgress/create",
+                id=self._next_outgoing_id(),
+                params={"token": token},
+            )
+        )
+        value: dict[str, Any] = {"kind": "begin", "title": title}
+        if message is not None:
+            value["message"] = message
+        self.outgoing_notifications.append(create_notification("$/progress", params={"token": token, "value": value}))
+        return token
+
+    def report_work_done_progress(self, token: str, message: str | None = None, percentage: int | None = None) -> None:
+        value: dict[str, Any] = {"kind": "report"}
+        if message is not None:
+            value["message"] = message
+        if percentage is not None:
+            value["percentage"] = percentage
+        self.outgoing_notifications.append(create_notification("$/progress", params={"token": token, "value": value}))
+
+    def end_work_done_progress(self, token: str, message: str | None = None) -> None:
+        value: dict[str, Any] = {"kind": "end"}
+        if message is not None:
+            value["message"] = message
+        self.outgoing_notifications.append(create_notification("$/progress", params={"token": token, "value": value}))
+
+    def _next_outgoing_id(self) -> int:
+        request_id = self._next_outgoing_request_id
+        self._next_outgoing_request_id += 1
+        return request_id
 
     def _handle_shutdown(
         self,
@@ -359,6 +403,10 @@ class LspServer:
     def _client_supports_workspace_configuration(self) -> bool:
         workspace = self.client_capabilities.get("workspace")
         return isinstance(workspace, dict) and workspace.get("configuration") is True
+
+    def _client_supports_work_done_progress(self) -> bool:
+        window = self.client_capabilities.get("window")
+        return isinstance(window, dict) and window.get("workDoneProgress") is True
 
     def _handle_hover(
         self,

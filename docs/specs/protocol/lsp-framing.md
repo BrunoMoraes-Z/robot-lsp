@@ -40,13 +40,13 @@ class TransportStdio:
 ```
 
 - Read: `sys.stdin.buffer.read(n)` with a loop until Content-Length bytes are filled
-- Escrita: `sys.stdout.buffer.write(header + message)` thread-safe (lock)
-- Erro de escrita: log em stderr
+- Write: `sys.stdout.buffer.write(header + message)` thread-safe (lock)
+- Write error: log to stderr
 
 ## Tests
 
-- Mensagem simples
+- Simple message
 - Message with multibyte body
-- Mensagem recebida em chunks parciais
+- Message received in partial chunks
 - Multiple messages in sequence
-- Content-Type ignorado
+- Content-Type ignored

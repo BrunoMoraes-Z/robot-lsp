@@ -2,7 +2,7 @@
 
 ## Stage
 
-**Planned** (post-MVP)
+**Done** (post-MVP 08)
 
 ## Methods
 
@@ -12,10 +12,16 @@
 
 ## Notes
 
-Progress reporting will be implemented when long-running operations (workspace index, heavy analysis) justify user feedback.
+Progress reporting is available for server-initiated work. It is currently used around outbound `workspace/configuration` requests when the client advertises `window.workDoneProgress: true`.
 
-## Implementation (future)
+## Implementation
 
 - `WorkDoneProgressBegin`, `WorkDoneProgressReport`, `WorkDoneProgressEnd`
 - Token-based progress
-- Cancelamento via `window/workDoneProgress/cancel`
+- `window/workDoneProgress/create` request is queued before progress notifications
+- `$/progress` notifications carry `begin`, `report`, and `end` values
+
+## Future
+
+- Apply the same helper to measured long-running operations such as workspace indexing.
+- Cancellation through `window/workDoneProgress/cancel`.

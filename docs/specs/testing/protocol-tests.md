@@ -42,8 +42,8 @@ def test_initialize():
 
 ## What to Test
 
-- Ciclo completo de initialize → didOpen → completion → shutdown → exit
+- Full initialize -> didOpen -> completion -> shutdown -> exit cycle
 - Out-of-order messages
-- Cancelamento via $/cancelRequest
+- Cancellation through $/cancelRequest
 - Multiple concurrent requests
 - Notifications with no expected response

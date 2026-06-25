@@ -10,16 +10,16 @@
 
 ## Scope Implemented
 
-- Keywords locais
-- Variables locais
-- Imports locais
-- Test cases locais
+- Local keywords
+- Local variables
+- Local imports
+- Local test cases
 
 ## Out Of Scope
 
-- Definitions em resources/libraries importados
+- Definitions in imported resources/libraries
 - Definitions cross-workspace
 
 ## Result
 
-Retorna `Location[]`.
+Returns `Location[]`.

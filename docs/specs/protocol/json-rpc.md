@@ -48,7 +48,7 @@ Stage 01 — JSON-RPC
 
 ### Cancelation
 
-Request de cancelamento:
+Cancellation request:
 
 ```json
 {"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":1}}

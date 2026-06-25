@@ -32,5 +32,5 @@ class ParseCache:
 
 - Implemented with `OrderedDict` inside `ParseService`.
 - Workspace cache remains separate from the open document cache.
-- Versionamento usa `Document.version` e SHA-256 do texto.
+- Versioning uses `Document.version` and SHA-256 of the text.
 - Disk cache will be evaluated when there are real metrics for large workspaces.

@@ -18,7 +18,7 @@ Stage 04 — Robot Framework Model (parse), Stage 06 — Completion, Stage 07 �
 
 ## Future Scope
 
-- Library keywords via libspec
-- Resource keywords via workspace index
+- Library keywords through libspec
+- Resource keywords through workspace index
 - Keyword argument completion
 - Keyword calltips/signature help

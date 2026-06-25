@@ -10,6 +10,6 @@
 
 ## Notes
 
-- Retornar symbols (keywords, test cases) do workspace inteiro
-- Depende do workspace index (Stage 09)
+- Return symbols (keywords, test cases) from the whole workspace
+- Depends on workspace index (Stage 09)
 - Implementation will be done together with workspace index

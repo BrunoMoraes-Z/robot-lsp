@@ -51,6 +51,6 @@ Keyword With Error
 ## Purpose
 
 - `basic_suite.robot`: standard full parser test
-- `syntax_error.robot`: teste de diagnostics
-- `resource.robot`: teste de imports e workspace
-- `group_rf72.robot`: teste de feature detection (RF 7.2+)
+- `syntax_error.robot`: diagnostics test
+- `resource.robot`: imports and workspace test
+- `group_rf72.robot`: feature detection test (RF 7.2+)
