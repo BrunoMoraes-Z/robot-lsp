@@ -6,38 +6,38 @@ done
 
 ## Goal
 
-Implementar refactoring inicial via `prepareRename`, `rename` e `WorkspaceEdit`.
+Implement initial refactoring through `prepareRename`, `rename`, and `WorkspaceEdit`.
 
 ## Scope
 
 - `textDocument/prepareRename`
 - `textDocument/rename`
-- `WorkspaceEdit` com `changes`
-- Rename de variables, keywords e test cases locais
-- Rename em documentos indexados quando `WorkspaceIndex` estiver disponível
+- `WorkspaceEdit` with `changes`
+- Rename local variables, keywords, and test cases
+- Rename in indexed documents when `WorkspaceIndex` is available
 
 ## Out Of Scope
 
-- Validação semântica profunda do novo nome
-- Rename inteligente por escopo
-- Rename de symbols importados a partir de clique em usage importada
-- Aplicação de edits no filesystem
+- Deep semantic validation of the new name
+- Scope-aware rename
+- Rename imported symbols from a click on imported usage
+- Applying edits to the filesystem
 
 ## Deliverables
 
 - `src/robot_lsp/application/refactoring_service.py`
-- Handlers no `LspServer`
-- Capability `renameProvider` com `prepareProvider: true`
-- Testes unitários de service e handlers LSP
+- Handlers in `LspServer`
+- `renameProvider` capability with `prepareProvider: true`
+- Unit tests for service and LSP handlers
 
 ## Acceptance Criteria
 
-- `prepareRename` retorna range e placeholder quando símbolo é renomeável
-- `prepareRename` retorna `null` para símbolos desconhecidos
-- `rename` retorna `WorkspaceEdit`
-- Rename local altera todas as ocorrências textuais exatas no documento aberto
-- Rename com `WorkspaceIndex` inclui arquivos indexados
-- Handler retorna `null` quando service não está configurado
+- `prepareRename` returns range and placeholder when a symbol is renameable
+- `prepareRename` returns `null` for unknown symbols
+- `rename` returns `WorkspaceEdit`
+- Local rename changes all exact textual occurrences in the open document
+- Rename with `WorkspaceIndex` includes indexed files
+- Handler returns `null` when service is not configured
 
 ## Tests
 
@@ -51,8 +51,8 @@ Implementar refactoring inicial via `prepareRename`, `rename` e `WorkspaceEdit`.
 
 ## Risks
 
-- Rename textual exato pode renomear ocorrências que não são semanticamente o mesmo símbolo.
-- Rename por escopo será refinado quando o modelo semântico de uso/definição amadurecer.
+- Exact textual rename can rename occurrences that are not semantically the same symbol.
+- Scope-aware rename will be refined when the semantic usage/definition model matures.
 
 ## Dependencies
 
@@ -62,6 +62,6 @@ Implementar refactoring inicial via `prepareRename`, `rename` e `WorkspaceEdit`.
 
 ## Notes
 
-- Stage concluída com `RefactoringService` e integração LSP.
-- WorkspaceEdit usa `changes` por URI.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with `RefactoringService` and LSP integration.
+- WorkspaceEdit uses `changes` by URI.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

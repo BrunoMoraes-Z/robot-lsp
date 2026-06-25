@@ -10,11 +10,11 @@ Post-MVP 01 — Robot Framework 7.x compatibility matrix
 
 | RF Version | Status | Notes |
 |---|---|---|
-| 7.0.1 | CI target | Mínimo suportado |
+| 7.0.1 | CI target | Minimum supported |
 | 7.1.1 | CI target | |
 | 7.2.2 | CI target | Group/END |
 | 7.3.2 | CI target | |
-| 7.4.2 | CI target + locally validated | Versão instalada no ambiente atual |
+| 7.4.2 | CI target + locally validated | Version installed in the current environment |
 
 ## Python Versions
 
@@ -33,10 +33,10 @@ Post-MVP 01 — Robot Framework 7.x compatibility matrix
 | Linux | CI target |
 | macOS | Future |
 
-## Test Strategy por Versão
+## Test Strategy by Version
 
 ```bash
-# Criar ambiente para cada versão do RF
+# Create environment for each RF version
 uv venv --python 3.12 .venv-rf70
 uv pip install robotframework==7.0.1
 uv run pytest tests/ -v
@@ -48,7 +48,7 @@ uv run pytest tests/ -v
 
 ## Feature Detection Tests
 
-Testes específicos para verificar que cada versão é detectada corretamente e que features ausentes não causam erro.
+Specific tests to verify that each version is detected correctly and that missing features do not cause errors.
 
 ## Current CI
 

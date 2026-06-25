@@ -2,7 +2,7 @@
 
 ## Stage
 
-**Planned** (pós-MVP)
+**Planned** (post-MVP)
 
 ## Methods
 
@@ -12,7 +12,7 @@
 
 ## Notes
 
-Progress reporting será implementado quando operações longas (workspace index, análise pesada) justificarem feedback ao usuário.
+Progress reporting will be implemented when long-running operations (workspace index, heavy analysis) justify user feedback.
 
 ## Implementation (future)
 

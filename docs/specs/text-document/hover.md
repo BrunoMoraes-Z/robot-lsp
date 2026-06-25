@@ -10,10 +10,10 @@ Stage 07 — Hover
 
 ## Initial Scope
 
-- Hover em keyword local: nome, args, docstring
-- Hover em variável local: tipo, valor
-- Hover em import: tipo, caminho
-- Formatação Markdown
+- Hover on local keyword: name, args, docstring
+- Hover on local variable: type, value
+- Hover on import: type, path
+- Markdown formatting
 
 ## Implementation
 
@@ -34,11 +34,11 @@ class HoverProvider(ABC):
     def compute(context: HoverContext) -> Hover | None
 ```
 
-### Providers Implementados
+### Implemented Providers
 
-1. **KeywordHoverProvider**: encontra keyword na posição, retorna `**Nome(args)**` + docstring
-2. **VariableHoverProvider**: encontra variável na posição, retorna tipo e valor
-3. **ImportHoverProvider**: encontra import na posição, retorna tipo e caminho
+1. **KeywordHoverProvider**: finds keyword at position, returns `**Name(args)**` + docstring
+2. **VariableHoverProvider**: finds variable at position, returns type and value
+3. **ImportHoverProvider**: finds import at position, returns type and path
 
 ### HoverContext
 
@@ -49,7 +49,7 @@ class HoverContext:
     position: LspPosition
     document: Document
     suite: RobotSuite | None
-    word_at_position: str | None  # palavra sob o cursor
+    word_at_position: str | None  # word under the cursor
 ```
 
 ### Hover Response
@@ -66,19 +66,19 @@ class Hover:
 - Keyword: `**keyword_name(args)**\n\nDocstring text`
 - Variable: `**${var}**\`\`\`\nType: scalar\nValue: "hello"\`\`\``
 - Import: `**Library**: Collections`
-- Vazio: `None` (null)
+- Empty: `None` (null)
 
 ## Future Scope
 
-- Hover em keywords de libraries (via libspec)
-- Hover em BuiltIn keywords
-- Signature help para argumentos
-- Documentation rica (exemplo, tags, etc.)
+- Hover on library keywords (through libspec)
+- Hover on BuiltIn keywords
+- Signature help for arguments
+- Rich documentation (examples, tags, etc.)
 
 ## Tests
 
-- Keyword local → markdown correto
-- Variável → tipo e valor
-- Import → tipo
-- Símbolo inexistente → None
-- Range correto
+- Local keyword -> correct markdown
+- Variable -> type and value
+- Import -> type
+- Missing symbol -> None
+- Correct range

@@ -6,41 +6,41 @@ done
 
 ## Goal
 
-Implementar sincronização de documentos (didOpen, didChange, didClose) e o gerenciamento de workspace.
+Implement document synchronization (didOpen, didChange, didClose) and workspace management.
 
 ## Scope
 
-- `textDocument/didOpen`: receber documento, armazenar, iniciar tracking
-- `textDocument/didChange` (sync Full): substituir conteúdo completo
-- `textDocument/didClose`: remover documento do tracking
-- `DocumentStore`: repositório de documentos abertos
-- `Document`: URI, path, texto, versão, languageId
-- URI helpers: `file://` → path, path → `file://`
-- Conversão de posições LSP:
-  - Line: 0-based
-  - Character: 0-based UTF-16 code units
-- Operações com range: calcular texto de um range, split por lines
+- `textDocument/didOpen`: receive document, store it, start tracking
+- `textDocument/didChange` (Full sync): replace full content
+- `textDocument/didClose`: remove document from tracking
+- `DocumentStore`: repository for open documents
+- `Document`: URI, path, text, version, languageId
+- URI helpers: `file://` -> path, path -> `file://`
+- LSP position conversion:
+- Line: 0-based
+- Character: 0-based UTF-16 code units
+- Range operations: calculate text for a range, split by lines
 
 ## Out Of Scope
 
-- Sync incremental (deixado para depois)
+- Incremental sync (deferred)
 - Diagnostics (Stage 05)
-- Workspace folders dinâmicos (deixado para Stage 13)
+- Dynamic workspace folders (deferred to Stage 13)
 
 ## Deliverables
 
-- `src/robot_lsp/domain/positions.py` (LspPosition, LspRange, cálculos UTF-16)
+- `src/robot_lsp/domain/positions.py` (LspPosition, LspRange, UTF-16 calculations)
 - `src/robot_lsp/application/document_store.py` (DocumentStore, Document)
-- Testes unitários de posições, conversões e store
+- Unit tests for positions, conversions, and store
 
 ## Acceptance Criteria
 
-- `didOpen` adiciona documento ao `DocumentStore`
-- `didChange` com `textDocumentSyncKind.Full` substitui conteúdo e incrementa versão
-- `didClose` remove documento
-- URI `file:///c:/projects/test.robot` → path correto
-- Conversão UTF-16 funciona: strings com emoji (2 code units) e acentos (1 code unit)
-- `LspRange` calcula texto de um range corretamente
+- `didOpen` adds document to `DocumentStore`
+- `didChange` with `textDocumentSyncKind.Full` replaces content and increments version
+- `didClose` removes document
+- URI `file:///c:/projects/test.robot` maps to the correct path
+- UTF-16 conversion works for strings with emoji (2 code units) and accented characters (1 code unit)
+- `LspRange` correctly calculates text for a range
 
 ## Tests
 
@@ -57,8 +57,8 @@ Implementar sincronização de documentos (didOpen, didChange, didClose) e o ger
 
 ## Risks
 
-- Conversão UTF-16 incorreta causa bugs de posição em todos os recursos do LSP
-- URIs com encoding percentual precisam ser decodificadas
+- Incorrect UTF-16 conversion causes position bugs across all LSP features
+- URIs with percent encoding must be decoded
 
 ## Dependencies
 
@@ -66,7 +66,7 @@ Implementar sincronização de documentos (didOpen, didChange, didClose) e o ger
 
 ## Notes
 
-- Stage concluída com `DocumentStore`, `Document`, URI helpers, conversão UTF-16 e handlers LSP de document sync.
-- `didChange` usa sync full conforme ADR-0005 e specs de sincronização.
-- `position_to_utf16_offset` trata texto vazio, acentos e emoji (2 UTF-16 code units).
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with `DocumentStore`, `Document`, URI helpers, UTF-16 conversion, and document sync LSP handlers.
+- `didChange` uses full sync according to ADR-0005 and synchronization specs.
+- `position_to_utf16_offset` handles empty text, accented characters, and emoji (2 UTF-16 code units).
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

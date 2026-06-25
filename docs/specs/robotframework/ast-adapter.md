@@ -6,7 +6,7 @@ Stage 04 — Robot Framework Model
 
 ## Goal
 
-Mapear o AST do Robot Framework (estrutura mutável entre versões) para modelos intermediários estáveis em `domain/models.py`.
+Map the Robot Framework AST (a mutable structure across versions) to stable intermediate models in `domain/models.py`.
 
 ## Architecture
 
@@ -43,10 +43,10 @@ class RobotFrameworkASTAdapter:
 ## Version-Specific Handling
 
 ```python
-# RF 7.0+: ReturnSetting (setting) diferente de Return (statement)
+# RF 7.0+: ReturnSetting (setting) differs from Return (statement)
 if self._features.version.at_least(7, 0):
-    # Tratar ReturnSetting como setting
-    # Tratar Return como keyword call
+    # Treat ReturnSetting as a setting
+    # Treat Return as a keyword call
 ```
 
 ## Visitor Implementation
@@ -72,12 +72,12 @@ class ModelBuildingVisitor(ModelVisitor):
 
 ## Error Handling
 
-- Erros de sintaxe são retornados separadamente do modelo
-- Adapter nunca lança exceção; coleta erros em lista
-- ParseService retorna `ParseResult(suite=..., errors=[...])`
+- Syntax errors are returned separately from the model
+- Adapter never raises exceptions; it collects errors in a list
+- ParseService returns `ParseResult(suite=..., errors=[...])`
 
 ## Tests
 
-- Cada tipo de statement/bloco tem teste de mapeamento
-- Erros de parse são capturados sem crash
-- FeatureSet condicional afeta mapeamento
+- Each statement/block type has a mapping test
+- Parse errors are captured without crashing
+- Conditional FeatureSet affects mapping

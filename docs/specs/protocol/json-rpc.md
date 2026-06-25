@@ -6,7 +6,7 @@ Stage 01 — JSON-RPC
 
 ## Methods
 
-- N/A (transporte, não método LSP)
+- N/A (transport, not an LSP method)
 
 ## Specification
 
@@ -38,13 +38,13 @@ Stage 01 — JSON-RPC
 
 | Code | Name | Description |
 |---|---|---|
-| -32700 | ParseError | JSON inválido |
-| -32600 | InvalidRequest | Estrutura da mensagem inválida |
-| -32601 | MethodNotFound | Método não existe |
-| -32602 | InvalidParams | Parâmetros inválidos |
-| -32603 | InternalError | Erro interno |
-| -32002 | ServerNotInitialized | LSP não inicializado |
-| -32003 | ServerShuttingDown | LSP desligando |
+| -32700 | ParseError | Invalid JSON |
+| -32600 | InvalidRequest | Invalid message structure |
+| -32601 | MethodNotFound | Method does not exist |
+| -32602 | InvalidParams | Invalid parameters |
+| -32603 | InternalError | Internal error |
+| -32002 | ServerNotInitialized | LSP not initialized |
+| -32003 | ServerShuttingDown | LSP shutting down |
 
 ### Cancelation
 
@@ -76,6 +76,6 @@ class JsonRpcMessage:
 
 ## Architecture
 
-- Parser puro, sem estado
-- Validação de campos obrigatórios
-- Separação entre request, notification e response pelo campo `id`
+- Pure, stateless parser
+- Required field validation
+- Separation between request, notification, and response by the `id` field

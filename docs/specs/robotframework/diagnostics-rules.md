@@ -8,27 +8,27 @@ Stage 05 — Diagnostics
 
 ### Parse Errors
 
-- Erros de sintaxe do Robot Framework são reportados como `error`
-- Inclui: seção inválida, argumento faltando, sintaxe de IF/WHILE/FOR incorreta, etc.
-- Range obtido do erro reportado pelo RF
+- Robot Framework syntax errors are reported as `error`
+- Includes: invalid section, missing argument, incorrect IF/WHILE/FOR syntax, etc.
+- Range obtained from the error reported by RF
 
 ### Warnings (future)
 
-- Template em test case sem argumentos
-- Força bruta (force tags) sobrescrevendo tags
-- Documentação vazia em keyword pública
+- Template in test case without arguments
+- Force tags overriding tags
+- Empty documentation in public keyword
 
 ### Semantic Errors (future)
 
-- Import de library/resource/variables não encontrado
-- Keyword chamada mas não definida nem importada
-- Variável referenciada mas não definida
-- Argumento posicional após argumento nomeado
-- Template ausente em test case que usa template
+- Library/resource/variables import not found
+- Keyword called but not defined or imported
+- Variable referenced but not defined
+- Positional argument after named argument
+- Missing template in test case that uses a template
 
 ## Severity Mapping
 
-| Tipo | Severidade LSP | Código |
+| Type | LSP Severity | Code |
 |---|---|---|
 | Parse error | 1 (Error) | parse_error |
 | Import not found | 1 (Error) | import_not_found |

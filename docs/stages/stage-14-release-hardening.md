@@ -6,44 +6,44 @@ done
 
 ## Goal
 
-Preparar o MVP para execução real como language server via stdio, com documentação mínima, CI e validações finais.
+Prepare the MVP for real execution as a language server over stdio, with minimal documentation, CI, and final validation.
 
 ## Scope
 
-- Runner stdio real
-- CLI básica
-- Logging em stderr
+- Real stdio runner
+- Basic CLI
+- Logging to stderr
 - CI pipeline
-- Documentação de uso
-- Changelog inicial
-- Matriz de compatibilidade atualizada
+- Usage documentation
+- Initial changelog
+- Updated compatibility matrix
 
 ## Out Of Scope
 
-- Publicação em PyPI
-- Teste real contra todos os Robot Framework 7.x
-- Tracing distribuído
-- Logs estruturados avançados
-- Subprocess integration tests completos
+- Publishing to PyPI
+- Real testing against every Robot Framework 7.x version
+- Distributed tracing
+- Advanced structured logs
+- Complete subprocess integration tests
 
 ## Deliverables
 
-- `src/robot_lsp/main.py` com loop LSP stdio
+- `src/robot_lsp/main.py` with LSP stdio loop
 - `README.md`
 - `docs/usage.md`
 - `docs/changelog.md`
 - `.github/workflows/ci.yml`
-- Testes unitários do runner
+- Runner unit tests
 
 ## Acceptance Criteria
 
-- `python -m robot_lsp --version` imprime versão
-- Runner responde sessão mínima `initialize`, `shutdown`, `exit`
-- Runner responde JSON-RPC error para mensagem inválida
-- Logs são enviados para stderr
-- CI executa pytest e compileall
-- Documentação de uso existe
-- Changelog inicial existe
+- `python -m robot_lsp --version` prints version
+- Runner responds to a minimal `initialize`, `shutdown`, `exit` session
+- Runner responds with JSON-RPC error for invalid messages
+- Logs are sent to stderr
+- CI runs pytest and compileall
+- Usage documentation exists
+- Initial changelog exists
 
 ## Tests
 
@@ -53,9 +53,9 @@ Preparar o MVP para execução real como language server via stdio, com document
 
 ## Risks
 
-- Diagnostics assíncronos via processo real ainda precisam de teste end-to-end com subprocesso.
-- CI testa a versão resolvida de Robot Framework, não uma matriz completa de RF 7.x.
-- Publicação/distribuição em PyPI ainda não foi automatizada.
+- Asynchronous diagnostics through the real process still need end-to-end subprocess testing.
+- CI tests the resolved Robot Framework version, not a complete RF 7.x matrix.
+- Publishing/distribution to PyPI has not been automated yet.
 
 ## Dependencies
 
@@ -66,5 +66,5 @@ Preparar o MVP para execução real como language server via stdio, com document
 
 ## Notes
 
-- O runner injeta um publisher que escreve diagnostics diretamente no transporte, evitando depender apenas de fila em memória.
-- stdout é reservado exclusivamente ao protocolo LSP.
+- The runner injects a publisher that writes diagnostics directly to the transport, avoiding reliance only on an in-memory queue.
+- stdout is reserved exclusively for the LSP protocol.

@@ -8,43 +8,43 @@ All stages
 
 ### Unit Tests (`tests/unit/`)
 
-- Testam uma única classe/função isoladamente
-- Mocks para dependências externas (infrastructure, RF)
-- Execução rápida (segundos)
-- Cobertura: todas as funções públicas de domain, application e protocol
+- Test a single class/function in isolation
+- Mocks for external dependencies (infrastructure, RF)
+- Fast execution (seconds)
+- Coverage: all public functions in domain, application, and protocol
 
 ### Integration Tests (`tests/integration/`)
 
-- Testam interação entre camadas
+- Test interaction between layers
 - Usam fixtures `.robot` reais
-- Testam parser/adapter com RF real instalado
-- Testam sessão LSP via transporte em memória
-- Execução moderada (minutos)
+- Test parser/adapter with real installed RF
+- Test LSP session through in-memory transport
+- Moderate execution time (minutes)
 
 ### Protocol Tests (dentro de `tests/unit/protocol/`)
 
-- Testam JSON-RPC e framing contra especificação
+- Test JSON-RPC and framing against the specification
 - Testam lifecycle LSP
-- Usam transporte em memória (não stdio real)
+- Use in-memory transport (not real stdio)
 
 ## Test Framework
 
 - `pytest` como framework principal
-- `conftest.py` para fixtures compartilhadas
-- `pytest-cov` para cobertura (opcional)
-- `unittest.mock` para mocks
+- `conftest.py` for shared fixtures
+- `pytest-cov` for coverage (optional)
+- `unittest.mock` for mocks
 
 ## Fixtures
 
 ### Robot Files (`tests/integration/fixtures/`)
 
-- `basic_suite.robot`: suite mínima com settings, variables, test case, keyword
-- `settings.robot`: todas as variações de settings
+- `basic_suite.robot`: minimal suite with settings, variables, test case, keyword
+- `settings.robot`: all settings variations
 - `variables.robot`: scalar, list, dict, environment variables
-- `keywords.robot`: keyword com argumentos, docstring, body
-- `syntax_error.robot`: arquivo com erros de sintaxe
-- `resource.robot`: resource file para testes de import
-- `group_rf72.robot`: arquivo usando GROUP/END (RF 7.2+)
+- `keywords.robot`: keyword with arguments, docstring, body
+- `syntax_error.robot`: file with syntax errors
+- `resource.robot`: resource file for import tests
+- `group_rf72.robot`: file using GROUP/END (RF 7.2+)
 - `secret_variable.robot`: uso de secret variable (RF 7.4+)
 
 ### In-Memory Transport
@@ -52,7 +52,7 @@ All stages
 ```python
 @pytest.fixture
 def in_memory_transport():
-    """Transport que não usa stdio real."""
+    """Transport that does not use real stdio."""
     reader = io.StringIO()
     writer = io.StringIO()
     transport = TransportStdio(reader=reader, writer=writer)
@@ -62,20 +62,20 @@ def in_memory_transport():
 ## Conftest Structure
 
 - `tests/conftest.py`: fixtures globais
-- `tests/unit/conftest.py`: fixtures para unit tests
-- `tests/integration/conftest.py`: fixtures com RF real
+- `tests/unit/conftest.py`: fixtures for unit tests
+- `tests/integration/conftest.py`: fixtures with real RF
 
 ## Naming Convention
 
 - Arquivos: `test_<module>.py`
 - Classes: `Test<Feature>`
-- Funções: `test_<feature>_<scenario>`
+- Functions: `test_<feature>_<scenario>`
 
 ## Compatibility Matrix
 
 | RF Version | Test Runner |
 |---|---|
-| 7.0.x | CI (opcional, mínimo) |
+| 7.0.x | CI (optional, minimum) |
 | 7.1.x | CI |
 | 7.2.x | CI |
 | 7.3.x | CI |

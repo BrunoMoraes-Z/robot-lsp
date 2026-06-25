@@ -6,38 +6,38 @@ done
 
 ## Goal
 
-Reduzir trabalho repetido em requests comuns e registrar decisões sobre isolamento antes de adicionar concorrência ou subprocessos.
+Reduce repeated work in common requests and record isolation decisions before adding concurrency or subprocesses.
 
 ## Scope
 
-- Cache de parse de documentos abertos
-- Invalidação por URI, versão e hash do texto
-- Limite LRU configurável
-- Revisão do cache de workspace existente
-- Decisão explícita sobre worker pool e subprocess isolation
+- Parse cache for open documents
+- Invalidation by URI, version, and text hash
+- Configurable LRU limit
+- Review of the existing workspace cache
+- Explicit decision about worker pool and subprocess isolation
 
 ## Out Of Scope
 
-- Worker pool para handlers LSP
-- Subprocesso para indexação
-- Cache persistido em disco
-- Telemetria ou profiling detalhado
+- Worker pool for LSP handlers
+- Subprocess for indexing
+- Persistent disk cache
+- Detailed telemetry or profiling
 
 ## Deliverables
 
-- Cache LRU em `src/robot_lsp/application/parse_service.py`
-- Testes unitários de cache e invalidação
-- Atualização das specs de performance
+- LRU cache in `src/robot_lsp/application/parse_service.py`
+- Unit tests for cache and invalidation
+- Performance spec updates
 
 ## Acceptance Criteria
 
-- Documento inalterado reutiliza o mesmo `ParseResult`
-- Mudança de texto dispara novo parse
-- Mudança de versão dispara novo parse
-- Cache respeita limite LRU configurável
-- Cache pode ser limpo por URI
-- Workspace index mantém cache por mtime + hash
-- Subprocess isolation fica documentado como decisão futura baseada em métricas
+- Unchanged document reuses the same `ParseResult`
+- Text changes trigger a new parse
+- Version changes trigger a new parse
+- Cache respects the configurable LRU limit
+- Cache can be cleared by URI
+- Workspace index keeps cache by mtime + hash
+- Subprocess isolation remains documented as a future metrics-based decision
 
 ## Tests
 
@@ -50,9 +50,9 @@ Reduzir trabalho repetido em requests comuns e registrar decisões sobre isolame
 
 ## Risks
 
-- O cache guarda `ParseResult` em memória e pode reter modelos de documentos grandes até eviction.
-- Como handlers ainda são síncronos, operações realmente longas ainda podem bloquear até stages futuros.
-- Cache em disco não existe; workspaces grandes ainda dependem de cache em memória.
+- The cache stores `ParseResult` in memory and may retain large document models until eviction.
+- Since handlers are still synchronous, truly long operations can still block until future stages.
+- There is no disk cache; large workspaces still depend on in-memory cache.
 
 ## Dependencies
 
@@ -62,5 +62,5 @@ Reduzir trabalho repetido em requests comuns e registrar decisões sobre isolame
 
 ## Notes
 
-- A otimização foi aplicada no `ParseService`, então diagnostics, completion, hover, navigation e refactoring se beneficiam sem mudanças locais.
-- Worker pool e subprocesso foram postergados para evitar complexidade prematura.
+- The optimization was applied in `ParseService`, so diagnostics, completion, hover, navigation, and refactoring benefit without local changes.
+- Worker pool and subprocesses were postponed to avoid premature complexity.

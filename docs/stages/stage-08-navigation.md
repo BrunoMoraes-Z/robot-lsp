@@ -6,7 +6,7 @@ done
 
 ## Goal
 
-Implementar navegação local ao documento atual para símbolos do Robot Framework.
+Implement navigation local to the current document for Robot Framework symbols.
 
 ## Scope
 
@@ -15,31 +15,31 @@ Implementar navegação local ao documento atual para símbolos do Robot Framewo
 - `textDocument/documentSymbol`
 - `textDocument/foldingRange`
 - `textDocument/selectionRange`
-- Escopo local ao documento aberto atual
-- Keywords, variables, imports, test cases e ranges de seção
+- Scope local to the currently open document
+- Keywords, variables, imports, test cases, and section ranges
 
 ## Out Of Scope
 
-- Referências em todo o workspace
-- Definition para symbols importados de resources/libraries
+- Workspace-wide references
+- Definition for symbols imported from resources/libraries
 - Call hierarchy/type hierarchy
-- Resolução semântica profunda de libraries
+- Deep semantic library resolution
 
 ## Deliverables
 
 - `src/robot_lsp/application/navigation_service.py`
-- Integração dos handlers no `LspServer`
-- Capabilities de navegação no `initialize`
-- Testes unitários de service e handlers LSP
+- Handler integration in `LspServer`
+- Navigation capabilities in `initialize`
+- Unit tests for service and LSP handlers
 
 ## Acceptance Criteria
 
-- `definition` retorna localizações para keywords/variables/imports locais
-- `references` retorna ocorrências locais com suporte a `includeDeclaration`
-- `documentSymbol` retorna imports, variables, test cases e keywords
-- `foldingRange` retorna ranges de sections, test cases e keywords
-- `selectionRange` retorna range do símbolo com parent de linha quando possível
-- Handlers retornam listas vazias quando service/documento não existe
+- `definition` returns locations for local keywords/variables/imports
+- `references` returns local occurrences with `includeDeclaration` support
+- `documentSymbol` returns imports, variables, test cases, and keywords
+- `foldingRange` returns ranges for sections, test cases, and keywords
+- `selectionRange` returns symbol range with a line parent when possible
+- Handlers return empty lists when service/document does not exist
 
 ## Tests
 
@@ -58,8 +58,8 @@ Implementar navegação local ao documento atual para símbolos do Robot Framewo
 
 ## Risks
 
-- O escopo local pode retornar resultados incompletos até Stage 09.
-- Ranges de definição dependem da granularidade do adapter AST atual.
+- Local scope may return incomplete results until Stage 09.
+- Definition ranges depend on the granularity of the current AST adapter.
 
 ## Dependencies
 
@@ -69,7 +69,7 @@ Implementar navegação local ao documento atual para símbolos do Robot Framewo
 
 ## Notes
 
-- Stage concluída com navegação local ao documento atual.
-- As capabilities `definitionProvider`, `referencesProvider`, `documentSymbolProvider`, `foldingRangeProvider` e `selectionRangeProvider` são anunciadas no `initialize`.
-- Navegação cross-file fica para Stage 09 — Workspace Index.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with navigation local to the current document.
+- The `definitionProvider`, `referencesProvider`, `documentSymbolProvider`, `foldingRangeProvider`, and `selectionRangeProvider` capabilities are advertised in `initialize`.
+- Cross-file navigation is deferred to Stage 09: Workspace Index.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

@@ -6,40 +6,40 @@ done
 
 ## Goal
 
-Implementar o lifecycle básico do LSP: initialize, initialized, shutdown e exit, com estados do servidor e capabilities mínimas.
+Implement the basic LSP lifecycle: initialize, initialized, shutdown, and exit, with server states and minimal capabilities.
 
 ## Scope
 
-- `initialize` request: processar ClientCapabilities, retornar ServerCapabilities
+- `initialize` request: process ClientCapabilities and return ServerCapabilities
 - `initialized` notification
-- `shutdown` request: preparar servidor para desligar
-- `exit` notification: encerrar processo
-- Estados: `uninitialized`, `running`, `shuttingDown`, `exited`
-- Validação: mensagens antes de `initialize` geram erro; mensagens depois de `shutdown` geram erro
-- Capabilities mínimas:
-  - `textDocumentSync`: Full
-  - `completionProvider`: triggerCharacters=[" "], resolveProvider=false
-  - `hoverProvider`: true
+- `shutdown` request: prepare server for shutdown
+- `exit` notification: terminate process
+- States: `uninitialized`, `running`, `shuttingDown`, `exited`
+- Validation: messages before `initialize` return an error; messages after `shutdown` return an error
+- Minimal capabilities:
+- `textDocumentSync`: Full
+- `completionProvider`: triggerCharacters=[" "], resolveProvider=false
+- `hoverProvider`: true
 
 ## Out Of Scope
 
-- Diagnósticos, completion, hover funcionais (apenas declarar capabilities)
+- Functional diagnostics, completion, or hover (only declare capabilities)
 
 ## Deliverables
 
-- `src/robot_lsp/protocol/server.py` com `LspServer`
-- `src/robot_lsp/protocol/lsp_types.py` com tipos auxiliares
-- Testes de sessão LSP via transporte em memória
+- `src/robot_lsp/protocol/server.py` with `LspServer`
+- `src/robot_lsp/protocol/lsp_types.py` with auxiliary types
+- LSP session tests through in-memory transport
 
 ## Acceptance Criteria
 
-- Servidor responde `initialize` com `capabilities` corretas
-- ServerCapabilities inclui `textDocumentSync: { openClose: true, change: Full }`
-- `initialized` não gera resposta (é notification)
-- `shutdown` retorna `null`
-- `exit` encerra o processo
-- Requests antes de `initialize` retornam erro `-32002` (server not initialized)
-- Requests depois de `shutdown` retornam erro `-32003` (server shutting down)
+- Server responds to `initialize` with correct `capabilities`
+- ServerCapabilities include `textDocumentSync: { openClose: true, change: Full }`
+- `initialized` does not generate a response (it is a notification)
+- `shutdown` returns `null`
+- `exit` terminates the process
+- Requests before `initialize` return error `-32002` (server not initialized)
+- Requests after `shutdown` return error `-32003` (server shutting down)
 
 ## Tests
 
@@ -53,7 +53,7 @@ Implementar o lifecycle básico do LSP: initialize, initialized, shutdown e exit
 
 ## Risks
 
-- Estado de shutdown deve ser atômico para evitar race conditions
+- Shutdown state must be atomic to avoid race conditions
 
 ## Dependencies
 
@@ -61,7 +61,7 @@ Implementar o lifecycle básico do LSP: initialize, initialized, shutdown e exit
 
 ## Notes
 
-- Stage concluída com `LspServer`, `ServerState`, `TextDocumentSyncKind` e capabilities iniciais.
-- `textDocumentSync` retorna `{ "openClose": true, "change": Full }` conforme acceptance criteria.
-- `exit` define `exit_code=0` apenas após `shutdown`; caso contrário define `exit_code=1`.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with `LspServer`, `ServerState`, `TextDocumentSyncKind`, and initial capabilities.
+- `textDocumentSync` returns `{ "openClose": true, "change": Full }` according to the acceptance criteria.
+- `exit` sets `exit_code=0` only after `shutdown`; otherwise it sets `exit_code=1`.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

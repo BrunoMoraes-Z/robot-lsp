@@ -6,39 +6,39 @@ done
 
 ## Goal
 
-Indexar arquivos `.robot` e `.resource` do workspace para permitir resolução básica de imports, keywords e variables cross-file.
+Index `.robot` and `.resource` workspace files to allow basic cross-file import, keyword, and variable resolution.
 
 ## Scope
 
-- Indexação de arquivos `.robot` e `.resource`
-- `WorkspaceEntry` com URI, path, suite, mtime e hash de conteúdo
-- Busca de keywords e variables por nome
-- Resolução básica de imports `Resource`, `Variables` e `Library`
-- Cache simples por mtime + hash de conteúdo
-- Integração opcional com completion/navigation para symbols de resources importados
+- Index `.robot` and `.resource` files
+- `WorkspaceEntry` with URI, path, suite, mtime, and content hash
+- Search keywords and variables by name
+- Basic import resolution for `Resource`, `Variables`, and `Library`
+- Simple cache by mtime + content hash
+- Optional integration with completion/navigation for symbols from imported resources
 
 ## Out Of Scope
 
-- Watching de arquivos via `workspace/didChangeWatchedFiles`
-- Cache em disco
-- Indexação assíncrona/worker pool
-- Libspec completo de libraries Python
-- References globais em todo workspace
+- File watching through `workspace/didChangeWatchedFiles`
+- Disk cache
+- Asynchronous indexing/worker pool
+- Full libspec for Python libraries
+- Global references across the whole workspace
 
 ## Deliverables
 
 - `src/robot_lsp/application/workspace.py`
-- Testes unitários de indexação, resolução e integração com navigation/completion
+- Unit tests for indexing, resolution, and integration with navigation/completion
 
 ## Acceptance Criteria
 
-- `scan(root)` indexa `.robot` e `.resource`
-- `find_keyword(name)` retorna keywords indexadas
-- `find_variable(name)` retorna variables indexadas
-- `resolve_import()` resolve `Resource` e `Variables` relativos ao arquivo atual
-- `resolve_import()` resolve libraries Python/Robot padrão quando possível
-- `CompletionService` pode incluir keywords/variables de resource importado
-- `NavigationService.definition()` pode apontar para keyword/variable em resource importado
+- `scan(root)` indexes `.robot` and `.resource`
+- `find_keyword(name)` returns indexed keywords
+- `find_variable(name)` returns indexed variables
+- `resolve_import()` resolves `Resource` and `Variables` relative to the current file
+- `resolve_import()` resolves standard Python/Robot libraries when possible
+- `CompletionService` can include keywords/variables from imported resources
+- `NavigationService.definition()` can point to a keyword/variable in an imported resource
 
 ## Tests
 
@@ -55,8 +55,8 @@ Indexar arquivos `.robot` e `.resource` do workspace para permitir resolução b
 
 ## Risks
 
-- Resolução de libraries ainda não substitui libdoc/libspec completo.
-- Indexação síncrona pode ficar pesada em workspaces grandes; Stage 12 tratará performance/isolamento.
+- Library resolution still does not replace full libdoc/libspec support.
+- Synchronous indexing can become heavy in large workspaces; Stage 12 will address performance/isolation.
 
 ## Dependencies
 
@@ -66,7 +66,7 @@ Indexar arquivos `.robot` e `.resource` do workspace para permitir resolução b
 
 ## Notes
 
-- Stage concluída com indexação local síncrona e cache em memória.
-- Resolução de `Library` usa `importlib.util.find_spec()` e fallback para `robot.libraries.<name>`.
-- Resolução cross-file inicial cobre resources importados, suficiente para foundation de Stage 10+.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with local synchronous indexing and in-memory cache.
+- `Library` resolution uses `importlib.util.find_spec()` and falls back to `robot.libraries.<name>`.
+- Initial cross-file resolution covers imported resources, which is sufficient for the Stage 10+ foundation.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

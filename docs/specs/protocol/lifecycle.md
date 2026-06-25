@@ -77,6 +77,6 @@ class LspServer:
     def handle_message(self, msg: JsonRpcMessage) -> JsonRpcMessage | None
 ```
 
-- Retorna `JsonRpcMessage` para responses, `None` para notifications
-- Métodos privados `_handle_initialize`, `_handle_shutdown`, etc.
-- Valida estado atual antes de processar cada método
+- Returns `JsonRpcMessage` for responses, `None` for notifications
+- Private methods `_handle_initialize`, `_handle_shutdown`, etc.
+- Validates current state before processing each method

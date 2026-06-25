@@ -34,6 +34,28 @@ class TestCompletionService:
         ]
         assert completion.items[0].kind == CompletionItemKind.SNIPPET
         assert completion.items[0].detail == "Robot Framework section"
+        assert completion.items[0].to_lsp()["insertText"] == "*** Settings ***\n$0"
+        assert completion.items[0].to_lsp()["insertTextFormat"] == 2
+
+    def test_completion_sections_without_snippets(self):
+        service, uri = make_service("")
+
+        completion = service.compute_completion(
+            uri,
+            LspPosition(line=0, character=0),
+            snippets_enabled=False,
+        )
+
+        assert completion is not None
+        assert labels(completion) == [
+            "*** Settings ***",
+            "*** Variables ***",
+            "*** Test Cases ***",
+            "*** Keywords ***",
+        ]
+        assert completion.items[0].kind == CompletionItemKind.TEXT
+        assert "insertText" not in completion.items[0].to_lsp()
+        assert "insertTextFormat" not in completion.items[0].to_lsp()
 
     def test_completion_sections_after_prefix(self):
         service, uri = make_service("***")

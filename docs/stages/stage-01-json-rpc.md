@@ -6,24 +6,24 @@ done
 
 ## Goal
 
-Implementar o protocolo JSON-RPC 2.0 e o transporte LSP sobre `stdio`, sem dependências externas.
+Implement the JSON-RPC 2.0 protocol and LSP transport over `stdio`, without external dependencies.
 
 ## Scope
 
-- Parser/serializer JSON-RPC 2.0
+- JSON-RPC 2.0 parser/serializer
 - Request, Response, Notification, Error
-- Error codes padrão: ParseError, InvalidRequest, MethodNotFound, InvalidParams, InternalError, etc.
+- Standard error codes: ParseError, InvalidRequest, MethodNotFound, InvalidParams, InternalError, etc.
 - LSP framing: `Content-Length: <bytes>\r\n\r\n<json>`
-- Leitor thread-safe com buffer parcial
-- Escritor thread-safe
-- Dispatch de métodos por nome
-- Suporte a `$/cancelRequest`
-- Testes com mensagens em memória (sem stdio real)
+- Thread-safe reader with partial buffer
+- Thread-safe writer
+- Method dispatch by name
+- Support for `$/cancelRequest`
+- Tests with in-memory messages (without real stdio)
 
 ## Out Of Scope
 
-- Qualquer método LSP específico (initialize, etc.)
-- Lifecycle do servidor
+- Any specific LSP method (initialize, etc.)
+- Server lifecycle
 - Document sync
 
 ## Deliverables
@@ -31,19 +31,19 @@ Implementar o protocolo JSON-RPC 2.0 e o transporte LSP sobre `stdio`, sem depen
 - `src/robot_lsp/protocol/jsonrpc.py`
 - `src/robot_lsp/protocol/dispatch.py`
 - `src/robot_lsp/protocol/transport_stdio.py`
-- Testes unitários completos
+- Complete unit tests
 
 ## Acceptance Criteria
 
-- Mensagens JSON-RPC são serializadas/deserializadas corretamente
-- Requests com `id` geram responses correspondentes
-- Notifications (sem `id`) não geram responses
-- Errors têm code, message e data
-- `Content-Length` header é lido e escrito corretamente
-- Mensagens parciais são acumuladas até o tamanho completo
-- `$/cancelRequest` cancela handler pendente
-- Métodos desconhecidos retornam `MethodNotFound`
-- Testes de framing com conteúdo multi-byte
+- JSON-RPC messages serialize/deserialize correctly
+- Requests with `id` generate matching responses
+- Notifications (without `id`) do not generate responses
+- Errors include code, message, and data
+- `Content-Length` header is read and written correctly
+- Partial messages are accumulated until the full size is reached
+- `$/cancelRequest` cancels a pending handler
+- Unknown methods return `MethodNotFound`
+- Framing tests cover multibyte content
 
 ## Tests
 
@@ -60,8 +60,8 @@ Implementar o protocolo JSON-RPC 2.0 e o transporte LSP sobre `stdio`, sem depen
 
 ## Risks
 
-- Thread safety no escritor/leitor concorrente
-- Tratamento de mensagens parcialmente recebidas
+- Thread safety in concurrent reader/writer usage
+- Handling partially received messages
 
 ## Dependencies
 
@@ -69,8 +69,8 @@ Implementar o protocolo JSON-RPC 2.0 e o transporte LSP sobre `stdio`, sem depen
 
 ## Notes
 
-- Usar `json` da stdlib
-- Reader opera em `sys.stdin.buffer`, writer em `sys.stdout.buffer`
-- Logs vão para `stderr`
-- Stage concluída com 24 testes específicos de protocolo + teste geral de importação
-- Validação executada com `just test` e `uv run python -m compileall src tests`
+- Use stdlib `json`
+- Reader operates on `sys.stdin.buffer`, writer on `sys.stdout.buffer`
+- Logs go to `stderr`
+- Stage completed with 24 protocol-specific tests plus the general import test
+- Validation executed with `just test` and `uv run python -m compileall src tests`

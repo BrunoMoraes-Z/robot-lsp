@@ -10,9 +10,9 @@
 
 ## Scope Implemented
 
-- Referências locais no documento atual
-- Suporte a `context.includeDeclaration`
+- Local references in the current document
+- Support for `context.includeDeclaration`
 
 ## Future Scope
 
-- Referências em todo o workspace após Stage 09 — Workspace Index.
+- Workspace-wide references after Stage 09 — Workspace Index.

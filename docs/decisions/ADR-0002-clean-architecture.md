@@ -6,32 +6,32 @@ accepted
 
 ## Context
 
-O projeto precisa ser sustentável a longo prazo, com separação clara de responsabilidades para permitir manutenção, testes e evolução independentes.
+The project must be sustainable long term, with clear separation of responsibilities to allow independent maintenance, testing, and evolution.
 
 ## Decision
 
-Adotar Clean Architecture (também conhecida como Arquitetura Limpa / Onion Architecture / Hexagonal) com as seguintes camadas:
+Adopt Clean Architecture (also known as Onion Architecture or Hexagonal Architecture) with the following layers:
 
-- **Domain**: modelos de negócio puros, sem dependências externas.
-- **Application**: casos de uso que orquestram o domínio.
-- **Protocol**: comunicação com o mundo exterior (JSON-RPC, LSP framing).
-- **Infrastructure**: implementações concretas (parser RF, adaptadores).
+- **Domain**: pure business models with no external dependencies.
+- **Application**: use cases that orchestrate the domain.
+- **Protocol**: communication with the outside world (JSON-RPC, LSP framing).
+- **Infrastructure**: concrete implementations (RF parser, adapters).
 
-### Regra de dependência
-- Código fonte pode depender apenas de camadas mais internas.
-- `domain` → nenhuma dependência.
+### Dependency Rule
+- Source code may depend only on more internal layers.
+- `domain` -> no dependencies.
 - `application` → domain.
 - `protocol` → application, domain.
 - `infrastructure` → domain.
-- Nenhuma camada importa da camada externa de outra.
+- No layer imports from another layer's outer layer.
 
 ## Consequences
 
-- Testabilidade: cada camada pode ser testada isoladamente.
-- Troca de implementação: parser RF pode ser substituído sem afetar core.
-- Framework agnóstico: o LSP não depende de bibliotecas externas de LSP.
+- Testability: each layer can be tested in isolation.
+- Implementation swapping: the RF parser can be replaced without affecting the core.
+- Framework agnostic: the LSP server does not depend on external LSP libraries.
 
 ## Alternatives Considered
 
-- Flat structure: rejeitada por não escalar com a complexidade do LSP.
-- MVC: não se adequa a um servidor orientado a protocolo.
+- Flat structure: rejected because it does not scale with LSP complexity.
+- MVC: does not fit a protocol-oriented server.

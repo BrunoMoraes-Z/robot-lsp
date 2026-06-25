@@ -6,24 +6,24 @@ accepted
 
 ## Context
 
-O LSP precisa sincronizar documentos entre cliente e servidor. O protocolo suporta `None`, `Full` e `Incremental` sync.
+LSP needs to synchronize documents between client and server. The protocol supports `None`, `Full`, and `Incremental` sync.
 
 ## Decision
 
-Começar com `TextDocumentSyncKind.Full` (envio do texto completo a cada `didChange`).
+Start with `TextDocumentSyncKind.Full` (send the full text on each `didChange`).
 
-### Justificativa
-- Simplicidade: não precisa aplicar diffs.
-- Segurança: estado do documento nunca fica inconsistente.
-- Robot Framework arquivos `.robot` costumam ter centenas de linhas, não milhares — enviar completo é aceitável.
-- Podemos evoluir para `Incremental` depois se performance exigir.
+### Rationale
+- Simplicity: no need to apply diffs.
+- Safety: document state never becomes inconsistent.
+- Robot Framework `.robot` files usually have hundreds of lines, not thousands, so sending the full text is acceptable.
+- We can evolve to `Incremental` later if performance requires it.
 
 ## Consequences
 
-- Maior uso de banda em documentos muito grandes.
-- Parse é always full, simples e sem estado residual.
-- Transição para incremental no futuro é compatível mudando `textDocumentSync` capability.
+- Higher bandwidth usage for very large documents.
+- Parsing is always full, simple, and has no residual state.
+- A future transition to incremental sync is compatible by changing the `textDocumentSync` capability.
 
 ## Alternatives Considered
 
-- Incremental sync: mais complexo, estado diff, risco de corrupção. Deixado para Stage 12.
+- Incremental sync: more complex, diff state, corruption risk. Deferred to Stage 12.

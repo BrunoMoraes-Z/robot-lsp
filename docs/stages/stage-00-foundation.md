@@ -6,55 +6,55 @@ in-progress
 
 ## Goal
 
-Estabelecer a base do projeto: estrutura de diretórios, sistema de build, ferramentas de desenvolvimento, documentação inicial e entrypoint.
+Establish the project foundation: directory structure, build system, development tooling, initial documentation, and entrypoint.
 
 ## Scope
 
-- Criar projeto Python com `uv`
-- Configurar `pyproject.toml`
-- Criar `justfile` com suporte PowerShell
-- Definir estrutura de pacotes `src/robot_lsp/`
-- Criar camadas: `domain/`, `application/`, `infrastructure/`, `protocol/`, `adapters/`
-- Criar entrypoint vazio `__main__.py`
-- Criar `tests/` com estrutura `unit/` e `integration/`
-- Configurar `pytest`
-- Criar `docs/` com roadmap, architecture, ADRs, stages e specs
-- Criar `.gitkeep` para diretórios vazios
+- Create a Python project with `uv`
+- Configure `pyproject.toml`
+- Create a `justfile` with PowerShell support
+- Define the `src/robot_lsp/` package structure
+- Create layers: `domain/`, `application/`, `infrastructure/`, `protocol/`, `adapters/`
+- Create an empty `__main__.py` entrypoint
+- Create `tests/` with `unit/` and `integration/` structure
+- Configure `pytest`
+- Create `docs/` with roadmap, architecture, ADRs, stages, and specs
+- Create `.gitkeep` files for empty directories
 
 ## Out Of Scope
 
-- Qualquer lógica de LSP, JSON-RPC ou parse
+- Any LSP, JSON-RPC, or parsing logic
 
 ## Deliverables
 
-- `pyproject.toml` configurado
-- `justfile` funcional
-- `src/robot_lsp/` com `__init__.py`, `__main__.py`, `main.py`
-- `src/robot_lsp/domain/`, `application/`, `infrastructure/robotframework/`, `protocol/`, `adapters/` com `__init__.py`
+- Configured `pyproject.toml`
+- Working `justfile`
+- `src/robot_lsp/` with `__init__.py`, `__main__.py`, `main.py`
+- `src/robot_lsp/domain/`, `application/`, `infrastructure/robotframework/`, `protocol/`, `adapters/` with `__init__.py`
 - `tests/conftest.py`, `tests/unit/`, `tests/integration/`
-- `docs/` completo
-- `.gitignore` inicial
+- Complete `docs/`
+- Initial `.gitignore`
 
 ## Acceptance Criteria
 
-- `uv run pytest` executa e passa
-- `just test` executa e passa
-- `python -m robot_lsp` executa sem erro
-- Estrutura de diretórios reflete Clean Architecture
+- `uv run pytest` runs and passes
+- `just test` runs and passes
+- `python -m robot_lsp` runs without error
+- Directory structure reflects Clean Architecture
 
 ## Tests
 
-- Teste de importação de todos os módulos (vazio)
+- Import test for all modules (empty)
 
 ## Risks
 
-- Nenhum
+- None
 
 ## Dependencies
 
-- Nenhuma
+- None
 
 ## Notes
 
-- Usar `uv` como gerenciador de projeto
-- Suporte mínimo Python 3.10+
+- Use `uv` as the project manager
+- Minimum Python support: 3.10+

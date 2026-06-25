@@ -12,4 +12,4 @@
 
 - Retornar symbols (keywords, test cases) do workspace inteiro
 - Depende do workspace index (Stage 09)
-- A implementação será feita junto com o workspace index
+- Implementation will be done together with workspace index

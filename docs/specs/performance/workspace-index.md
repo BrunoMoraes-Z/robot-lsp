@@ -6,13 +6,13 @@ Stage 09 — done
 
 ## Goal
 
-Indexar todos os arquivos `.robot` e `.resource` do workspace para resolução de imports, keywords e variáveis.
+Index all workspace `.robot` and `.resource` files for import, keyword, and variable resolution.
 
 ## Indexed Data
 
-- Keywords definidas em cada arquivo
+- Keywords defined in each file
 - Imports (Library, Resource, Variables)
-- Variáveis definidas
+- Defined variables
 - Test cases
 
 ## Implementation
@@ -35,14 +35,14 @@ class WorkspaceIndex:
 
 ## Incremental Update
 
-- Quando arquivo é aberto/fechado/salvo, atualizar entry correspondente
-- `didChangeWatchedFiles` para mudanças externas
-- Indexação lazy: só quando necessário (completion/hover pedir)
+- When a file is opened/closed/saved, update the corresponding entry
+- `didChangeWatchedFiles` for external changes
+- Lazy indexing: only when needed (completion/hover requests it)
 
 ## Notes
 
-- Workspace index é a base para navigation (definition, references)
-- Necessário para suportar múltiplos arquivos e imports
+- Workspace index is the foundation for navigation (definition, references)
+- Required to support multiple files and imports
 - Performance: pode exigir worker separado se workspace grande
 
 ## Implemented
@@ -53,11 +53,11 @@ class WorkspaceIndex:
 - `WorkspaceIndex.find_keyword(name)`
 - `WorkspaceIndex.find_variable(name)`
 - `WorkspaceIndex.resolve_import(source_path, import_)`
-- Cache em memória por mtime + hash
+- In-memory cache by mtime + hash
 
 ## Future
 
 - Cache em disco
-- Watching de arquivos
-- Indexação assíncrona
+- File watching
+- Asynchronous indexing
 - References globais

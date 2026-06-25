@@ -6,42 +6,42 @@ done
 
 ## Goal
 
-Implementar completação de código para arquivos `.robot`: sections, settings, keywords locais e variables locais.
+Implement code completion for `.robot` files: sections, settings, local keywords, and local variables.
 
 ## Scope
 
 - `textDocument/completion` handler
-- `CompletionContext`: posição do cursor, documento, modelo parseado
+- `CompletionContext`: cursor position, document, parsed model
 - Providers:
-  - **SectionProvider**: completa `*** Settings ***`, `*** Variables ***`, `*** Test Cases ***`, `*** Keywords ***`
-  - **SettingProvider**: completa `Library`, `Resource`, `Variables`, `Documentation`, `Metadata`, `Suite Setup`, `Suite Teardown`, `Test Setup`, `Test Teardown`, `Test Tags`, `Test Template`, `Test Timeout`, `Force Tags`, `Default Tags`
-  - **LocalKeywordProvider**: completa nomes de keywords definidas no mesmo arquivo
-  - **LocalVariableProvider**: completa nomes de variáveis definidas no mesmo arquivo ($, @, &, %)
-- `CompletionItem` com label, kind, detail, documentation, textEdit, data
-- Trigger characters: espaço (para settings) e `$`, `@`, `&`, `%` (para variables)
-- `isIncomplete`: false no MVP
+- **SectionProvider**: completes `*** Settings ***`, `*** Variables ***`, `*** Test Cases ***`, `*** Keywords ***`
+- **SettingProvider**: completes `Library`, `Resource`, `Variables`, `Documentation`, `Metadata`, `Suite Setup`, `Suite Teardown`, `Test Setup`, `Test Teardown`, `Test Tags`, `Test Template`, `Test Timeout`, `Force Tags`, `Default Tags`
+- **LocalKeywordProvider**: completes keyword names defined in the same file
+- **LocalVariableProvider**: completes variable names defined in the same file ($, @, &, %)
+- `CompletionItem` with label, kind, detail, documentation, textEdit, data
+- Trigger characters: space (for settings) and `$`, `@`, `&`, `%` (for variables)
+- `isIncomplete`: false in the MVP
 
 ## Out Of Scope
 
-- Completion de libraries importadas (Stage 09)
+- Completion for imported libraries (Stage 09)
 - Auto-import
 - `completionItem/resolve`
-- Snippets completos
+- Full snippets
 
 ## Deliverables
 
 - `src/robot_lsp/application/completion_service.py`
-- Providers em módulos internos
-- Testes para cada provider
+- Providers in internal modules
+- Tests for each provider
 
 ## Acceptance Criteria
 
-- Em linha vazia no início do arquivo: completa sections
-- Em `*** Settings ***`: completa settings conhecidos
-- Em `*** Keywords ***`: completa keywords definidas no mesmo arquivo
-- Em chamada de keyword: completa nomes de keywords
-- Em contexto de variável: completa variáveis do arquivo
-- `CompletionItem` tem `label`, `kind` e `detail` preenchidos
+- On an empty line at the start of the file: completes sections
+- In `*** Settings ***`: completes known settings
+- In `*** Keywords ***`: completes keywords defined in the same file
+- In a keyword call: completes keyword names
+- In a variable context: completes variables from the file
+- `CompletionItem` has `label`, `kind`, and `detail` populated
 
 ## Tests
 
@@ -54,17 +54,17 @@ Implementar completação de código para arquivos `.robot`: sections, settings,
 
 ## Risks
 
-- Contexto incorreto (saber se cursor está em keyword call vs setting value) requer análise de linha
-- Trigger characters podem causar completions inesperados
+- Incorrect context detection (keyword call vs setting value) requires line analysis
+- Trigger characters may cause unexpected completions
 
 ## Dependencies
 
-- Stage 04 (modelo RF)
+- Stage 04 (RF model)
 
 ## Notes
 
-- Stage concluída com completion inicial para sections, settings, keywords locais e variables locais.
-- `textDocument/completion` foi integrado ao `LspServer` como request LSP.
-- O serviço usa `DocumentStore` + `ParseService`, sem dependência direta do Robot Framework.
-- Completion ainda não resolve libraries/resources importados; isso permanece para Stage 09.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with initial completion for sections, settings, local keywords, and local variables.
+- `textDocument/completion` was integrated into `LspServer` as an LSP request.
+- The service uses `DocumentStore` + `ParseService`, without a direct Robot Framework dependency.
+- Completion does not yet resolve imported libraries/resources; that remains for Stage 09.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

@@ -11,17 +11,17 @@ Stage 10 — done
 
 ## Notes
 
-Renomear símbolos (keywords, variáveis) com suporte a workspace edit.
+Rename symbols (keywords, variables) with workspace edit support.
 
 ## Implemented
 
 - `textDocument/prepareRename`
 - `textDocument/rename`
-- `WorkspaceEdit` usando `changes`
-- Variables, keywords e test cases locais
-- Inclusão de arquivos indexados quando `WorkspaceIndex` está disponível
+- `WorkspaceEdit` using `changes`
+- Local variables, keywords, and test cases
+- Inclusion of indexed files when `WorkspaceIndex` is available
 
 ## Limitations
 
-- Rename ainda é textual exato, não semântico por escopo.
-- Rename de symbols importados a partir do usage fica para evolução futura.
+- Rename is still exact textual rename, not scope-aware semantic rename.
+- Rename of imported symbols from usage is left for future evolution.

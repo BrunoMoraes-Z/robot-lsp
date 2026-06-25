@@ -6,14 +6,14 @@ Stage 05 — Diagnostics
 
 ## LSP Methods
 
-- `textDocument/publishDiagnostics` (notification servidor → cliente)
+- `textDocument/publishDiagnostics` (server -> client notification)
 
 ## Initial Scope
 
-- Diagnostics de parse/sintaxe vindos do Robot Framework
-- Debounce de 300ms
-- Cancelamento de diagnóstico pendente por URI
-- Range do erro quando disponível; fallback para linha inteira
+- Parse/syntax diagnostics from Robot Framework
+- 300 ms debounce
+- Pending diagnostic cancellation by URI
+- Error range when available; fallback to the whole line
 
 ## Implementation
 
@@ -46,30 +46,30 @@ class DiagnosticService:
 ### Flow
 
 1. `didChange` → `schedule_diagnostics(uri)`
-2. Se já existe timer para uri, cancela
-3. Agenda novo timer para `DEBOUNCE_SECONDS`
-4. Timer executa: parse + collect diagnostics + publica
-5. Publicação via `server.publish_diagnostics(uri, diagnostics)`
-6. Se diagnostics são idênticos aos últimos publicados, não publica
+2. If a timer already exists for uri, cancel it
+3. Schedule a new timer for `DEBOUNCE_SECONDS`
+4. Timer runs: parse + collect diagnostics + publish
+5. Publication through `server.publish_diagnostics(uri, diagnostics)`
+6. If diagnostics are identical to the last published diagnostics, do not publish
 
 ### RF Range Conversion
 
-- Robot Framework: linha/coluna 1-based
-- LSP: linha 0-based, coluna 0-based UTF-16
-- Se RF não fornecer coluna, usar coluna 0
-- Se RF não fornecer end line/col, usar start line/col (point diagnostic)
+- Robot Framework: 1-based line/column
+- LSP: 0-based line, 0-based UTF-16 column
+- If RF does not provide column, use column 0
+- If RF does not provide end line/col, use start line/col (point diagnostic)
 
 ## Future Scope
 
-- Análise semântica (imports quebrados, keywords não encontradas)
-- Integração com robocop ou linter externo
-- Diagnostics com código para code actions
+- Semantic analysis (broken imports, keywords not found)
+- Integration with robocop or external linter
+- Diagnostics with code for code actions
 - Diagnostic tags (unnecessary, deprecated)
 
 ## Tests
 
-- Parse error → diagnostic publicado
-- Correção → diagnostics limpos
-- Debounce → não publica se timer ainda não expirou
-- Cancelamento → timer antigo não publica
+- Parse error -> diagnostic published
+- Fix -> diagnostics cleared
+- Debounce -> does not publish if timer has not expired yet
+- Cancellation -> old timer does not publish
 - Range 1-based → 0-based

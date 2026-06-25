@@ -28,14 +28,14 @@ class Endpoint:
 
 ### Fluxo
 
-1. Request chega com `id`
-2. Handler é registrado em `_pending`
-3. Se `$/cancelRequest` chega para `id`, marca em `_canceled` e remove de `_pending`
+1. Request arrives with `id`
+2. Handler is registered in `_pending`
+3. If `$/cancelRequest` arrives for `id`, mark it in `_canceled` and remove it from `_pending`
 4. Handler periodicamente checa `is_canceled(id)` e aborta se True
-5. Resposta de request cancelado não é enviada ao cliente
+5. Response for a cancelled request is not sent to the client
 
 ## Notes
 
-- Cancelamento é cooperativo (handlers precisam checar)
-- Implementação inicial simplificada pode ser uma flag `_canceled`
-- Versão futura: `asyncio` tasks com `Task.cancel()`
+- Cancellation is cooperative (handlers must check)
+- Initial simplified implementation can be a `_canceled` flag
+- Future version: `asyncio` tasks with `Task.cancel()`

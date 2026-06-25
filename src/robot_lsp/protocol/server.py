@@ -297,6 +297,7 @@ class LspServer:
             uri,
             LspPosition(line=line, character=character),
             trigger_character=trigger_character,
+            snippets_enabled=self.configuration_service.config.completion.snippets,
         )
         if completion is None:
             return {"isIncomplete": False, "items": []}

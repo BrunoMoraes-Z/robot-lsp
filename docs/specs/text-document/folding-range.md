@@ -16,4 +16,4 @@
 
 ## Future Scope
 
-- IF/WHILE/FOR/GROUP blocks após modelagem detalhada de blocos de controle.
+- IF/WHILE/FOR/GROUP blocks after detailed control-block modeling.

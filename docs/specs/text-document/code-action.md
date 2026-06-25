@@ -10,18 +10,18 @@
 
 ## Notes
 
-Quick actions iniciais para diagnostics conhecidos.
+Initial quick actions for known diagnostics.
 
 ## Behavior
 
-- `textDocument/codeAction` retorna lista vazia quando o documento não está aberto.
-- Diagnostics com `code: parse_error` retornam uma action `quickfix` informativa.
-- Diagnostics com `code: import_not_found` retornam uma action `quickfix` informativa.
+- `textDocument/codeAction` returns an empty list when the document is not open.
+- Diagnostics with `code: parse_error` return an informative `quickfix` action.
+- Diagnostics with `code: import_not_found` return an informative `quickfix` action.
 - Actions incluem o diagnostic original em `diagnostics`.
 
 ## Out Of Scope
 
-- Aplicar edits automáticos para corrigir parse errors.
+- Apply automatic edits to fix parse errors.
 - Resolver imports ausentes por busca no workspace.
-- Corrigir variáveis não definidas.
+- Fix undefined variables.
 - `codeAction/resolve`.

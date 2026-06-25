@@ -6,28 +6,28 @@
 
 ## Goal
 
-Resolver libraries Python importadas em arquivos `.robot` e extrair keywords, argumentos e documentação.
+Resolve Python libraries imported in `.robot` files and extract keywords, arguments, and documentation.
 
 ## Approaches
 
-1. **Static analysis**: ler arquivo Python da library, extrair nomes de função e docstrings via AST
-2. **libdoc**: usar `robot.libdoc` para gerar documentação estruturada
-3. **Cache**: armazenar libspec (keyword definitions) em cache de disco
+1. **Static analysis**: read the library Python file, extract function names and docstrings through AST
+2. **libdoc**: use `robot.libdoc` to generate structured documentation
+3. **Cache**: store libspec (keyword definitions) in disk cache
 
 ## Implementation Strategy
 
-- Iniciar com static analysis básico para libraries Python puras
-- libdoc como fallback para libraries complexas
-- Cache em disco com invalidação por mtime
+- Start with basic static analysis for pure Python libraries
+- Use libdoc as fallback for complex libraries
+- Disk cache with mtime invalidation
 
 ## Challenges
 
-- Libraries podem ser dinâmicas (keywords geradas em runtime)
-- Libraries podem ter wrapper/decorator que esconde assinatura real
-- Libraries podem ser em Java ou .NET via remote library
+- Libraries may be dynamic (keywords generated at runtime)
+- Libraries may have wrappers/decorators that hide the real signature
+- Libraries may be Java or .NET through remote library
 
 ## Notes
 
-- Resolução total de libraries é complexa e será incremental
-- MVP inicial suporta apenas keywords locais e BuiltIn
-- Libraries conhecidas (BuiltIn, Collections, etc.) podem ter specs manuais iniciais
+- Full library resolution is complex and will be incremental
+- Initial MVP supports only local and BuiltIn keywords
+- Known libraries (BuiltIn, Collections, etc.) may have initial manual specs

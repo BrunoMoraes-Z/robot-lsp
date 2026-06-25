@@ -10,37 +10,37 @@ Stage 09 — partially implemented, Stage 13 — configured paths
 
 ## Goal
 
-Resolver imports `Library`, `Resource`, `Variables` para encontrar arquivos reais no sistema de arquivos.
+Resolve `Library`, `Resource`, and `Variables` imports to find real files on the filesystem.
 
 ## Resolution Order
 
-1. Relativo ao diretório do arquivo atual
-2. Caminhos configurados pelo usuário (`robot.lsp.importPaths`) para imports de arquivo
-3. Relativo aos diretórios do Python path (para libraries Python)
+1. Relative to the current file directory
+2. User-configured paths (`robot.lsp.importPaths`) for file imports
+3. Relative to Python path directories (for Python libraries)
 
 ## Implementation Components
 
-- `ImportResolver`: resolve imports para paths absolutos
-- `LibraryResolver`: encontra módulos Python para libraries
-- `ResourceResolver`: encontra arquivos `.resource` e `.robot`
-- Cache de resolução com invalidação
+- `ImportResolver`: resolves imports to absolute paths
+- `LibraryResolver`: finds Python modules for libraries
+- `ResourceResolver`: finds `.resource` and `.robot` files
+- Resolution cache with invalidation
 
 ## Notes
 
-- Resolução de libraries Python requer inspecionar `sys.path` e módulos instalados
-- Libraries podem ter aliases (`Library  Collections  alias=MyLib`)
-- Variables files podem ser `.py`, `.yaml`, `.json`, `.robot`
-- Resolução será implementada junto com workspace index
+- Python library resolution requires inspecting `sys.path` and installed modules
+- Libraries may have aliases (`Library  Collections  alias=MyLib`)
+- Variables files may be `.py`, `.yaml`, `.json`, `.robot`
+- Resolution will be implemented together with workspace index
 
 ## Implemented
 
-- `Resource` relativo ao arquivo atual
-- `Variables` relativo ao arquivo atual
-- `Resource` e `Variables` via caminhos configurados em `robot.lsp.importPaths`
+- `Resource` relative to the current file
+- `Variables` relative to the current file
+- `Resource` and `Variables` through paths configured in `robot.lsp.importPaths`
 - `Library` via `importlib.util.find_spec()`
 - Robot standard libraries via `robot.libraries.<name>`
 
 ## Future
 
-- Libspec/libdoc completo para libraries
-- Resolução de variables files `.py`, `.yaml`, `.json` com extração semântica
+- Full libspec/libdoc for libraries
+- Variables file resolution for `.py`, `.yaml`, `.json` with semantic extraction

@@ -6,15 +6,15 @@
 
 ## Goal
 
-Evitar re-parsing do AST quando o documento não mudou.
+Avoid re-parsing the AST when the document has not changed.
 
 ## Strategy
 
-- Cache por URI com versão do documento e hash do conteúdo
-- Invalidação automática quando versão ou texto mudam
-- Tamanho máximo: LRU cache com 50 entradas por padrão
-- Invalidação explícita por URI ou cache completo
-- Cache em disco para workspace index fica fora do MVP
+- Cache by URI with document version and content hash
+- Automatic invalidation when version or text changes
+- Maximum size: LRU cache with 50 entries by default
+- Explicit invalidation by URI or full cache
+- Disk cache for workspace index remains outside the MVP
 
 ## Implementation Sketch
 
@@ -30,7 +30,7 @@ class ParseCache:
 
 ## Notes
 
-- Implementado com `OrderedDict` dentro de `ParseService`.
-- Cache de workspace permanece separado do cache de documentos abertos.
+- Implemented with `OrderedDict` inside `ParseService`.
+- Workspace cache remains separate from the open document cache.
 - Versionamento usa `Document.version` e SHA-256 do texto.
-- Cache em disco será avaliado quando houver métricas reais de workspace grande.
+- Disk cache will be evaluated when there are real metrics for large workspaces.

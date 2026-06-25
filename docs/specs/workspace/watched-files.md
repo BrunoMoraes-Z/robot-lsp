@@ -2,7 +2,7 @@
 
 ## Stage
 
-**Planned** (pós-MVP)
+**Planned** (post-MVP)
 
 ## LSP Methods
 
@@ -10,6 +10,6 @@
 
 ## Notes
 
-- Notificar servidor sobre mudanças em arquivos `.robot` e `.resource` fora dos documentos abertos
-- Usado para invalidar cache de workspace index
-- Registrado via `workspace/didChangeWatchedFiles` capability na inicialização
+- Notify server about changes in `.robot` and `.resource` files outside open documents
+- Used to invalidate workspace index cache
+- Registered through `workspace/didChangeWatchedFiles` capability during initialization

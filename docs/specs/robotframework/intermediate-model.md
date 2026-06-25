@@ -6,7 +6,7 @@ Stage 04 — Robot Framework Model
 
 ## Purpose
 
-Modelos intermediários desacoplam o core do LSP do AST do Robot Framework. Mudanças no AST do RF afetam apenas o adaptador, não as camadas de aplicação e protocolo.
+Intermediate models decouple the LSP core from the Robot Framework AST. Changes in the RF AST affect only the adapter, not the application and protocol layers.
 
 ## Models
 
@@ -139,7 +139,7 @@ class RobotDiagnostic:
 
 ## Design Decisions
 
-- Todos os modelos usam `LspRange` (0-based UTF-16) para ranges
-- Modelos são dataclasses simples, sem lógica de negócio
-- `None` para campos opcionais indica ausência de informação
-- Listas vazias para coleções (nunca None)
+- All models use `LspRange` (0-based UTF-16) for ranges
+- Models are simple dataclasses, with no business logic
+- `None` for optional fields indicates missing information
+- Empty lists for collections (never None)

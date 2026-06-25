@@ -6,13 +6,13 @@
 
 ## Motivation
 
-No MVP, o servidor executa tudo no mesmo processo. Se workspace index ou análise pesada bloquear o event loop, completion/hover ficam lentos.
+In the MVP, the server runs everything in the same process. If workspace index or heavy analysis blocks the event loop, completion/hover become slow.
 
 ## Strategy
 
-- **Não implementar subprocessos no MVP**
-- Monitorar performance com arquivos reais
-- Se necessário, adicionar subprocesso apenas para operações pesadas
+- **Do not implement subprocesses in the MVP**
+- Monitor performance with real files
+- If necessary, add a subprocess only for heavy operations
 
 ## Possible Architecture
 
@@ -23,7 +23,7 @@ Main Process (LSP lifecycle, completion, hover)
 
 ## Communication
 
-- Subprocesso também usa JSON-RPC sobre stdio (pipe) para comunicação
+- Subprocess also uses JSON-RPC over stdio (pipe) for communication
 - Main process serializa requests e responses
 - Subprocesso pode ser restartado independentemente
 
@@ -32,11 +32,11 @@ Main Process (LSP lifecycle, completion, hover)
 - O LSP existente usa 3 subprocessos (api/lint/others)
 - Para um MVP menor, 1 subprocesso suficiente
 - Complexidade alta: gerenciar lifecycle, restart, timeout
-- Postergar até que métricas justifiquem
+- Defer until metrics justify it
 
 ## Notes
 
-- Cancelamento entre processos é mais complexo
-- Comunicação via pipe com framing JSON-RPC reaproveita código existente
-- Subprocesso precisa de seu próprio `DocumentStore` (sincronizado via `didOpen`/`didChange`)
-- Stage 12 não implementa subprocesso porque o custo operacional ainda não é justificado por métricas.
+- Cross-process cancellation is more complex
+- Pipe communication with JSON-RPC framing reuses existing code
+- Subprocess needs its own `DocumentStore` (synchronized through `didOpen`/`didChange`)
+- Stage 12 does not implement a subprocess because the operational cost is not yet justified by metrics.

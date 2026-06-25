@@ -7,27 +7,27 @@ Status: `done`
 
 ## Verification Summary
 
-As 14 etapas planejadas para o MVP foram implementadas e validadas pela suite atual.
+All 14 stages planned for the MVP have been implemented and validated by the current test suite.
 
-Validação local mais recente:
-- `uv run pytest` — 164 testes passando
+Most recent local validation:
+- `uv run pytest` — 171 tests passing
 
-Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-MVP porque foram explicitamente adiados nos documentos de estágio/specs ou fazem parte de hardening de release além da primeira versão funcional.
+The items below do not block the MVP, but remain pending for post-MVP evolution because they were explicitly deferred in stage/spec documents or belong to release hardening beyond the first functional version.
 
 ## Post-MVP Pending Roadmap
 
 | Order | Item | Source | Status |
 |---|---|---|---|
-| 01 | Executar matriz real de compatibilidade Robot Framework 7.x, não apenas a versão instalada | Stage 14 / compatibility matrix | done |
-| 02 | Automatizar publicação/distribuição de release, incluindo build artifacts e PyPI se aplicável | Stage 14 | done |
-| 03 | Implementar logging estruturado aplicado à configuração `robot.lsp.logLevel` em runtime | Stage 13 / Stage 14 | done |
-| 04 | Aplicar `robot.lsp.completion.snippets` aos completion items e snippets configuráveis | Stage 13 | pending |
-| 05 | Implementar request outbound `workspace/configuration` e configuração por workspace folder | Stage 13 / workspace configuration spec | pending |
-| 06 | Adicionar worker pool/cancelamento real para operações longas quando houver métricas justificando | Stage 12 / performance specs | pending |
-| 07 | Avaliar subprocess isolation para indexação/análise pesada com testes de integração dedicados | Stage 12 / Stage 14 risks | pending |
-| 08 | Adicionar progress reporting (`$/progress`, `window/workDoneProgress/create`) para operações longas | protocol progress spec | pending |
-| 09 | Expandir CI para novos targets quando necessário, como macOS e Python 3.13 | compatibility matrix | pending |
-| 10 | Implementar diagnostics semânticos/warnings além dos erros de parse do Robot Framework | diagnostics rules spec | pending |
+| 01 | Run the real Robot Framework 7.x compatibility matrix, not only the installed version | Stage 14 / compatibility matrix | done |
+| 02 | Automate release publishing/distribution, including build artifacts and PyPI if applicable | Stage 14 | done |
+| 03 | Implement structured logging applied to `robot.lsp.logLevel` at runtime | Stage 13 / Stage 14 | done |
+| 04 | Apply `robot.lsp.completion.snippets` to completion items and configurable snippets | Stage 13 | done |
+| 05 | Implement outbound `workspace/configuration` request and workspace-folder-specific configuration | Stage 13 / workspace configuration spec | pending |
+| 06 | Add worker pool/real cancellation for long-running operations when metrics justify it | Stage 12 / performance specs | pending |
+| 07 | Evaluate subprocess isolation for indexing/heavy analysis with dedicated integration tests | Stage 12 / Stage 14 risks | pending |
+| 08 | Add progress reporting (`$/progress`, `window/workDoneProgress/create`) for long-running operations | protocol progress spec | pending |
+| 09 | Expand CI to new targets when needed, such as macOS and Python 3.13 | compatibility matrix | pending |
+| 10 | Implement semantic diagnostics/warnings beyond Robot Framework parse errors | diagnostics rules spec | pending |
 
 ---
 
@@ -58,64 +58,64 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 ### Stage 00 — Foundation
 
 **Expected**
-- Criar projeto com `uv`
-- Definir estrutura de pacotes (Clean Architecture)
-- Criar `justfile` com PowerShell
-- Criar arquitetura inicial de diretórios
-- Criar documentação base (`docs/`, ADRs, stages, specs)
-- Configurar `pytest`
-- Entrypoint vazio `python -m robot_lsp`
+- Create project with `uv`
+- Define package structure (Clean Architecture)
+- Create `justfile` with PowerShell
+- Create initial directory architecture
+- Create base documentation (`docs/`, ADRs, stages, specs)
+- Configure `pytest`
+- Empty `python -m robot_lsp` entrypoint
 
 **Done**
-- Projeto criado com `uv`
-- Estrutura de diretórios Clean Architecture estabelecida
-- `pyproject.toml` configurado com dependências e build-system
-- `justfile` funcional com PowerShell
-- `docs/` completo: roadmap, architecture, ADRs, stages (00-07), specs (protocolo, text-document, RF, testing, performance)
-- Entrypoint `python -m robot_lsp` funcional
-- Teste de importação de todos os módulos passando
-- `pytest` configurado
-- `.gitignore` criado
+- Project created with `uv`
+- Clean Architecture directory structure established
+- `pyproject.toml` configured with dependencies and build system
+- Working `justfile` with PowerShell
+- Complete `docs/`: roadmap, architecture, ADRs, stages (00-07), specs (protocol, text-document, RF, testing, performance)
+- Working `python -m robot_lsp` entrypoint
+- Import test for all modules passing
+- `pytest` configured
+- `.gitignore` created
 
 **Acceptance Criteria**
-- ✅ `uv run pytest` executa e passa
-- ✅ `just test` executa e passa
-- ✅ Estrutura `src/robot_lsp/` existe com as camadas `domain/`, `application/`, `infrastructure/`, `protocol/`, `adapters/`
-- ✅ Estrutura `tests/` existe com `unit/` e `integration/`
-- ✅ `python -m robot_lsp` executa sem erro
-- ✅ `docs/` está preenchido com roadmap, architecture, ADRs, stages e specs
-- ✅ `just test` executa `uv run pytest`
-- ✅ `uv run python -m robot_lsp` imprime info no stderr
+- ✅ `uv run pytest` runs and passes
+- ✅ `just test` runs and passes
+- ✅ `src/robot_lsp/` structure exists with `domain/`, `application/`, `infrastructure/`, `protocol/`, `adapters/` layers
+- ✅ `tests/` structure exists with `unit/` and `integration/`
+- ✅ `python -m robot_lsp` runs without error
+- ✅ `docs/` is populated with roadmap, architecture, ADRs, stages, and specs
+- ✅ `just test` runs `uv run pytest`
+- ✅ `uv run python -m robot_lsp` prints info to stderr
 
 ---
 
 ### Stage 01 — JSON-RPC
 
 **Expected**
-- Implementar JSON-RPC 2.0: request, response, notification, error
-- Implementar LSP framing (`Content-Length`)
-- Implementar reader/writer sobre `stdio`
-- Implementar dispatch de métodos
-- Suporte a `$/cancelRequest`
-- Testes unitários de framing e mensagens
+- Implement JSON-RPC 2.0: request, response, notification, error
+- Implement LSP framing (`Content-Length`)
+- Implement reader/writer over `stdio`
+- Implement method dispatch
+- Support `$/cancelRequest`
+- Unit tests for framing and messages
 
 **Done**
-- Implementado parser/serializer JSON-RPC 2.0 em `src/robot_lsp/protocol/jsonrpc.py`
-- Implementados modelos `JsonRpcMessage`, `JsonRpcError` e erro de protocolo `JsonRpcProtocolError`
-- Implementados helpers para request, notification, response e error response
-- Implementados error codes padrão JSON-RPC e códigos LSP internos iniciais
-- Implementado framing LSP `Content-Length` em `src/robot_lsp/protocol/transport_stdio.py`
-- Implementado reader/writer binário com escrita thread-safe
-- Implementado `MethodDispatcher` em `src/robot_lsp/protocol/dispatch.py`
-- Implementado cancelamento cooperativo via `$/cancelRequest`
-- Criados testes unitários para JSON-RPC, transporte e dispatcher
+- Implemented JSON-RPC 2.0 parser/serializer in `src/robot_lsp/protocol/jsonrpc.py`
+- Implemented `JsonRpcMessage`, `JsonRpcError`, and `JsonRpcProtocolError` protocol error models
+- Implemented helpers for request, notification, response, and error response
+- Implemented standard JSON-RPC error codes and initial internal LSP codes
+- Implemented LSP `Content-Length` framing in `src/robot_lsp/protocol/transport_stdio.py`
+- Implemented binary reader/writer with thread-safe writes
+- Implemented `MethodDispatcher` in `src/robot_lsp/protocol/dispatch.py`
+- Implemented cooperative cancellation through `$/cancelRequest`
+- Created unit tests for JSON-RPC, transport, and dispatcher
 
 **Acceptance Criteria**
-- ✅ Requests, notifications e responses serializam/deserializam corretamente
-- ✅ Erros padrão JSON-RPC são emitidos para mensagens inválidas
-- ✅ `Content-Length` header é lido/escrito corretamente
-- ✅ Mensagens maiores que buffer são lidas corretamente
-- ✅ Cancelamento de request funciona
+- ✅ Requests, notifications, and responses serialize/deserialize correctly
+- ✅ Standard JSON-RPC errors are emitted for invalid messages
+- ✅ `Content-Length` header is read/written correctly
+- ✅ Messages larger than the buffer are read correctly
+- ✅ Request cancellation works
 
 ---
 
@@ -126,26 +126,26 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 - `initialized`
 - `shutdown`
 - `exit`
-- Estados do servidor (uninitialized, running, shuttingDown, exited)
-- Capabilities mínimas (textDocumentSync, completionProvider, hoverProvider)
-- Testes de sessão LSP mínima via transporte em memória
+- Server states (uninitialized, running, shuttingDown, exited)
+- Minimal capabilities (textDocumentSync, completionProvider, hoverProvider)
+- Minimal LSP session tests through in-memory transport
 
 **Done**
-- Implementado `LspServer` em `src/robot_lsp/protocol/server.py`
-- Implementados estados `uninitialized`, `running`, `shuttingDown`, `exited`
-- Implementados handlers `initialize`, `initialized`, `shutdown`, `exit`
-- Implementada validação de mensagens antes de `initialize` com erro `-32002`
-- Implementada validação de requests após `shutdown` com erro `-32003`
-- Implementado `serverInfo` com nome e versão do servidor
-- Implementadas capabilities iniciais em `src/robot_lsp/protocol/lsp_types.py`
-- Criados testes unitários de lifecycle em `tests/unit/protocol/test_server.py`
+- Implemented `LspServer` in `src/robot_lsp/protocol/server.py`
+- Implemented states `uninitialized`, `running`, `shuttingDown`, `exited`
+- Implemented `initialize`, `initialized`, `shutdown`, `exit` handlers
+- Implemented validation for messages before `initialize` with error `-32002`
+- Implemented validation for requests after `shutdown` with error `-32003`
+- Implemented `serverInfo` with server name and version
+- Implemented initial capabilities in `src/robot_lsp/protocol/lsp_types.py`
+- Created lifecycle unit tests in `tests/unit/protocol/test_server.py`
 
 **Acceptance Criteria**
-- ✅ Servidor responde `initialize` com capabilities corretas
-- ✅ `initialized` é aceito como notification
-- ✅ `shutdown` + `exit` encerra servidor
-- ✅ Mensagens antes de `initialize` são rejeitadas
-- ✅ Mensagens depois de `shutdown` são rejeitadas
+- ✅ Server responds to `initialize` with correct capabilities
+- ✅ `initialized` is accepted as a notification
+- ✅ `shutdown` + `exit` terminates the server
+- ✅ Messages before `initialize` are rejected
+- ✅ Messages after `shutdown` are rejected
 
 ---
 
@@ -155,146 +155,146 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 - `textDocument/didOpen`
 - `textDocument/didChange` (sync full)
 - `textDocument/didClose`
-- `DocumentStore`: gerencia documentos abertos
+- `DocumentStore`: manages open documents
 - URI/path helpers
-- Conversão de posições LSP (UTF-16 code units)
+- LSP position conversion (UTF-16 code units)
 - Ranges: 0-based line, 0-based UTF-16 column
 
 **Done**
-- Corrigido e completado `DocumentStore` em `src/robot_lsp/application/document_store.py`
-- Implementado `Document` com `lines` e extração de texto por `LspRange`
-- Implementados helpers `uri_to_path` e `path_to_uri`
-- Aprimorada conversão UTF-16 em `src/robot_lsp/domain/positions.py`
-- Implementado `range_text` para extração por ranges LSP
-- Implementados handlers `textDocument/didOpen`, `textDocument/didChange`, `textDocument/didClose` no `LspServer`
-- Criados testes de `DocumentStore`, URI/path, posições UTF-16 e document sync
+- Fixed and completed `DocumentStore` in `src/robot_lsp/application/document_store.py`
+- Implemented `Document` with `lines` and text extraction by `LspRange`
+- Implemented `uri_to_path` and `path_to_uri` helpers
+- Improved UTF-16 conversion in `src/robot_lsp/domain/positions.py`
+- Implemented `range_text` for extraction by LSP ranges
+- Implemented `textDocument/didOpen`, `textDocument/didChange`, `textDocument/didClose` handlers in `LspServer`
+- Created tests for `DocumentStore`, URI/path, UTF-16 positions, and document sync
 
 **Acceptance Criteria**
-- ✅ Documento aberto via `didOpen` fica disponível no `DocumentStore`
-- ✅ `didChange` com texto completo substitui conteúdo
-- ✅ `didClose` remove documento
-- ✅ Conversões UTF-16 funcionam com caracteres multi-byte (acentos, emoji)
-- ✅ URI `file://` é convertida para path do sistema
-- ✅ `LspRange` calcula texto de um range corretamente
+- ✅ Document opened through `didOpen` becomes available in `DocumentStore`
+- ✅ `didChange` with full text replaces content
+- ✅ `didClose` removes document
+- ✅ UTF-16 conversions work with multibyte characters (accents, emoji)
+- ✅ `file://` URI is converted to system path
+- ✅ `LspRange` calculates range text correctly
 
 ---
 
 ### Stage 04 — Robot Framework Model
 
 **Expected**
-- Detector de versão do Robot Framework (`robot.version.VERSION`)
-- `FeatureSet` com capacidades baseadas na versão
-- Parser usando exclusivamente `robot.api.parsing`
-- Modelo intermediário próprio (desacoplado do AST do RF)
-- Adapter que mapeia AST do RF para modelo intermediário
-- Fixtures `.robot` para testes
+- Robot Framework version detector (`robot.version.VERSION`)
+- `FeatureSet` with version-based capabilities
+- Parser using only `robot.api.parsing`
+- Custom intermediate model (decoupled from the RF AST)
+- Adapter that maps the RF AST to the intermediate model
+- `.robot` fixtures for tests
 
 **Done**
-- Implementados modelos intermediários faltantes: `RobotDocument`, `RobotDiagnostic`, `ParseResult`
-- Implementado detector de versão em `src/robot_lsp/infrastructure/robotframework/version.py`
-- Implementado `FeatureSet` para RF >= 7.0 com flags `has_group` e `has_secret_variables`
-- Implementado parser em `src/robot_lsp/infrastructure/robotframework/parser.py` usando apenas `robot.api.parsing`
-- Implementado adapter AST em `src/robot_lsp/infrastructure/robotframework/adapter.py`
-- Implementado visitor de coleta de erros em `visitors.py`
-- Extraídos settings, metadata, imports, variables, test cases, keywords, args e steps
-- Criadas fixtures `.robot` e `.resource` reais em `tests/integration/fixtures/`
-- Criados testes de versão, parser, adapter e isolamento de imports do RF
+- Implemented missing intermediate models: `RobotDocument`, `RobotDiagnostic`, `ParseResult`
+- Implemented version detector in `src/robot_lsp/infrastructure/robotframework/version.py`
+- Implemented `FeatureSet` for RF >= 7.0 with `has_group` and `has_secret_variables` flags
+- Implemented parser in `src/robot_lsp/infrastructure/robotframework/parser.py` using only `robot.api.parsing`
+- Implemented AST adapter in `src/robot_lsp/infrastructure/robotframework/adapter.py`
+- Implemented error collection visitor in `visitors.py`
+- Extracted settings, metadata, imports, variables, test cases, keywords, args, and steps
+- Created real `.robot` and `.resource` fixtures in `tests/integration/fixtures/`
+- Created tests for versioning, parser, adapter, and RF import isolation
 
 **Acceptance Criteria**
-- ✅ Versão 7.0+ é detectada e reportada corretamente
-- ✅ `FeatureSet` reflete a versão instalada
-- ✅ Suite `.robot` é parseada para modelo intermediário
-- ✅ Core do LSP nunca importa `robot.api.parsing` nem `robot.parsing` diretamente
-- ✅ Erros de parse do RF são capturados sem crash
-- ✅ Testes com fixtures reais `.robot`
+- ✅ Version 7.0+ is detected and reported correctly
+- ✅ `FeatureSet` reflects the installed version
+- ✅ `.robot` suite is parsed to the intermediate model
+- ✅ LSP core never imports `robot.api.parsing` or `robot.parsing` directly
+- ✅ RF parse errors are captured without crashing
+- ✅ Tests with real `.robot` fixtures
 
 ---
 
 ### Stage 05 — Diagnostics
 
 **Expected**
-- Diagnostics de parse/sintaxe via Robot Framework
-- `textDocument/publishDiagnostics` notificação
-- Debounce de diagnostics (ex: 300ms)
-- Cancelamento de diagnóstico pendente por URI
-- Conversão de ranges RF (1-based) → LSP (0-based)
-- Fallback para linha inteira quando range não está disponível
+- Parse/syntax diagnostics through Robot Framework
+- `textDocument/publishDiagnostics` notification
+- Diagnostics debounce (for example, 300 ms)
+- Pending diagnostic cancellation by URI
+- RF range conversion (1-based) -> LSP (0-based)
+- Fallback to the whole line when range is unavailable
 
 **Done**
-- Implementado `ParseService` em `src/robot_lsp/application/parse_service.py`
-- Implementado `DiagnosticService` em `src/robot_lsp/application/diagnostic_service.py`
-- Implementada serialização LSP de `LspDiagnostic` em `domain/diagnostics.py`
-- Integrado `DiagnosticService` ao `LspServer` via injeção opcional
-- Implementado `textDocument/publishDiagnostics` como notification de saída
-- `didOpen` e `didChange` agendam diagnostics com debounce
-- `didClose` limpa diagnostics e cancela timers pendentes
-- Implementado cancelamento de diagnostic pendente por URI
-- Implementada deduplicação para não publicar diagnostics idênticos
-- Criados testes unitários para parse diagnostics, clear, debounce, cancel, publication e ranges
+- Implemented `ParseService` in `src/robot_lsp/application/parse_service.py`
+- Implemented `DiagnosticService` in `src/robot_lsp/application/diagnostic_service.py`
+- Implemented LSP serialization for `LspDiagnostic` in `domain/diagnostics.py`
+- Integrated `DiagnosticService` into `LspServer` through optional injection
+- Implemented `textDocument/publishDiagnostics` as an outgoing notification
+- `didOpen` and `didChange` schedule diagnostics with debounce
+- `didClose` clears diagnostics and cancels pending timers
+- Implemented pending diagnostic cancellation by URI
+- Implemented deduplication to avoid publishing identical diagnostics
+- Created unit tests for parse diagnostics, clear, debounce, cancel, publication, and ranges
 
 **Acceptance Criteria**
-- ✅ Documento inválido dispara `publishDiagnostics`
-- ✅ Documento corrigido limpa diagnostics
-- ✅ Debounce evita flood em digitação rápida
-- ✅ Diagnostics cancelados não são publicados
-- ✅ Parsing não quebra servidor em caso de erro grave
-- ✅ Severidade correta: error para parse error
+- ✅ Invalid document triggers `publishDiagnostics`
+- ✅ Fixed document clears diagnostics
+- ✅ Debounce avoids flooding during fast typing
+- ✅ Cancelled diagnostics are not published
+- ✅ Parsing does not break the server on severe error
+- ✅ Correct severity: error for parse error
 
 ---
 
 ### Stage 06 — Completion
 
 **Expected**
-- Completar sections (`*** Settings ***`, etc.)
-- Completar settings (`Library`, `Resource`, `Suite Setup`, etc.)
-- Completar keywords locais (mesmo arquivo)
-- Completar variables locais
+- Complete sections (`*** Settings ***`, etc.)
+- Complete settings (`Library`, `Resource`, `Suite Setup`, etc.)
+- Complete local keywords (same file)
+- Complete local variables
 - `InsertTextFormat.PlainText` e `Snippet` simples
 
 **Done**
-- Implementado `CompletionService` em `src/robot_lsp/application/completion_service.py`
-- Implementados tipos `CompletionItem`, `CompletionList`, `CompletionContext` e `CompletionItemKind`
-- Implementada completion de sections
-- Implementada completion de settings em `*** Settings ***`
-- Implementada completion de keywords locais em bodies de test cases/keywords
-- Implementada completion de variables locais com triggers `$`, `@`, `&`, `%`
-- Integrado handler `textDocument/completion` ao `LspServer`
-- Criados testes unitários para service e handler LSP
+- Implemented `CompletionService` in `src/robot_lsp/application/completion_service.py`
+- Implemented `CompletionItem`, `CompletionList`, `CompletionContext`, and `CompletionItemKind` types
+- Implemented section completion
+- Implemented settings completion in `*** Settings ***`
+- Implemented local keyword completion in test case/keyword bodies
+- Implemented local variable completion with `$`, `@`, `&`, `%` triggers
+- Integrated `textDocument/completion` handler into `LspServer`
+- Created unit tests for service and LSP handler
 
 **Acceptance Criteria**
-- ✅ Cursor após linha vazia completa sections
-- ✅ Cursor em `*** Settings ***` completa settings conhecidos
-- ✅ Cursor em `*** Keywords ***` completa keywords do arquivo
-- ✅ Cursor onde variável é esperada completa variáveis do arquivo
-- ✅ Completion items têm label, kind, detail e documentation quando aplicável
+- ✅ Cursor after an empty line completes sections
+- ✅ Cursor in `*** Settings ***` completes known settings
+- ✅ Cursor in `*** Keywords ***` completes file keywords
+- ✅ Cursor where a variable is expected completes file variables
+- ✅ Completion items have label, kind, detail, and documentation when applicable
 
 ---
 
 ### Stage 07 — Hover
 
 **Expected**
-- Hover em keyword local (mostra docstring/args)
-- Hover em variable local (mostra tipo e valor)
-- Hover em import (mostra tipo do import)
-- Formatação Markdown
-- Range do símbolo sob o cursor
+- Hover on local keyword (shows docstring/args)
+- Hover on local variable (shows type and value)
+- Hover on import (shows import type)
+- Markdown formatting
+- Range of the symbol under the cursor
 
 **Done**
-- Implementado `HoverService` em `src/robot_lsp/application/hover_service.py`
-- Implementados tipos `MarkupContent`, `Hover` e `HoverContext`
-- Implementado hover de keywords locais com assinatura, argumentos e documentação
-- Implementado hover de variáveis locais com tipo e valor
-- Implementado hover de imports com tipo, nome, alias e argumentos
-- Integrado handler `textDocument/hover` ao `LspServer`
-- Criados testes unitários para service e handler LSP
+- Implemented `HoverService` in `src/robot_lsp/application/hover_service.py`
+- Implemented `MarkupContent`, `Hover`, and `HoverContext` types
+- Implemented hover for local keywords with signature, arguments, and documentation
+- Implemented hover for local variables with type and value
+- Implemented hover for imports with type, name, alias, and arguments
+- Integrated `textDocument/hover` handler into `LspServer`
+- Created unit tests for service and LSP handler
 
 **Acceptance Criteria**
-- ✅ Hover em keyword local retorna assinatura e documentação
-- ✅ Hover em variável retorna tipo e valor
-- ✅ Hover em import retorna tipo e caminho
-- ✅ Retorno respeita `MarkupKind.Markdown`
-- ✅ `null`/`None` se não encontrar nada no hover
-- ✅ Range no hover cobre o símbolo sob o cursor
+- ✅ Hover on local keyword returns signature and documentation
+- ✅ Hover on variable returns type and value
+- ✅ Hover on import returns type and path
+- ✅ Response respects `MarkupKind.Markdown`
+- ✅ `null`/`None` if nothing is found for hover
+- ✅ Hover range covers the symbol under the cursor
 
 ---
 
@@ -308,51 +308,51 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 - `textDocument/selectionRange`
 
 **Done**
-- Implementado `NavigationService` em `src/robot_lsp/application/navigation_service.py`
-- Implementado `textDocument/definition` para symbols locais
-- Implementado `textDocument/references` com suporte a `includeDeclaration`
-- Implementado `textDocument/documentSymbol` para imports, variables, test cases e keywords
-- Implementado `textDocument/foldingRange` para sections, test cases e keywords
-- Implementado `textDocument/selectionRange` com range de símbolo e parent de linha
-- Integradas capabilities de navigation no `initialize`
-- Criados testes unitários para service e handlers LSP
+- Implemented `NavigationService` in `src/robot_lsp/application/navigation_service.py`
+- Implemented `textDocument/definition` for local symbols
+- Implemented `textDocument/references` with `includeDeclaration` support
+- Implemented `textDocument/documentSymbol` for imports, variables, test cases, and keywords
+- Implemented `textDocument/foldingRange` for sections, test cases, and keywords
+- Implemented `textDocument/selectionRange` with symbol range and line parent
+- Integrated navigation capabilities in `initialize`
+- Created unit tests for service and LSP handlers
 
 **Acceptance Criteria**
-- ✅ `definition` retorna localizações locais
-- ✅ `references` retorna ocorrências locais e respeita `includeDeclaration`
-- ✅ `documentSymbol` retorna estrutura do documento
-- ✅ `foldingRange` retorna ranges dobráveis
-- ✅ `selectionRange` retorna ranges por posição
-- ✅ Handlers retornam listas vazias quando service/documento não existe
+- ✅ `definition` returns local locations
+- ✅ `references` returns local occurrences and respects `includeDeclaration`
+- ✅ `documentSymbol` returns document structure
+- ✅ `foldingRange` returns foldable ranges
+- ✅ `selectionRange` returns ranges by position
+- ✅ Handlers return empty lists when service/document does not exist
 
 ---
 
 ### Stage 09 — Workspace Index
 
 **Expected**
-- Indexação de arquivos `.robot` e `.resource` no workspace
-- Resolução de imports (`Library`, `Resource`, `Variables`)
-- Keywords de bibliotecas importadas
-- Variáveis de resources importados
-- Cache de workspace
+- Index `.robot` and `.resource` files in the workspace
+- Import resolution (`Library`, `Resource`, `Variables`)
+- Keywords from imported libraries
+- Variables from imported resources
+- Workspace cache
 
 **Done**
-- Implementado `WorkspaceIndex` em `src/robot_lsp/application/workspace.py`
-- Implementados `WorkspaceEntry`, `SymbolLocation` e `ImportResolution`
-- Implementado scan de arquivos `.robot` e `.resource`
-- Implementadas buscas `find_keyword` e `find_variable`
-- Implementada resolução básica de imports `Resource`, `Variables` e `Library`
-- Implementado cache simples por mtime + hash de conteúdo
-- Integrado opcionalmente `WorkspaceIndex` ao `CompletionService`
-- Integrado opcionalmente `WorkspaceIndex` ao `NavigationService`
-- Criados testes de indexação, resolução e integração cross-file via resource
+- Implemented `WorkspaceIndex` in `src/robot_lsp/application/workspace.py`
+- Implemented `WorkspaceEntry`, `SymbolLocation`, and `ImportResolution`
+- Implemented scanning for `.robot` and `.resource` files
+- Implemented `find_keyword` and `find_variable` searches
+- Implemented basic `Resource`, `Variables`, and `Library` import resolution
+- Implemented simple cache by mtime + content hash
+- Optionally integrated `WorkspaceIndex` into `CompletionService`
+- Optionally integrated `WorkspaceIndex` into `NavigationService`
+- Created tests for indexing, resolution, and cross-file integration through resources
 
 **Acceptance Criteria**
-- ✅ Indexação de arquivos `.robot` e `.resource`
-- ✅ Resolução básica de imports `Library`, `Resource`, `Variables`
-- ✅ Keywords de resources importados ficam disponíveis para completion/definition
-- ✅ Variáveis de resources importados ficam disponíveis para completion
-- ✅ Cache em memória por mtime + hash de conteúdo
+- ✅ Indexing of `.robot` and `.resource` files
+- ✅ Basic import resolution for `Library`, `Resource`, `Variables`
+- ✅ Keywords from imported resources are available for completion/definition
+- ✅ Variables from imported resources are available for completion
+- ✅ In-memory cache by mtime + content hash
 
 ---
 
@@ -364,22 +364,22 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 - `workspace/workspaceEdit`
 
 **Done**
-- Implementado `RefactoringService` em `src/robot_lsp/application/refactoring_service.py`
-- Implementado `textDocument/prepareRename`
-- Implementado `textDocument/rename`
-- Implementado `WorkspaceEdit` com `changes`
-- Implementado rename local de variables, keywords e test cases
-- Implementado rename textual em arquivos indexados quando `WorkspaceIndex` estiver disponível
-- Adicionada capability `renameProvider` com `prepareProvider: true`
-- Criados testes unitários para service e handlers LSP
+- Implemented `RefactoringService` in `src/robot_lsp/application/refactoring_service.py`
+- Implemented `textDocument/prepareRename`
+- Implemented `textDocument/rename`
+- Implemented `WorkspaceEdit` with `changes`
+- Implemented local rename for variables, keywords, and test cases
+- Implemented textual rename in indexed files when `WorkspaceIndex` is available
+- Added `renameProvider` capability with `prepareProvider: true`
+- Created unit tests for service and LSP handlers
 
 **Acceptance Criteria**
-- ✅ `prepareRename` retorna range e placeholder
-- ✅ `prepareRename` retorna `null` para símbolo desconhecido
-- ✅ `rename` retorna `WorkspaceEdit`
-- ✅ Rename local altera ocorrências do documento aberto
-- ✅ Rename com `WorkspaceIndex` inclui arquivos indexados
-- ✅ Handler retorna `null` quando service não está configurado
+- ✅ `prepareRename` returns range and placeholder
+- ✅ `prepareRename` returns `null` for unknown symbol
+- ✅ `rename` returns `WorkspaceEdit`
+- ✅ Local rename changes occurrences in the open document
+- ✅ Rename with `WorkspaceIndex` includes indexed files
+- ✅ Handler returns `null` when service is not configured
 
 ---
 
@@ -389,55 +389,55 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 - `textDocument/formatting`
 - `textDocument/rangeFormatting`
 - `textDocument/codeAction`
-- Quick fixes para diagnostics comuns
+- Quick fixes for common diagnostics
 
 **Done**
-- Implementado `FormattingService` em `src/robot_lsp/application/formatting_service.py`
-- Implementado `textDocument/formatting`
-- Implementado `textDocument/rangeFormatting`
-- Implementada normalização inicial de espaçamento entre células para 4 espaços
-- Implementada remoção de whitespace final por linha
-- Implementado `CodeActionService` em `src/robot_lsp/application/code_action_service.py`
-- Implementado `textDocument/codeAction`
-- Adicionadas capabilities `documentFormattingProvider`, `documentRangeFormattingProvider` e `codeActionProvider`
-- Criados testes unitários para services e handlers LSP
+- Implemented `FormattingService` in `src/robot_lsp/application/formatting_service.py`
+- Implemented `textDocument/formatting`
+- Implemented `textDocument/rangeFormatting`
+- Implemented initial spacing normalization between cells to 4 spaces
+- Implemented trailing whitespace removal per line
+- Implemented `CodeActionService` in `src/robot_lsp/application/code_action_service.py`
+- Implemented `textDocument/codeAction`
+- Added `documentFormattingProvider`, `documentRangeFormattingProvider`, and `codeActionProvider` capabilities
+- Created unit tests for services and LSP handlers
 
 **Acceptance Criteria**
-- ✅ `textDocument/formatting` retorna `TextEdit` de documento inteiro quando há mudanças
-- ✅ `textDocument/formatting` retorna lista vazia quando documento já está formatado
-- ✅ `textDocument/rangeFormatting` formata linhas tocadas pelo range
-- ✅ `textDocument/codeAction` retorna quick actions para diagnostics conhecidos
-- ✅ Capabilities de formatting e code action são anunciadas no `initialize`
-- ✅ Handlers retornam lista vazia quando services não estão configurados
+- ✅ `textDocument/formatting` returns a whole-document `TextEdit` when there are changes
+- ✅ `textDocument/formatting` returns an empty list when the document is already formatted
+- ✅ `textDocument/rangeFormatting` formats lines touched by the range
+- ✅ `textDocument/codeAction` returns quick actions for known diagnostics
+- ✅ Formatting and code action capabilities are advertised in `initialize`
+- ✅ Handlers return an empty list when services are not configured
 
 ---
 
 ### Stage 12 — Performance & Isolation
 
 **Expected**
-- Cache de parse de AST
-- Cache de análise de workspace
-- Cancelamento real de requests longos
-- Worker pool para operações pesadas
-- Subprocesso isolado para indexação (se necessário)
+- AST parse cache
+- Workspace analysis cache
+- Real cancellation for long requests
+- Worker pool for heavy operations
+- Isolated subprocess for indexing (if needed)
 
 **Done**
-- Implementado cache LRU de parse em `ParseService`
-- Cache de parse usa URI, versão do documento e SHA-256 do texto
-- Cache é reaproveitado por diagnostics, completion, hover, navigation e refactoring via `ParseService`
-- Adicionados métodos `clear_uri` e `clear` para invalidação explícita
-- Adicionado limite configurável `max_cache_entries`, padrão 50
-- Mantido cache de workspace já implementado por mtime + hash de conteúdo
-- Worker pool e subprocesso permanecem fora do MVP até métricas justificarem a complexidade
+- Implemented LRU parse cache in `ParseService`
+- Parse cache uses URI, document version, and SHA-256 text hash
+- Cache is reused by diagnostics, completion, hover, navigation, and refactoring through `ParseService`
+- Added `clear_uri` and `clear` methods for explicit invalidation
+- Added configurable `max_cache_entries` limit, default 50
+- Kept the existing workspace cache by mtime + content hash
+- Worker pool and subprocess remain outside the MVP until metrics justify the complexity
 
 **Acceptance Criteria**
-- ✅ Documento inalterado não é parseado novamente
-- ✅ Mudança de texto invalida cache
-- ✅ Mudança de versão invalida cache
-- ✅ Cache respeita limite LRU configurável
-- ✅ Cache pode ser invalidado por URI
-- ✅ Workspace index mantém cache por mtime + hash
-- ✅ Subprocess isolation documentado como futuro, não necessário no MVP atual
+- ✅ Unchanged document is not parsed again
+- ✅ Text change invalidates cache
+- ✅ Version change invalidates cache
+- ✅ Cache respects configurable LRU limit
+- ✅ Cache can be invalidated by URI
+- ✅ Workspace index keeps cache by mtime + hash
+- ✅ Subprocess isolation documented as future work, not needed in the current MVP
 
 ---
 
@@ -445,63 +445,63 @@ Os itens abaixo não bloqueiam o MVP, mas seguem pendentes para evolução pós-
 
 **Expected**
 - `workspace/configuration`
-- Configurações do LSP (feature flags, caminhos de import)
-- Configuração por workspace folder
+- LSP settings (feature flags, import paths)
+- Workspace-folder-specific configuration
 - `didChangeConfiguration`
 
 **Done**
-- Implementado `ConfigurationService` em `src/robot_lsp/application/configuration.py`
-- Implementado modelo `ServerConfig` com `importPaths`, `logLevel`, `diagnostics.enable` e `completion.snippets`
-- Implementado suporte a `initializationOptions`
-- Implementado handler `workspace/didChangeConfiguration`
-- Adicionada capability `workspace.didChangeConfiguration`
-- Integrado `diagnostics.enable` ao agendamento de diagnostics
-- Desabilitar diagnostics limpa diagnostics publicados de documentos abertos
-- Integrado `robot.lsp.importPaths` à resolução de imports de arquivos no `WorkspaceIndex`
-- Criados testes unitários para config service, handler LSP e import paths
+- Implemented `ConfigurationService` in `src/robot_lsp/application/configuration.py`
+- Implemented `ServerConfig` model with `importPaths`, `logLevel`, `diagnostics.enable`, and `completion.snippets`
+- Implemented `initializationOptions` support
+- Implemented `workspace/didChangeConfiguration` handler
+- Added `workspace.didChangeConfiguration` capability
+- Integrated `diagnostics.enable` into diagnostic scheduling
+- Disabling diagnostics clears published diagnostics from open documents
+- Integrated `robot.lsp.importPaths` into file import resolution in `WorkspaceIndex`
+- Created unit tests for config service, LSP handler, and import paths
 
 **Acceptance Criteria**
-- ✅ Defaults funcionam sem configuração
-- ✅ `initializationOptions` aplica configurações iniciais
-- ✅ `workspace/didChangeConfiguration` atualiza configurações em runtime
-- ✅ Diagnostics podem ser desabilitados por configuração
-- ✅ Desabilitar diagnostics limpa diagnostics existentes
-- ✅ `robot.lsp.importPaths` participa da resolução de `Resource` e `Variables`
-- ✅ Valores inválidos são ignorados sem quebrar configuração existente
-- ✅ `workspace/configuration` permanece como futuro server-to-client quando existir loop de request outbound
+- ✅ Defaults work without configuration
+- ✅ `initializationOptions` applies initial settings
+- ✅ `workspace/didChangeConfiguration` updates settings at runtime
+- ✅ Diagnostics can be disabled through configuration
+- ✅ Disabling diagnostics clears existing diagnostics
+- ✅ `robot.lsp.importPaths` participates in `Resource` and `Variables` resolution
+- ✅ Invalid values are ignored without breaking existing configuration
+- ✅ `workspace/configuration` remains future server-to-client work when an outbound request loop exists
 
 ---
 
 ### Stage 14 — Release Hardening
 
 **Expected**
-- Matriz de compatibilidade RF 7.x
+- RF 7.x compatibility matrix
 - CI pipeline
-- Packaging e distribuição
-- Logging estruturado
-- Tracing para diagnóstico
-- Documentação de uso
+- Packaging and distribution
+- Structured logging
+- Tracing for diagnostics
+- Usage documentation
 - Changelog
 
 **Done**
-- Implementado runner stdio real em `src/robot_lsp/main.py`
-- Implementada fábrica `create_server()` com todos os services do MVP conectados
-- Implementado `--version`
-- Implementado `--log-level` com logs em stderr
-- Protocol errors no loop stdio retornam JSON-RPC error response
-- Notifications pendentes são drenadas pelo runner
-- Diagnostics assíncronos podem publicar diretamente no transporte do runner
-- Adicionado workflow CI em `.github/workflows/ci.yml`
-- Adicionado `README.md`
-- Adicionado `docs/usage.md`
-- Adicionado `docs/changelog.md`
-- Atualizada matriz de compatibilidade com targets e validação local
+- Implemented real stdio runner in `src/robot_lsp/main.py`
+- Implemented `create_server()` factory with all MVP services connected
+- Implemented `--version`
+- Implemented `--log-level` with logs on stderr
+- Protocol errors in the stdio loop return JSON-RPC error responses
+- Pending notifications are drained by the runner
+- Asynchronous diagnostics can publish directly to the runner transport
+- Added CI workflow in `.github/workflows/ci.yml`
+- Added `README.md`
+- Added `docs/usage.md`
+- Added `docs/changelog.md`
+- Updated compatibility matrix with targets and local validation
 
 **Acceptance Criteria**
-- ✅ `python -m robot_lsp --version` retorna versão
-- ✅ Runner stdio responde sessão mínima LSP
-- ✅ Runner stdio retorna erro JSON-RPC para mensagem inválida
-- ✅ Logs usam stderr, preservando stdout para LSP
-- ✅ CI pipeline documentado em GitHub Actions
-- ✅ Documentação de uso e changelog inicial existem
-- ✅ Testes e compileall passam
+- ✅ `python -m robot_lsp --version` returns version
+- ✅ Stdio runner responds to minimal LSP session
+- ✅ Stdio runner returns JSON-RPC error for invalid message
+- ✅ Logs use stderr, preserving stdout for LSP
+- ✅ CI pipeline documented in GitHub Actions
+- ✅ Usage documentation and initial changelog exist
+- ✅ Tests and compileall pass

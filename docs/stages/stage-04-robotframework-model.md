@@ -6,31 +6,31 @@ done
 
 ## Goal
 
-Implementar o detector de versão do Robot Framework, o parser via `robot.api.parsing`, o modelo intermediário e o adaptador AST.
+Implement the Robot Framework version detector, parser through `robot.api.parsing`, intermediate model, and AST adapter.
 
 ## Scope
 
-- `RobotFrameworkVersionDetector`: lê `robot.version.VERSION` e retorna `VersionInfo`
-- `FeatureSet`: flags baseadas na versão:
-  - `has_group` (>= 7.2)
-  - `has_secret_variables` (>= 7.4)
-- Modelo intermediário em `domain/models.py`:
-  - `RobotSuite`, `RobotSettings`, `RobotVariable`, `RobotImport`
-  - `RobotTestCase`, `RobotKeyword`, `RobotStep`, `RobotArg`
-  - `RobotDocument`
-- `RobotFrameworkParser`: interface pública para parse de texto/arquivo
-- `RobotFrameworkASTAdapter`: mapeia AST do RF para modelos intermediários
-  - Visita `File` → `RobotSuite`
-  - `SettingSection` → `RobotSettings`, `RobotImport`, `RobotVariable`
-  - `TestCaseSection` → `RobotTestCase`
-  - `KeywordSection` → `RobotKeyword`
-- Fixtures de teste: arquivos `.robot` e `.resource` reais
+- `RobotFrameworkVersionDetector`: reads `robot.version.VERSION` and returns `VersionInfo`
+- `FeatureSet`: version-based flags:
+- `has_group` (>= 7.2)
+- `has_secret_variables` (>= 7.4)
+- Intermediate model in `domain/models.py`:
+- `RobotSuite`, `RobotSettings`, `RobotVariable`, `RobotImport`
+- `RobotTestCase`, `RobotKeyword`, `RobotStep`, `RobotArg`
+- `RobotDocument`
+- `RobotFrameworkParser`: public interface for parsing text/files
+- `RobotFrameworkASTAdapter`: maps RF AST to intermediate models
+- Visits `File` -> `RobotSuite`
+- `SettingSection` -> `RobotSettings`, `RobotImport`, `RobotVariable`
+- `TestCaseSection` -> `RobotTestCase`
+- `KeywordSection` -> `RobotKeyword`
+- Test fixtures: real `.robot` and `.resource` files
 
 ## Out Of Scope
 
 - Diagnostics (Stage 05)
-- Completion/hover baseados no modelo (Stage 06+)
-- Resolução de imports/bibliotecas
+- Model-based completion/hover (Stage 06+)
+- Import/library resolution
 
 ## Deliverables
 
@@ -40,18 +40,18 @@ Implementar o detector de versão do Robot Framework, o parser via `robot.api.pa
 - `src/robot_lsp/infrastructure/robotframework/parser.py`
 - `src/robot_lsp/infrastructure/robotframework/adapter.py`
 - `src/robot_lsp/infrastructure/robotframework/visitors.py`
-- Fixtures `.robot` em `tests/integration/fixtures/`
-- Testes unitários do adapter
+- `.robot` fixtures in `tests/integration/fixtures/`
+- Adapter unit tests
 
 ## Acceptance Criteria
 
-- Versão 7.0+ detectada sem erro
-- `FeatureSet` reflete versão instalada
-- `RobotSuite` é populado corretamente a partir de texto `.robot`
-- Settings, variables, imports, test cases e keywords são extraídos
-- Erros de parse (sintaxe inválida) são capturados sem crash
-- Core não importa `robot.api.parsing` nem `robot.parsing.*`
-- Testes com fixtures reais passam
+- Version 7.0+ is detected without error
+- `FeatureSet` reflects the installed version
+- `RobotSuite` is populated correctly from `.robot` text
+- Settings, variables, imports, test cases, and keywords are extracted
+- Parse errors (invalid syntax) are captured without crashing
+- Core does not import `robot.api.parsing` or `robot.parsing.*`
+- Tests with real fixtures pass
 
 ## Tests
 
@@ -70,17 +70,17 @@ Implementar o detector de versão do Robot Framework, o parser via `robot.api.pa
 
 ## Risks
 
-- AST do RF pode mudar entre minor versions — testar adapter com cada versão 7.x
-- Erros de parse podem vir sem posição — fallback necessário
+- RF AST may change between minor versions; test the adapter with each 7.x version
+- Parse errors may come without positions; fallback is required
 
 ## Dependencies
 
-- Stage 03 (precisa de `Document` e posições)
+- Stage 03 (needs `Document` and positions)
 
 ## Notes
 
-- Stage concluída com parser e adapter base para Robot Framework >= 7.0.
-- O core (`domain`, `application`, `protocol`) não importa `robot.api.parsing` nem `robot.parsing`.
-- O adapter trabalha por modelos intermediários e tokens públicos do `robot.api.parsing`.
-- Erros de parse expostos como nós `Error` são convertidos para `RobotDiagnostic`.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with the base parser and adapter for Robot Framework >= 7.0.
+- The core (`domain`, `application`, `protocol`) does not import `robot.api.parsing` or `robot.parsing`.
+- The adapter works through intermediate models and public `robot.api.parsing` tokens.
+- Parse errors exposed as `Error` nodes are converted to `RobotDiagnostic`.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

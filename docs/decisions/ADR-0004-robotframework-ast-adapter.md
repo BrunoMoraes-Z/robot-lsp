@@ -6,33 +6,33 @@ accepted
 
 ## Context
 
-O AST do Robot Framework muda entre versões (ex: `Return` → `ReturnSetting` em 7.0, `Group` adicionado em 7.2). Precisamos isolar o core do LSP dessas mudanças.
+The Robot Framework AST changes between versions (for example, `Return` -> `ReturnSetting` in 7.0, `Group` added in 7.2). We need to isolate the LSP core from those changes.
 
 ## Decision
 
-Criar uma camada de adaptador em `infrastructure/robotframework/` que:
+Create an adapter layer in `infrastructure/robotframework/` that:
 
-1. Usa exclusivamente APIs públicas de `robot.api.parsing` (nunca `robot.parsing.*`).
-2. Define modelos intermediários próprios em `domain/models.py`.
-3. O adaptador mapeia nós do AST RF → modelos intermediários.
-4. O core do LSP trabalha apenas com modelos intermediários.
+1. Uses only public APIs from `robot.api.parsing` (never `robot.parsing.*`).
+2. Defines custom intermediate models in `domain/models.py`.
+3. Maps RF AST nodes -> intermediate models.
+4. Keeps the LSP core working only with intermediate models.
 
-### Modelos intermediários
+### Intermediate Models
 - `RobotSuite`, `RobotSettings`, `RobotVariable`, `RobotImport`
 - `RobotTestCase`, `RobotKeyword`, `RobotStep`, `RobotArg`
 - `RobotDiagnostic`
 
-### Versionamento
-- `FeatureSet` contém flags baseadas na versão do RF.
-- Novos nós AST são mapeados condicionalmente conforme disponíveis.
+### Versioning
+- `FeatureSet` contains flags based on the RF version.
+- New AST nodes are mapped conditionally when available.
 
 ## Consequences
 
-- Mudanças no AST do RF afetam apenas o adaptador.
-- Testes do adaptador quebram primeiro quando RF muda, protegendo o resto.
-- Core do LSP permanece estável entre versões do RF.
+- RF AST changes affect only the adapter.
+- Adapter tests fail first when RF changes, protecting the rest of the code.
+- The LSP core remains stable across RF versions.
 
 ## Alternatives Considered
 
-- Usar AST do RF diretamente: rejeitado por risco de quebra entre versões.
-- monkey-patching do AST: rejeitado por ser frágil.
+- Use the RF AST directly: rejected because of breakage risk between versions.
+- Monkey-patching the AST: rejected because it is fragile.

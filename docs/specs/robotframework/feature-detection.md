@@ -6,7 +6,7 @@ Stage 04 — Robot Framework Model
 
 ## Strategy
 
-Usar duas abordagens complementares:
+Use two complementary approaches:
 
 ### 1. Version String Parsing
 
@@ -23,7 +23,7 @@ class VersionInfo:
 
 ### 2. Feature Import Detection
 
-Usar `try/except ImportError` para classes que podem não existir:
+Use `try/except ImportError` for classes that may not exist:
 
 ```python
 try:
@@ -45,10 +45,10 @@ class FeatureSet:
 
 ## Global Feature Set
 
-FeatureSet é computado uma vez na inicialização do servidor e disponibilizado via injeção de dependência. Todas as partes do sistema que precisam saber de capacidades do RF recebem o FeatureSet.
+FeatureSet is computed once during server startup and made available through dependency injection. Every system component that needs to know RF capabilities receives the FeatureSet.
 
 ## Tests
 
-- Testar com mock de `robot.version.VERSION`
-- Testar com RF 7.0 e RF 7.2+ se disponível
-- FeatureSet congelado (frozen) para evitar mutação
+- Test with a mock of `robot.version.VERSION`
+- Test with RF 7.0 and RF 7.2+ if available
+- Frozen FeatureSet to avoid mutation

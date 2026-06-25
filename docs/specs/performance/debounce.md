@@ -6,7 +6,7 @@ Stage 05 — Diagnostics
 
 ## Goal
 
-Evitar processamento excessivo durante digitação rápida.
+Avoid excessive processing during fast typing.
 
 ## Implementation
 
@@ -21,9 +21,9 @@ class Debouncer:
 
 ## Current Usage
 
-- Diagnostics: 300ms debounce por URI
-- Completion: sem debounce (responde a cada request)
-- Hover: sem debounce (responde a cada request)
+- Diagnostics: 300 ms debounce by URI
+- Completion: no debounce (responds to each request)
+- Hover: no debounce (responds to each request)
 
 ## Future Usage
 
@@ -32,6 +32,6 @@ class Debouncer:
 
 ## Design
 
-- Timer é cancelado se nova chamada chegar com mesma key
-- Timer executa callback no próximo tick do event loop
-- Thread-safe: usar `threading.Lock` ou `threading.Timer` nativo
+- Timer is cancelled if a new call arrives with the same key
+- Timer runs callback on the next event loop tick
+- Thread-safe: use `threading.Lock` or native `threading.Timer`

@@ -9,7 +9,7 @@ Stage 03 — Document & Workspace
 - `textDocument/didOpen`
 - `textDocument/didChange`
 - `textDocument/didClose`
-- `textDocument/didSave` (opcional, postergado)
+- `textDocument/didSave` (optional, deferred)
 
 ## Initial Scope
 
@@ -43,21 +43,21 @@ class DocumentStore:
 
 ### didChange Flow
 
-1. Cliente envia `didChange` com `textDocument.uri`, `contentChanges[0].text` (full), `textDocument.version`
-2. `DocumentStore.change()` atualiza texto e versão
-3. Dispara `ParseService` para atualizar modelo
-4. Dispara `DiagnosticService` para gerar diagnostics
+1. Client sends `didChange` with `textDocument.uri`, `contentChanges[0].text` (full), `textDocument.version`
+2. `DocumentStore.change()` updates text and version
+3. Triggers `ParseService` to update the model
+4. Triggers `DiagnosticService` to generate diagnostics
 
 ## Future Scope
 
-- `TextDocumentSyncKind.Incremental` (2) — enviar diffs em vez do texto completo
-- `didSave` — notificação opcional
-- `willSave` / `willSaveWaitUntil` — se necessário
+- `TextDocumentSyncKind.Incremental` (2): send diffs instead of the full text
+- `didSave`: optional notification
+- `willSave` / `willSaveWaitUntil`: if needed
 
 ## Tests
 
-- Abertura de documento
-- Mudança completa de conteúdo
-- Versionamento incremental
-- Fechamento e remoção
-- Sobrescrita de documento já aberto
+- Document open
+- Full content change
+- Incremental versioning
+- Close and removal
+- Overwrite already-open document

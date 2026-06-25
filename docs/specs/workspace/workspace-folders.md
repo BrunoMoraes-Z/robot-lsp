@@ -11,6 +11,6 @@
 
 ## Notes
 
-- Inicialmente, `rootUri` do `initialize` é suficiente
-- Workspace folders dinâmicos serão implementados quando houver suporte a multi-root workspace
-- Impacta resolução de imports relativos
+- Initially, `rootUri` from `initialize` is sufficient
+- Dynamic workspace folders will be implemented when multi-root workspace support exists
+- Impacts relative import resolution

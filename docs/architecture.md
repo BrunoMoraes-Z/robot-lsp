@@ -2,7 +2,7 @@
 
 ## Overview
 
-Clean Architecture com separação explícita em camadas. O fluxo de dados sempre aponta para o centro: protocolo → aplicação → domínio, com a infraestrutura sendo injetada nas bordas.
+Clean Architecture with explicit layer separation. Data flow always points inward: protocol -> application -> domain, with infrastructure injected at the edges.
 
 ```
   ┌─────────────────────────────────────────┐
@@ -33,46 +33,46 @@ Clean Architecture com separação explícita em camadas. O fluxo de dados sempr
 ## Layer Rules
 
 ### Domain Layer (`src/robot_lsp/domain/`)
-- Pure Python com `dataclasses` e tipos padrão.
-- Sem dependências externas (nem Robot Framework, nem LSP, nem JSON-RPC).
-- Modelos intermediários do LSP: `LspRange`, `LspPosition`, `LspDiagnostic`.
-- Modelos intermediários do Robot: `RobotSuite`, `RobotTestCase`, `RobotKeyword`, `RobotVariable`, `RobotStep`, `RobotImport`, `RobotSettings`, `RobotArg`.
-- `FeatureSet`: informação da versão do Robot Framework e capacidades ativas.
+- Pure Python with `dataclasses` and standard types.
+- No external dependencies (not Robot Framework, LSP, or JSON-RPC).
+- Intermediate LSP models: `LspRange`, `LspPosition`, `LspDiagnostic`.
+- Intermediate Robot models: `RobotSuite`, `RobotTestCase`, `RobotKeyword`, `RobotVariable`, `RobotStep`, `RobotImport`, `RobotSettings`, `RobotArg`.
+- `FeatureSet`: Robot Framework version information and active capabilities.
 
 ### Application Layer (`src/robot_lsp/application/`)
-- Casos de uso do LSP.
-- Depende apenas de `domain/`.
-- `DocumentStore`: gerencia documentos abertos.
-- `Workspace`: gerencia arquivos do workspace.
-- `ParseService`: coordena parse via infraestrutura.
-- `DiagnosticService`: coordena geração e publicação de diagnostics.
-- `CompletionService`: coordena completion.
-- `HoverService`: coordena hover.
+- LSP use cases.
+- Depends only on `domain/`.
+- `DocumentStore`: manages open documents.
+- `Workspace`: manages workspace files.
+- `ParseService`: coordinates parsing through infrastructure.
+- `DiagnosticService`: coordinates diagnostic generation and publication.
+- `CompletionService`: coordinates completion.
+- `HoverService`: coordinates hover.
 
 ### Protocol Layer (`src/robot_lsp/protocol/`)
-- JSON-RPC 2.0 puro.
-- LSP framing sobre `stdio`.
-- `Endpoint`: roteamento de requests/notifications.
-- `Dispatch`: mapeamento de método LSP para handler.
-- `Server`: estado do servidor LSP e handlers de lifecycle.
-- Depende de `application/` e `domain/`.
+- Pure JSON-RPC 2.0.
+- LSP framing over `stdio`.
+- `Endpoint`: request/notification routing.
+- `Dispatch`: maps LSP methods to handlers.
+- `Server`: LSP server state and lifecycle handlers.
+- Depends on `application/` and `domain/`.
 
 ### Infrastructure Layer (`src/robot_lsp/infrastructure/`)
-- Implementações concretas: parser do Robot Framework, adapter AST.
-- Única camada que importa `robotframework`.
-- `robotframework/version.py`: detector de versão.
-- `robotframework/parser.py`: parse via `robot.api.parsing`.
-- `robotframework/adapter.py`: mapeia AST RF → modelo intermediário.
-- `robotframework/visitors.py`: visitors para extrair informações do AST.
+- Concrete implementations: Robot Framework parser, AST adapter.
+- The only layer that imports `robotframework`.
+- `robotframework/version.py`: version detector.
+- `robotframework/parser.py`: parsing through `robot.api.parsing`.
+- `robotframework/adapter.py`: maps RF AST -> intermediate model.
+- `robotframework/visitors.py`: visitors for extracting AST information.
 
 ## Dependency Rule
 
-- Camadas externas dependem de camadas internas.
-- `domain/` não depende de ninguém.
-- `application/` depende só de `domain/`.
-- `protocol/` depende de `application/` e `domain/`.
-- `infrastructure/` depende de `domain/` (retorna modelos).
-- Nenhuma camada externa conhece implementação interna de outra camada externa.
+- Outer layers depend on inner layers.
+- `domain/` depends on nothing.
+- `application/` depends only on `domain/`.
+- `protocol/` depends on `application/` and `domain/`.
+- `infrastructure/` depends on `domain/` (returns models).
+- No outer layer knows the internal implementation of another outer layer.
 
 ## Project Layout
 
@@ -85,7 +85,7 @@ src/robot_lsp/
   domain/
     __init__.py
     models.py           # RobotSuite, RobotTestCase, RobotKeyword, etc.
-    positions.py        # LspPosition, LspRange, conversão
+    positions.py        # LspPosition, LspRange, conversion
     diagnostics.py      # LspDiagnostic, DiagnosticSeverity
     features.py         # FeatureSet, VersionInfo
 
@@ -105,15 +105,15 @@ src/robot_lsp/
       version.py        # RobotFrameworkVersionDetector
       parser.py         # RobotFrameworkParser
       adapter.py        # RobotFrameworkASTAdapter
-      visitors.py       # AST visitors especializados
+      visitors.py       # specialized AST visitors
 
   protocol/
     __init__.py
     jsonrpc.py          # JsonRpcMessage, encode/decode
     transport_stdio.py  # TransportStdio (Content-Length reader/writer)
-    endpoint.py         # Endpoint (dispatch/cancelamento)
+    endpoint.py         # Endpoint (dispatch/cancellation)
     dispatch.py         # MethodDispatcher
-    lsp_types.py        # Lsp types auxiliares
+    lsp_types.py        # auxiliary LSP types
     server.py           # LspServer (lifecycle, handlers)
 
   adapters/
@@ -139,11 +139,11 @@ tests/
       group_rf72.robot
 ```
 
-## Extensibilidade Futura
+## Future Extensibility
 
-Extensões IDE (VS Code, Neovim, etc.) serão adaptadores que:
-- Disparam o processo LSP.
-- Gerenciam transporte `stdio` ou TCP.
-- Mapeiam recursos IDE para o protocolo LSP.
+IDE extensions (VS Code, Neovim, etc.) will be adapters that:
+- Start the LSP process.
+- Manage `stdio` or TCP transport.
+- Map IDE features to the LSP protocol.
 
-Os adaptadores ficarão em um pacote separado (`robot_lsp_ide_vscode`, etc.) sem modificar o core.
+Adapters will live in separate packages (`robot_lsp_ide_vscode`, etc.) without modifying the core.

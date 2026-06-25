@@ -6,39 +6,39 @@ done
 
 ## Goal
 
-Implementar hover para mostrar informações sobre símbolos sob o cursor: keywords, variáveis e imports.
+Implement hover to show information about symbols under the cursor: keywords, variables, and imports.
 
 ## Scope
 
 - `textDocument/hover` handler
-- `HoverContext`: posição do cursor, documento, modelo parseado
+- `HoverContext`: cursor position, document, parsed model
 - Providers:
-  - **KeywordHoverProvider**: mostra assinatura (nome + args) e docstring de keywords locais
-  - **VariableHoverProvider**: mostra tipo (scalar/list/dict/secret) e valor bruto
-  - **ImportHoverProvider**: mostra tipo do import (Library/Resource/Variables) e caminho
-- `Hover` response com `contents` (MarkupContent) e `range`
-- Formatação Markdown para `contents`
-- `null` se não encontrar nada no hover
+- **KeywordHoverProvider**: shows signature (name + args) and docstring for local keywords
+- **VariableHoverProvider**: shows type (scalar/list/dict/secret) and raw value
+- **ImportHoverProvider**: shows import type (Library/Resource/Variables) and path
+- `Hover` response with `contents` (MarkupContent) and `range`
+- Markdown formatting for `contents`
+- `null` if nothing is found for hover
 
 ## Out Of Scope
 
-- Hover em keywords de bibliotecas externas (Stage 09)
-- Hover em variáveis de escopo global ou arguments de keywords
+- Hover for external library keywords (Stage 09)
+- Hover for global-scope variables or keyword arguments
 
 ## Deliverables
 
 - `src/robot_lsp/application/hover_service.py`
-- Providers em módulos internos
-- Testes para cada provider
+- Providers in internal modules
+- Tests for each provider
 
 ## Acceptance Criteria
 
-- Hover em keyword local: retorna `**Nome(args)**\n\ndocstring` em markdown
-- Hover em variável: retorna `**Tipo**: valor`
-- Hover em import: retorna `**Library**: Nome` ou similar
-- `range` no hover cobre o símbolo sob o cursor
-- Retorna `null` se cursor não está sobre símbolo conhecido
-- Markdown é formatado corretamente (cabeçalho, code, etc.)
+- Hover on local keyword: returns `**Name(args)**\n\ndocstring` in markdown
+- Hover on variable: returns `**Type**: value`
+- Hover on import: returns `**Library**: Name` or similar
+- Hover `range` covers the symbol under the cursor
+- Returns `null` if the cursor is not over a known symbol
+- Markdown is formatted correctly (heading, code, etc.)
 
 ## Tests
 
@@ -51,17 +51,17 @@ Implementar hover para mostrar informações sobre símbolos sob o cursor: keywo
 
 ## Risks
 
-- Identificar o símbolo exato sob o cursor requer análise de linha e coluna
-- Docstrings multi-line precisam ser formatadas corretamente em markdown
+- Identifying the exact symbol under the cursor requires line and column analysis
+- Multiline docstrings must be formatted correctly in markdown
 
 ## Dependencies
 
-- Stage 04 (modelo RF)
+- Stage 04 (RF model)
 
 ## Notes
 
-- Stage concluída com hover inicial para keywords locais, variables locais e imports.
-- `textDocument/hover` foi integrado ao `LspServer` como request LSP.
-- O serviço usa `DocumentStore` + `ParseService`, sem dependência direta do Robot Framework.
-- Hover de libraries/resources importados permanece fora do escopo e será tratado após workspace index.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with initial hover for local keywords, local variables, and imports.
+- `textDocument/hover` was integrated into `LspServer` as an LSP request.
+- The service uses `DocumentStore` + `ParseService`, without a direct Robot Framework dependency.
+- Hover for imported libraries/resources remains out of scope and will be handled after workspace index.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

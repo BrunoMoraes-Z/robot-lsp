@@ -2,7 +2,7 @@
 
 ## Stage
 
-**Planned** (pós-MVP)
+**Planned** (post-MVP)
 
 ## LSP Methods
 
@@ -11,10 +11,10 @@
 ## Commands (future)
 
 - `robot.runTest`: executar teste sob o cursor
-- `robot.runSuite`: executar suite atual
+- `robot.runSuite`: run current suite
 - `robot.debug`: iniciar debug
 
 ## Notes
 
-- Commands são acionados por code actions ou comandos do editor
-- Implementação depende do debug adapter (fora do escopo LSP)
+- Commands are triggered by code actions or editor commands
+- Implementation depends on the debug adapter (outside LSP scope)

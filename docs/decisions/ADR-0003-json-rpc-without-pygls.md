@@ -6,27 +6,27 @@ accepted
 
 ## Context
 
-Precisamos decidir como implementar o protocolo LSP. As opções são usar pygls (biblioteca Python para LSP) ou implementar JSON-RPC e transporte próprios.
+We need to decide how to implement the LSP protocol. The options are to use pygls (a Python LSP library) or implement our own JSON-RPC and transport.
 
 ## Decision
 
-Implementar JSON-RPC 2.0 e o transporte LSP (`Content-Length` framing sobre `stdio`) como código próprio, sem utilizar `pygls`, `python-lsp-server` ou `robocorp_ls_core`.
+Implement JSON-RPC 2.0 and LSP transport (`Content-Length` framing over `stdio`) as custom code, without using `pygls`, `python-lsp-server`, or `robocorp_ls_core`.
 
 ## Consequences
 
 ### Positive
-- Controle total do lifecycle do protocolo.
-- Sem acoplamento com versões de terceiros.
-- Possibilidade de otimizações específicas (cancelamento, tracing, performance).
-- Código mínimo e enxuto para o que realmente precisamos.
+- Full control of the protocol lifecycle.
+- No coupling to third-party versions.
+- Possibility for specific optimizations (cancellation, tracing, performance).
+- Minimal, lean code for what we actually need.
 
 ### Negative
-- Mais código para manter.
-- Responsabilidade por compatibilidade com especificação LSP.
-- Precisa implementar corretamente edge cases do protocolo.
+- More code to maintain.
+- Responsibility for compatibility with the LSP specification.
+- Protocol edge cases must be implemented correctly.
 
 ## Alternatives Considered
 
-- pygls: abstrai JSON-RPC e LSP, mas esconde detalhes de implementação e adiciona dependência pesada.
-- python-lsp-server: focado em Python, não se adapta bem ao Robot Framework.
-- robocorp_ls_core: reaproveitar o código do LSP existente, mas é proprietário e complexo.
+- pygls: abstracts JSON-RPC and LSP, but hides implementation details and adds a heavy dependency.
+- python-lsp-server: focused on Python and does not fit Robot Framework well.
+- robocorp_ls_core: reuses existing LSP code, but it is proprietary and complex.

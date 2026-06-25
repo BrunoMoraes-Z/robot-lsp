@@ -6,41 +6,41 @@ done
 
 ## Goal
 
-Implementar geração de diagnostics a partir do parse do Robot Framework e publicação via `textDocument/publishDiagnostics`.
+Implement diagnostic generation from Robot Framework parsing and publication through `textDocument/publishDiagnostics`.
 
 ## Scope
 
-- Coletar erros de sintaxe do parser RF
-- Mapear erros para `LspDiagnostic` com severity, message, range
-- Converter ranges RF (1-based) para LSP (0-based UTF-16)
-- `textDocument/publishDiagnostics`: enviar diagnostics para o cliente
-- `DiagnosticService`: orquestrar:
-  - Parse do documento
-  - Coleta de diagnostics
-  - Debounce (300ms) para evitar flood
-  - Cancelar diagnóstico pendente por URI quando novo didChange chega
-  - Publicar apenas se houve mudança
-- Fallback: quando RF não fornece range, usar linha inteira
+- Collect syntax errors from the RF parser
+- Map errors to `LspDiagnostic` with severity, message, and range
+- Convert RF ranges (1-based) to LSP ranges (0-based UTF-16)
+- `textDocument/publishDiagnostics`: send diagnostics to the client
+- `DiagnosticService`: orchestrate:
+- Document parsing
+- Diagnostic collection
+- Debounce (300 ms) to avoid flooding
+- Cancel pending diagnostics by URI when a new didChange arrives
+- Publish only if there was a change
+- Fallback: when RF does not provide a range, use the whole line
 
 ## Out Of Scope
 
-- Análise semântica (robocop, regras de boas práticas)
+- Semantic analysis (robocop, best-practice rules)
 - Code actions
 
 ## Deliverables
 
 - `src/robot_lsp/application/diagnostic_service.py`
 - `src/robot_lsp/domain/diagnostics.py`
-- Integração com `LspServer` para publicar diagnostics
+- Integration with `LspServer` to publish diagnostics
 
 ## Acceptance Criteria
 
-- Documento inválido dispara `publishDiagnostics` com ao menos 1 diagnostic
-- Documento corrigido limpa diagnostics (array vazio)
-- Debounce evita publicações em cada caractere digitado
-- Diagnostics cancelados (sobrescritos) não são publicados
-- Range do diagnostic cobre a região do erro (ou fallback para linha)
-- Severidade correta: error para parse error
+- Invalid document triggers `publishDiagnostics` with at least 1 diagnostic
+- Fixed document clears diagnostics (empty array)
+- Debounce avoids publications on every typed character
+- Cancelled diagnostics (superseded) are not published
+- Diagnostic range covers the error region (or falls back to the line)
+- Correct severity: error for parse error
 
 ## Tests
 
@@ -53,17 +53,17 @@ Implementar geração de diagnostics a partir do parse do Robot Framework e publ
 
 ## Risks
 
-- RF pode não reportar posição exata em todos os erros
-- Debounce pode atrasar feedback; ajustar para 300ms como padrão
+- RF may not report exact positions for all errors
+- Debounce may delay feedback; use 300 ms as the default
 
 ## Dependencies
 
-- Stage 04 (modelo RF)
+- Stage 04 (RF model)
 
 ## Notes
 
-- Stage concluída com `ParseService`, `DiagnosticService` e integração opcional com `LspServer`.
-- O servidor mantém notifications de saída em `outgoing_notifications` até termos o loop de transporte completo.
-- `didOpen` e `didChange` agendam diagnostics; `didClose` limpa diagnostics.
-- `DiagnosticService.flush(uri)` foi adicionado para testes determinísticos e uso controlado.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with `ParseService`, `DiagnosticService`, and optional integration with `LspServer`.
+- The server keeps outgoing notifications in `outgoing_notifications` until the full transport loop exists.
+- `didOpen` and `didChange` schedule diagnostics; `didClose` clears diagnostics.
+- `DiagnosticService.flush(uri)` was added for deterministic tests and controlled usage.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

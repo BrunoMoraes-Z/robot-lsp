@@ -10,7 +10,7 @@
 
 ## Scope Implemented
 
-Retorna símbolos planos para:
+Returns flat symbols for:
 
 - Imports
 - Variables
@@ -19,4 +19,4 @@ Retorna símbolos planos para:
 
 ## Future Scope
 
-- Símbolos hierárquicos por sections.
+- Hierarchical symbols by section.

@@ -6,15 +6,15 @@ Stage 04 — Robot Framework Model (parse), Stage 06 — Completion, Stage 07 �
 
 ## Types
 
-1. **User keywords**: definidas em `*** Keywords ***`
-2. **Library keywords**: de libraries importadas
-3. **BuiltIn keywords**: keywords internas do Robot Framework (Should Be Equal, Log, etc.)
-4. **Resource keywords**: de arquivos `.resource` importados
+1. **User keywords**: defined in `*** Keywords ***`
+2. **Library keywords**: from imported libraries
+3. **BuiltIn keywords**: internal Robot Framework keywords (Should Be Equal, Log, etc.)
+4. **Resource keywords**: from imported `.resource` files
 
 ## Initial Scope (MVP)
 
-- User keywords do mesmo arquivo
-- BuiltIn keywords básicas (conhecidas previamente)
+- User keywords from the same file
+- Basic BuiltIn keywords (known beforehand)
 
 ## Future Scope
 

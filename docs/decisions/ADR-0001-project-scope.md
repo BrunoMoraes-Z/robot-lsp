@@ -6,32 +6,32 @@ accepted
 
 ## Context
 
-Precisamos definir o escopo inicial e visão de longo prazo do projeto.
+We need to define the project's initial scope and long-term vision.
 
 ## Decision
 
-Robot Framework Language Server é um projeto de longo prazo que implementará o protocolo LSP completo para arquivos `.robot` e `.resource`. O projeto é real (não POC) e será desenvolvido em estágios incrementalmente.
+Robot Framework Language Server is a long-term project that will implement the full LSP protocol for `.robot` and `.resource` files. The project is real (not a POC) and will be developed incrementally in stages.
 
-### In Scope (visão geral)
-- Servidor LSP para Robot Framework suportando RF >= 7.0.
-- JSON-RPC 2.0 próprio (sem pygls).
-- Transporte via `stdio`.
-- Todos os métodos LSP propostos pelo protocolo, implementados em estágios.
-- Clean Architecture com modelos intermediários.
-- Suporte a múltiplas versões do Robot Framework via feature detection.
-- Testes unitários e de integração.
+### In Scope (overview)
+- LSP server for Robot Framework supporting RF >= 7.0.
+- Custom JSON-RPC 2.0 implementation (without pygls).
+- Transport through `stdio`.
+- All LSP methods proposed by the protocol, implemented in stages.
+- Clean Architecture with intermediate models.
+- Support for multiple Robot Framework versions through feature detection.
+- Unit and integration tests.
 
-### Out of Scope (neste projeto)
-- Extensões IDE (VS Code, Neovim, etc.) — serão projetos separados no futuro.
-- Debug adapter — não faz parte do protocolo LSP.
-- Robot Framework Console (REPL) — não faz parte do protocolo LSP.
+### Out of Scope (for this project)
+- IDE extensions (VS Code, Neovim, etc.) will be separate future projects.
+- Debug adapter: not part of the LSP protocol.
+- Robot Framework Console (REPL): not part of the LSP protocol.
 
 ## Consequences
 
-- Foco exclusivo no servidor simplifica a arquitetura inicial.
-- Projetos separados para extensões IDE mantêm responsabilidade única.
-- Documentamos a API de integração para facilitar extensões futuras.
+- Focusing only on the server simplifies the initial architecture.
+- Separate IDE extension projects keep responsibilities isolated.
+- We document the integration API to make future extensions easier.
 
 ## Alternatives Considered
 
-- Unificar servidor + extensão em um repositório: rejeitado para manter independência de versão.
+- Unify server and extension in one repository: rejected to keep versioning independent.

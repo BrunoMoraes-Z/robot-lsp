@@ -7,15 +7,15 @@ Stage 06 — Completion
 ## LSP Methods
 
 - `textDocument/completion`
-- `completionItem/resolve` (postergado)
+- `completionItem/resolve` (deferred)
 
 ## Initial Scope
 
-- Completar sections: `*** Settings ***`, `*** Variables ***`, `*** Test Cases ***`, `*** Keywords ***`
-- Completar settings em `*** Settings ***`: `Library`, `Resource`, `Variables`, `Documentation`, `Metadata`, `Suite Setup`, `Suite Teardown`, `Test Setup`, `Test Teardown`, `Test Tags`, `Test Template`, `Test Timeout`, `Force Tags`, `Default Tags`
-- Completar keywords locais (definidas no mesmo arquivo)
-- Completar variáveis locais (definidas no mesmo arquivo)
-- Trigger characters: ` ` (espaço), `$`, `@`, `&`, `%`
+- Complete sections: `*** Settings ***`, `*** Variables ***`, `*** Test Cases ***`, `*** Keywords ***`
+- Complete settings in `*** Settings ***`: `Library`, `Resource`, `Variables`, `Documentation`, `Metadata`, `Suite Setup`, `Suite Teardown`, `Test Setup`, `Test Teardown`, `Test Tags`, `Test Template`, `Test Timeout`, `Force Tags`, `Default Tags`
+- Complete local keywords (defined in the same file)
+- Complete local variables (defined in the same file)
+- Trigger characters: ` ` (space), `$`, `@`, `&`, `%`
 
 ## Implementation
 
@@ -36,12 +36,12 @@ class CompletionProvider(ABC):
     def compute(context: CompletionContext) -> list[CompletionItem]
 ```
 
-### Providers Implementados
+### Implemented Providers
 
-1. **SectionProvider**: no início do arquivo, após linha vazia
-2. **SettingProvider**: em seção Settings, após nome do setting
-3. **LocalKeywordProvider**: em chamada de keyword (contexto body)
-4. **LocalVariableProvider**: quando cursor após `$`, `@`, `&`, `%`
+1. **SectionProvider**: at the start of the file, after an empty line
+2. **SettingProvider**: in Settings section, after the setting name
+3. **LocalKeywordProvider**: in keyword calls (body context)
+4. **LocalVariableProvider**: when cursor is after `$`, `@`, `&`, `%`
 
 ### CompletionContext
 
@@ -53,7 +53,7 @@ class CompletionContext:
     document: Document
     suite: RobotSuite | None
     line_text: str
-    line_prefix: str  # texto antes do cursor na linha
+    line_prefix: str  # text before the cursor on the line
     trigger_kind: CompletionTriggerKind
     trigger_character: str | None
 ```
@@ -68,23 +68,23 @@ class CompletionItem:
     detail: str | None = None
     documentation: str | None = None
     text_edit: TextEdit | None = None
-    data: Any = None  # para resolve futuro
+    data: Any = None  # for future resolve
 ```
 
 ## Future Scope
 
-- Keywords de libraries importadas
-- Variables de resources importados
-- Snippets para templates de keyword/test case
-- Auto-import (completar Library/Resource com path)
-- `completionItem/resolve` para documentação detalhada
-- Filtering e sorting inteligente
+- Keywords from imported libraries
+- Variables from imported resources
+- Snippets for keyword/test case templates
+- Auto-import (complete Library/Resource with path)
+- `completionItem/resolve` for detailed documentation
+- Smart filtering and sorting
 
 ## Tests
 
-- Sections completadas corretamente
-- Settings completados apenas em Settings section
-- Keywords locais aparecem
-- Variáveis locais aparecem
+- Sections completed correctly
+- Settings completed only in Settings section
+- Local keywords appear
+- Local variables appear
 - Trigger characters
-- Contexto vazio retorna lista vazia
+- Empty context returns an empty list

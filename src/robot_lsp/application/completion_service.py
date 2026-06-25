@@ -22,12 +22,19 @@ class CompletionItemKind(IntEnum):
     SNIPPET = 15
 
 
+class InsertTextFormat(IntEnum):
+    PLAIN_TEXT = 1
+    SNIPPET = 2
+
+
 @dataclass(frozen=True)
 class CompletionItem:
     label: str
     kind: CompletionItemKind
     detail: str | None = None
     documentation: str | None = None
+    insert_text: str | None = None
+    insert_text_format: InsertTextFormat | None = None
     data: Any = None
 
     def to_lsp(self) -> dict[str, Any]:
@@ -39,6 +46,10 @@ class CompletionItem:
             payload["detail"] = self.detail
         if self.documentation is not None:
             payload["documentation"] = self.documentation
+        if self.insert_text is not None:
+            payload["insertText"] = self.insert_text
+        if self.insert_text_format is not None:
+            payload["insertTextFormat"] = int(self.insert_text_format)
         if self.data is not None:
             payload["data"] = self.data
         return payload
@@ -75,6 +86,12 @@ class CompletionService:
         "*** Test Cases ***",
         "*** Keywords ***",
     ]
+    SECTION_SNIPPETS = {
+        "*** Settings ***": "*** Settings ***\n$0",
+        "*** Variables ***": "*** Variables ***\n$0",
+        "*** Test Cases ***": "*** Test Cases ***\n${1:Test Case}\n    $0",
+        "*** Keywords ***": "*** Keywords ***\n${1:Keyword Name}\n    $0",
+    }
     SETTING_ITEMS = [
         "Library",
         "Resource",
@@ -109,6 +126,7 @@ class CompletionService:
         position: LspPosition,
         *,
         trigger_character: str | None = None,
+        snippets_enabled: bool = True,
     ) -> CompletionList | None:
         document = self._document_store.get(uri)
         if document is None:
@@ -122,7 +140,7 @@ class CompletionService:
         if self._is_variable_context(context):
             return CompletionList(self._variable_items(context))
         if self._is_section_context(context):
-            return CompletionList(self._section_items())
+            return CompletionList(self._section_items(snippets_enabled=snippets_enabled))
         if context.section == "settings":
             return CompletionList(self._setting_items())
         if context.section in {"test cases", "keywords"}:
@@ -162,12 +180,23 @@ class CompletionService:
             return True
         return any(context.line_prefix.endswith(trigger) for trigger in self.VARIABLE_TRIGGERS)
 
-    def _section_items(self) -> list[CompletionItem]:
+    def _section_items(self, *, snippets_enabled: bool) -> list[CompletionItem]:
+        if not snippets_enabled:
+            return [
+                CompletionItem(
+                    label=item,
+                    kind=CompletionItemKind.TEXT,
+                    detail="Robot Framework section",
+                )
+                for item in self.SECTION_ITEMS
+            ]
         return [
             CompletionItem(
                 label=item,
                 kind=CompletionItemKind.SNIPPET,
                 detail="Robot Framework section",
+                insert_text=self.SECTION_SNIPPETS[item],
+                insert_text_format=InsertTextFormat.SNIPPET,
             )
             for item in self.SECTION_ITEMS
         ]

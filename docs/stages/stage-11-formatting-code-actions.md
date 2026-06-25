@@ -6,40 +6,40 @@ done
 
 ## Goal
 
-Implementar formatação inicial de documentos Robot Framework e code actions básicas para diagnostics conhecidos.
+Implement initial Robot Framework document formatting and basic code actions for known diagnostics.
 
 ## Scope
 
 - `textDocument/formatting`
 - `textDocument/rangeFormatting`
 - `textDocument/codeAction`
-- Normalização inicial de espaçamento entre células
-- Quick actions para diagnostics conhecidos
+- Initial normalization of spacing between cells
+- Quick actions for known diagnostics
 
 ## Out Of Scope
 
-- Formatação semântica baseada em AST
-- Correção automática de parse errors
-- Busca de imports ausentes no workspace
+- AST-based semantic formatting
+- Automatic correction of parse errors
+- Search for missing imports in the workspace
 - `codeAction/resolve`
-- Configuração persistente de estilo
+- Persistent style configuration
 
 ## Deliverables
 
 - `src/robot_lsp/application/formatting_service.py`
 - `src/robot_lsp/application/code_action_service.py`
-- Handlers no `LspServer`
-- Capabilities de formatting e code action em `lsp_types.py`
-- Testes unitários de services e handlers LSP
+- Handlers in `LspServer`
+- Formatting and code action capabilities in `lsp_types.py`
+- Unit tests for services and LSP handlers
 
 ## Acceptance Criteria
 
-- `textDocument/formatting` retorna `TextEdit` quando há mudanças
-- `textDocument/formatting` retorna lista vazia quando documento já está formatado
-- `textDocument/rangeFormatting` formata linhas completas tocadas pelo range
-- `textDocument/codeAction` retorna quick actions para diagnostics conhecidos
-- `initialize` anuncia capabilities de formatting e code action
-- Services ausentes resultam em respostas vazias, sem erro
+- `textDocument/formatting` returns `TextEdit` when there are changes
+- `textDocument/formatting` returns an empty list when the document is already formatted
+- `textDocument/rangeFormatting` formats full lines touched by the range
+- `textDocument/codeAction` returns quick actions for known diagnostics
+- `initialize` advertises formatting and code action capabilities
+- Missing services result in empty responses, without errors
 
 ## Tests
 
@@ -54,9 +54,9 @@ Implementar formatação inicial de documentos Robot Framework e code actions b�
 
 ## Risks
 
-- A formatação atual é textual e pode não cobrir nuances semânticas do Robot Framework.
-- Code actions iniciais são informativas e ainda não aplicam correções automáticas.
-- `FormattingOptions` ainda não altera o estilo produzido.
+- Current formatting is textual and may not cover Robot Framework semantic nuances.
+- Initial code actions are informational and do not yet apply automatic fixes.
+- `FormattingOptions` does not yet change the produced style.
 
 ## Dependencies
 
@@ -66,5 +66,5 @@ Implementar formatação inicial de documentos Robot Framework e code actions b�
 
 ## Notes
 
-- Stage concluída com services de aplicação independentes e integração LSP.
-- Validação executada com `just test` e `uv run python -m compileall src tests`.
+- Stage completed with independent application services and LSP integration.
+- Validation executed with `just test` and `uv run python -m compileall src tests`.

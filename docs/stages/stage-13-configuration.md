@@ -6,43 +6,43 @@ done
 
 ## Goal
 
-Adicionar configuração do servidor via opções de inicialização e mudanças em runtime, com defaults seguros e integração nos recursos já existentes.
+Add server configuration through initialization options and runtime changes, with safe defaults and integration into existing features.
 
 ## Scope
 
 - `initializationOptions`
 - `workspace/didChangeConfiguration`
-- Modelo de configuração interno
-- Feature flag para diagnostics
-- Caminhos adicionais de import
-- Capabilities de configuração
+- Internal configuration model
+- Feature flag for diagnostics
+- Additional import paths
+- Configuration capabilities
 
 ## Out Of Scope
 
-- Request outbound `workspace/configuration`
-- Configuração específica por workspace folder
-- Persistência de configuração
-- Logging estruturado baseado em `logLevel`
-- Completion snippets configuráveis na resposta LSP
+- Outbound `workspace/configuration` request
+- Workspace-folder-specific configuration
+- Configuration persistence
+- Structured logging based on `logLevel`
+- Configurable completion snippets in the LSP response
 
 ## Deliverables
 
 - `src/robot_lsp/application/configuration.py`
-- Handler `workspace/didChangeConfiguration`
-- Capability `workspace.didChangeConfiguration`
-- Integração de `diagnostics.enable` no servidor
-- Integração de `importPaths` no `WorkspaceIndex`
-- Testes unitários de service, handler e import resolution
+- `workspace/didChangeConfiguration` handler
+- `workspace.didChangeConfiguration` capability
+- `diagnostics.enable` integration in the server
+- `importPaths` integration in `WorkspaceIndex`
+- Unit tests for service, handler, and import resolution
 
 ## Acceptance Criteria
 
-- Defaults funcionam sem configuração
-- `initializationOptions` aplica configuração inicial
-- `workspace/didChangeConfiguration` atualiza configuração em runtime
-- Diagnostics podem ser desabilitados
-- Desabilitar diagnostics limpa diagnostics existentes dos documentos abertos
-- `robot.lsp.importPaths` resolve imports `Resource` e `Variables`
-- Valores inválidos são ignorados sem crash
+- Defaults work without configuration
+- `initializationOptions` applies initial configuration
+- `workspace/didChangeConfiguration` updates configuration at runtime
+- Diagnostics can be disabled
+- Disabling diagnostics clears existing diagnostics for open documents
+- `robot.lsp.importPaths` resolves `Resource` and `Variables` imports
+- Invalid values are ignored without crashing
 
 ## Tests
 
@@ -58,9 +58,9 @@ Adicionar configuração do servidor via opções de inicialização e mudanças
 
 ## Risks
 
-- `workspace/configuration` ainda não é usado porque o servidor não tem loop de request outbound para o cliente.
-- `logLevel` e `completion.snippets` são armazenados, mas ainda não alteram comportamento.
-- `importPaths` é global no index, não específico por workspace folder.
+- `workspace/configuration` is not used yet because the server does not have an outbound request loop to the client.
+- `completion.snippets` only changes section completions, which are the only current snippets.
+- `importPaths` is global in the index, not workspace-folder-specific.
 
 ## Dependencies
 
@@ -70,4 +70,4 @@ Adicionar configuração do servidor via opções de inicialização e mudanças
 
 ## Notes
 
-- O formato aceito é direto (`importPaths`) ou aninhado (`robot.lsp` / `robot: { lsp: ... }`).
+- The accepted format is direct (`importPaths`) or nested (`robot.lsp` / `robot: { lsp: ... }`).

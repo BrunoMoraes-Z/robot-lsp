@@ -11,27 +11,27 @@
 
 ## Configuration Options
 
-- `robot.lsp.importPaths`: caminhos adicionais para resolução de imports
-- `robot.lsp.logLevel`: nível de log
-- `robot.lsp.diagnostics.enable`: ligar/desligar diagnostics
-- `robot.lsp.completion.snippets`: habilitar snippets
+- `robot.lsp.importPaths`: additional paths for import resolution
+- `robot.lsp.logLevel`: log level
+- `robot.lsp.diagnostics.enable`: enable/disable diagnostics
+- `robot.lsp.completion.snippets`: enable snippets
 
 ## Notes
 
-- Configuração pode vir das `initializationOptions` ou `workspace/configuration`
-- Valores padrão sensíveis para funcionar sem configuração
+- Configuration may come from `initializationOptions` or `workspace/configuration`
+- Sensible defaults to work without configuration
 
 ## Implemented
 
-- Configuração inicial via `initializationOptions`.
-- Atualização em runtime via `workspace/didChangeConfiguration`.
-- Settings aceitas em formato direto, `robot.lsp` ou `robot: { lsp: ... }`.
-- `diagnostics.enable` controla agendamento de diagnostics e limpa diagnostics publicados quando desligado.
-- `importPaths` é usado pelo `WorkspaceIndex` para resolver imports de arquivo.
-- `logLevel` controla o logger `robot_lsp` durante `initialize` e `workspace/didChangeConfiguration`.
+- Initial configuration through `initializationOptions`.
+- Runtime updates through `workspace/didChangeConfiguration`.
+- Settings accepted in direct format, `robot.lsp`, or `robot: { lsp: ... }`.
+- `diagnostics.enable` controls diagnostic scheduling and clears published diagnostics when disabled.
+- `importPaths` is used by `WorkspaceIndex` to resolve file imports.
+- `logLevel` controls the `robot_lsp` logger during `initialize` and `workspace/didChangeConfiguration`.
+- `completion.snippets` controls whether section completions use `insertTextFormat: Snippet`.
 
 ## Deferred
 
 - Request server-to-client `workspace/configuration`.
-- Configuração específica por workspace folder.
-- Aplicação de `completion.snippets` nos completion items.
+- Workspace-folder-specific configuration.

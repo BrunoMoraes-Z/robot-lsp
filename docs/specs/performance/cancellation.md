@@ -2,25 +2,25 @@
 
 ## Stage
 
-Stage 01 — JSON-RPC (básico), Stage 12 (avaliado)
+Stage 01 — JSON-RPC (basic), Stage 12 (evaluated)
 
 ## Current Implementation
 
 - `$/cancelRequest` marca request como cancelado
 - Handler verifica periodicamente `is_canceled()` e aborta se True
-- Resposta de request cancelado não é enviada
+- Cancelled request response is not sent
 
 ## Future Implementation
 
-- `asyncio` tasks com `Task.cancel()` para cancelamento real
-- Timeout automático para requests longos (ex: 10s)
-- Worker pool com `concurrent.futures` e cancelamento via Future
+- `asyncio` tasks with `Task.cancel()` for real cancellation
+- Automatic timeout for long requests (for example, 10s)
+- Worker pool with `concurrent.futures` and cancellation through Future
 
 ## Stage 12 Decision
 
-- O servidor ainda executa handlers síncronos e curtos.
-- Parse cache reduz reparses antes de introduzir concorrência.
-- Cancelamento real com worker pool fica postergado até existir request longo mensurável.
+- The server still runs short synchronous handlers.
+- Parse cache reduces reparsing before introducing concurrency.
+- Real cancellation with worker pool is deferred until there is a measurable long-running request.
 
 ## Design
 

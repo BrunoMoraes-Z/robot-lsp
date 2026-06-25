@@ -7,8 +7,8 @@ Stage 04 — Robot Framework Model
 ## Supported Versions
 
 - **Minimum**: 7.0
-- **Current**: todas as versões 7.x
-- **Policy**: suportar toda a linha 7.x durante seu ciclo de vida
+- **Current**: all 7.x versions
+- **Policy**: support the entire 7.x line during its lifecycle
 
 ## Version Detection
 
@@ -21,10 +21,10 @@ from robot.version import VERSION
 
 | Version | Group/END | Secret Variables | Notes |
 |---|---|---|---|
-| 7.0 | No | No | Base mínima |
-| 7.1 | No | No | Sem mudanças no AST |
-| 7.2 | Yes | No | `Group`/`GroupHeader` adicionado |
-| 7.3 | Yes | No | Apenas mudanças de sintaxe |
+| 7.0 | No | No | Minimum baseline |
+| 7.1 | No | No | No AST changes |
+| 7.2 | Yes | No | `Group`/`GroupHeader` added |
+| 7.3 | Yes | No | Syntax changes only |
 | 7.4 | Yes | Yes | `Secret` type |
 
 ## Feature Detection
@@ -40,18 +40,18 @@ class FeatureSet:
 
 ### Detection Strategy
 
-1. Parsear `robot.version.VERSION`
-2. Comparar com versões conhecidas
-3. Feature detection via `try/except ImportError` como fallback
+1. Parse `robot.version.VERSION`
+2. Compare with known versions
+3. Feature detection through `try/except ImportError` as fallback
 
 ## Risks
 
-- RF pode remover APIs públicas em versão futura (ex: deprecation warning em 7.x, remoção em 8.x)
-- Feature detection via import é mais seguro que comparação de string de versão
+- RF may remove public APIs in a future version (for example, deprecation warning in 7.x, removal in 8.x)
+- Feature detection through import is safer than version string comparison
 
 ## Tests
 
-- Detecção em RF 7.0
-- Detecção em RF 7.2+
-- Feature detection com `try/except`
-- Fallback para versão desconhecida (assumir mínimo)
+- Detection in RF 7.0
+- Detection in RF 7.2+
+- Feature detection with `try/except`
+- Fallback for unknown version (assume minimum)

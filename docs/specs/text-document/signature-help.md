@@ -10,4 +10,4 @@
 
 ## Notes
 
-Mostrar assinatura de keyword com argumentos enquanto o usuário digita.
+Show keyword signature with arguments while the user types.

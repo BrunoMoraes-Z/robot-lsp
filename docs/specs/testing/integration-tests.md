@@ -6,7 +6,7 @@ All stages
 
 ## Approach
 
-Testar o servidor LSP completo via processo real, usando `subprocess` com transporte stdio.
+Test the full LSP server through a real process, using `subprocess` with stdio transport.
 
 ```python
 @pytest.fixture
@@ -38,26 +38,26 @@ def receive(proc) -> dict:
 
 ## Scenarios
 
-- Sessão LSP completa com initialize, document sync, completion, hover, shutdown
-- Múltiplos documentos abertos
-- Documento com erro de sintaxe → diagnostics publicados
-- Documento corrigido → diagnostics limpos
-- Servidor é iniciado apenas com `python -m robot_lsp`
+- Full LSP session with initialize, document sync, completion, hover, shutdown
+- Multiple open documents
+- Document with syntax error -> diagnostics published
+- Fixed document -> diagnostics cleared
+- Server is started only with `python -m robot_lsp`
 
 ## Implemented In Stage 14
 
-- Runner stdio testado em memória com framing real.
-- Sessão mínima `initialize` → `shutdown` → `exit` validada em `tests/unit/test_main.py`.
-- Resposta de erro para mensagem JSON-RPC inválida validada no runner.
+- Stdio runner tested in memory with real framing.
+- Minimal `initialize` -> `shutdown` -> `exit` session validated in `tests/unit/test_main.py`.
+- Error response for invalid JSON-RPC message validated in the runner.
 
 ## Implemented Post-MVP
 
-- Teste de subprocesso real com `python -m robot_lsp` em `tests/integration/test_stdio_server.py`.
-- Sessão real via stdio: `initialize`, `initialized`, `didOpen`, `completion`, `shutdown`, `exit`.
-- Validação de completion em documento aberto por transporte stdio real.
-- Diagnostics assíncronos via stdio: publicação de parse error e limpeza após `didChange`.
+- Real subprocess test with `python -m robot_lsp` in `tests/integration/test_stdio_server.py`.
+- Real session through stdio: `initialize`, `initialized`, `didOpen`, `completion`, `shutdown`, `exit`.
+- Completion validation in a document opened through real stdio transport.
+- Asynchronous diagnostics through stdio: parse error publication and cleanup after `didChange`.
 
 ## Future
 
-- Teste de subprocesso com múltiplos documentos abertos.
-- Teste de subprocesso para hover, definition e formatting.
+- Subprocess test with multiple open documents.
+- Subprocess test for hover, definition, and formatting.

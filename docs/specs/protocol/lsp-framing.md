@@ -22,12 +22,12 @@ Content-Length: 45\r\n
 {"jsonrpc":"2.0","id":1,"method":"exit","params":null}
 ```
 
-### Observações
+### Notes
 
-- Header termina com `\r\n\r\n`
-- Content-Length é o número de bytes do JSON (UTF-8)
-- Content-Type opcional, se presente deve ser parseado mas não validado
-- Apenas um header obrigatório: `Content-Length`
+- Header ends with `\r\n\r\n`
+- Content-Length is the number of bytes in the JSON (UTF-8)
+- Optional Content-Type, parsed but not validated if present
+- Only one required header: `Content-Length`
 
 ## Implementation
 
@@ -39,14 +39,14 @@ class TransportStdio:
     def write_message(message: str) -> None
 ```
 
-- Leitura: `sys.stdin.buffer.read(n)` com loop até preencher Content-Length bytes
+- Read: `sys.stdin.buffer.read(n)` with a loop until Content-Length bytes are filled
 - Escrita: `sys.stdout.buffer.write(header + message)` thread-safe (lock)
 - Erro de escrita: log em stderr
 
 ## Tests
 
 - Mensagem simples
-- Mensagem com body multi-byte
+- Message with multibyte body
 - Mensagem recebida em chunks parciais
-- Múltiplas mensagens em sequência
+- Multiple messages in sequence
 - Content-Type ignorado

@@ -6,7 +6,7 @@ Stage 01 — JSON-RPC / Stage 02 — LSP Lifecycle
 
 ## Approach
 
-Testar o protocolo LSP via transporte em memória, sem stdio real.
+Test the LSP protocol through in-memory transport, without real stdio.
 
 ```python
 @pytest.fixture
@@ -22,7 +22,7 @@ def protocol_server():
 
 ```python
 def send_request(reader, writer, method: str, params: dict | None) -> dict:
-    """Envia request via writer e lê resposta do reader."""
+    """Send request through writer and read response from reader."""
     request = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
     writer.write(encode_lsp(json.dumps(request)))
     writer.seek(0)
@@ -43,7 +43,7 @@ def test_initialize():
 ## What to Test
 
 - Ciclo completo de initialize → didOpen → completion → shutdown → exit
-- Mensagens fora de ordem
+- Out-of-order messages
 - Cancelamento via $/cancelRequest
-- Múltiplos requests concorrentes
-- Notifications sem resposta esperada
+- Multiple concurrent requests
+- Notifications with no expected response

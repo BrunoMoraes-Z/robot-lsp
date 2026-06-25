@@ -52,4 +52,4 @@ Implemented behavior:
 - `importPaths` participates in `Resource` and `Variables` import resolution.
 - `diagnostics.enable` controls diagnostic scheduling and clears diagnostics when disabled.
 - `logLevel` updates the server logger during `initialize` and `workspace/didChangeConfiguration`.
-- `completion.snippets` is stored for future feature integration.
+- `completion.snippets` controls whether section completions are returned as LSP snippets.
