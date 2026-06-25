@@ -2,7 +2,7 @@
 
 VS Code extension client for `robot-lsp`.
 
-This package currently contains the Stage 02 language client startup implementation.
+This package currently contains the Stage 03 Python resolution implementation.
 
 ## Development
 
@@ -17,8 +17,10 @@ npm run compile
 - Contributes `robot-lsp.*` settings.
 - Starts `robot-lsp` over stdio using `vscode-languageclient`.
 - Supports `robot-lsp.languageServer.*` command overrides.
+- Resolves Python from explicit setting, VS Code Python extension, workspace virtual environment, or PATH.
+- Validates that the selected Python can import `robot_lsp` and `robotframework>=7.0`.
 - Registers a restart command for the language server.
-- Leaves full Python interpreter resolution for Stage 03.
+- Leaves configuration bridge refinement for Stage 04.
 - Compiles with strict TypeScript settings.
 
 See `docs/roadmap.md` for the staged implementation plan.

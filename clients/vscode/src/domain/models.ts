@@ -8,6 +8,14 @@ export interface PythonExecutable {
 export interface ResolvedPython {
   readonly executable: PythonExecutable;
   readonly version?: string;
+  readonly robotFrameworkVersion?: string;
+}
+
+export interface PythonValidationResult {
+  readonly ok: boolean;
+  readonly version?: string;
+  readonly robotFrameworkVersion?: string;
+  readonly error?: string;
 }
 
 export interface LaunchTarget {

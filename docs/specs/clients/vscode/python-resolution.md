@@ -32,6 +32,19 @@ python -c "import robot_lsp, robot; print(robot.version.VERSION)"
 
 The extension should verify that Robot Framework is at least 7.0.
 
+## Initial Implementation
+
+Stage 03 implements the language server Python resolution order and validation. Runtime/debug Python resolution remains documented here and will be used by later run/debug stages.
+
+Current language server resolution order:
+
+1. `robot-lsp.languageServer.python`
+2. VS Code Python extension selected interpreter through `getExecutionDetails()`
+3. Workspace virtual environment candidates: `.venv`, `venv`, `.env`
+4. PATH fallback: `python` on Windows, `python3` on Linux/macOS
+
+When `robot-lsp.languageServer.command` is configured, command override bypasses interpreter resolution.
+
 ## Variable Expansion
 
 Interpreter settings may contain:

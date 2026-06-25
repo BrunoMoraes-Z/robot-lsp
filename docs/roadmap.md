@@ -35,7 +35,7 @@ The core LSP MVP is complete. Editor clients are tracked separately so that clie
 
 | Client | Stage | Status | Docs |
 |---|---|---|---|
-| VS Code | Stage 03 - Python Resolution | pending | `clients/vscode/docs/roadmap.md` |
+| VS Code | Stage 04 - Configuration Bridge | pending | `clients/vscode/docs/roadmap.md` |
 
 ---
 

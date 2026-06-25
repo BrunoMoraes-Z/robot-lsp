@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 03 - Python Resolution
+Stage 04 - Configuration Bridge
 
 Status: `pending`
 
@@ -13,7 +13,7 @@ Status: `pending`
 | 00 | Documentation And Architecture | done |
 | 01 | VS Code Scaffold | done |
 | 02 | Language Client Startup | done |
-| 03 | Python Resolution | pending |
+| 03 | Python Resolution | done |
 | 04 | Configuration Bridge | pending |
 | 05 | Syntax Highlighting And Language Configuration | pending |
 | 06 | LSP Feature Smoke Tests | pending |
@@ -50,3 +50,12 @@ Status: `pending`
 - Restart command stops and starts the language client.
 - Deactivation stops the language client.
 - TypeScript compilation passes with `npm run compile`.
+
+## Stage 03 Acceptance Criteria
+
+- Python resolution implemented in the application layer behind ports.
+- Resolution order supports explicit setting, VS Code Python extension, workspace virtual environments, and PATH fallback.
+- Language server Python is validated by importing `robot_lsp` and `robotframework>=7.0`.
+- Startup shows an actionable VS Code error when no valid Python is found.
+- Language client startup uses the resolved Python unless `robot-lsp.languageServer.command` is configured.
+- Domain and application layers remain free of VS Code API imports.

@@ -3,6 +3,10 @@ import { activateExtension } from "./application/activateExtension";
 import { VsCodeCommandRegistry } from "./infrastructure/vscode/commandRegistry";
 import { RobotLanguageClientAdapter } from "./infrastructure/vscode/languageClient";
 import { OutputChannelLogger } from "./infrastructure/vscode/logging";
+import { PathPythonProvider } from "./infrastructure/vscode/pathPython";
+import { ProcessPythonValidator } from "./infrastructure/vscode/pythonValidator";
+import { VsCodePythonExtensionProvider } from "./infrastructure/vscode/pythonExtension";
+import { WorkspacePythonProvider } from "./infrastructure/vscode/workspacePython";
 import { VsCodeSettingsReader } from "./infrastructure/vscode/workspaceConfig";
 
 let languageServer: RobotLanguageClientAdapter | undefined;
@@ -12,7 +16,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(output);
   const logger = new OutputChannelLogger(output);
   const settings = new VsCodeSettingsReader();
-  languageServer = new RobotLanguageClientAdapter(settings, logger, output);
+  languageServer = new RobotLanguageClientAdapter(
+    settings,
+    logger,
+    output,
+    new VsCodePythonExtensionProvider(),
+    new WorkspacePythonProvider(),
+    new PathPythonProvider(),
+    new ProcessPythonValidator(),
+  );
 
   await activateExtension({
     commands: new VsCodeCommandRegistry(context.subscriptions),
