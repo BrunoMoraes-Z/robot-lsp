@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 07 - Test Explorer MVP
+Stage 08 - Run Support
 
 Status: `pending`
 
@@ -17,7 +17,7 @@ Status: `pending`
 | 04 | Configuration Bridge | done |
 | 05 | Syntax Highlighting And Language Configuration | done |
 | 06 | LSP Feature Smoke Tests | done |
-| 07 | Test Explorer MVP | pending |
+| 07 | Test Explorer MVP | done |
 | 08 | Run Support | pending |
 | 09 | Debug Adapter Design | pending |
 | 10 | Debug Adapter MVP | pending |
@@ -86,3 +86,13 @@ Status: `pending`
 - Smoke tests verify `robot-lsp.languageServer.command` overrides the default server command.
 - Smoke tests verify VS Code settings map to the server `robot.lsp` configuration shape.
 - Smoke tests verify initialization options use the same configuration shape as workspace configuration.
+
+## Stage 07 Acceptance Criteria
+
+- Test controller is registered with id `robot-lsp.testController` and display name `Robot Framework` when `robot-lsp.testExplorer.enabled` is enabled.
+- Initial fallback discovery scans workspace `.robot` files without requiring the Python language server to start.
+- Test discovery recognizes top-level test cases under `*** Test Cases ***` and top-level tasks under `*** Tasks ***`.
+- Test Explorer tree shape is `File.robot -> Test Case Name` for discovered tests.
+- Test item ranges point at the discovered test declaration line.
+- Smoke tests cover the fallback scanner used by the Test Explorer MVP.
+- Run and debug execution are intentionally deferred to later stages.

@@ -26,6 +26,12 @@
 - Verify client settings map to the server `robot.lsp` configuration shape.
 - Verify initialization options and workspace configuration use the same configuration bridge.
 
+### Test Explorer Smoke Tests
+
+- Verify fallback discovery reads top-level tests under `*** Test Cases ***`.
+- Verify fallback discovery reads top-level tasks under `*** Tasks ***`.
+- Verify keyword definitions and indented steps are not exposed as tests.
+
 ### Extension Host Tests
 
 - Extension activates for `.robot` files

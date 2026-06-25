@@ -4,6 +4,8 @@
 
 Expose Robot Framework tests in the VS Code Test Explorer and support run/debug from the tree.
 
+The initial MVP covers discovery and tree population only. Run and debug execution are staged separately.
+
 ## Test Controller
 
 Controller id:
@@ -29,6 +31,7 @@ Preferred discovery:
 Initial fallback discovery:
 
 - Lightweight TypeScript scanner for top-level test cases in `.robot` files.
+- Top-level tasks under `*** Tasks ***` are exposed as runnable test items as well.
 - Used when the LSP is not yet started or test notifications are unavailable.
 
 ## Tree Shape
@@ -43,6 +46,8 @@ Workspace Folder
 
 - Run
 - Debug
+
+Run profiles are deferred until run support is implemented.
 
 ## Run Flow
 

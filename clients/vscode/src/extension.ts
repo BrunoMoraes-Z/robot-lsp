@@ -6,6 +6,7 @@ import { OutputChannelLogger } from "./infrastructure/vscode/logging";
 import { PathPythonProvider } from "./infrastructure/vscode/pathPython";
 import { ProcessPythonValidator } from "./infrastructure/vscode/pythonValidator";
 import { VsCodePythonExtensionProvider } from "./infrastructure/vscode/pythonExtension";
+import { RobotTestControllerAdapter } from "./infrastructure/vscode/testController";
 import { WorkspacePythonProvider } from "./infrastructure/vscode/workspacePython";
 import { VsCodeConfigurationBridge, VsCodeSettingsReader } from "./infrastructure/vscode/workspaceConfig";
 
@@ -16,6 +17,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(output);
   const logger = new OutputChannelLogger(output);
   const settings = new VsCodeSettingsReader();
+  if (settings.read().testExplorerEnabled) {
+    const testController = new RobotTestControllerAdapter();
+    context.subscriptions.push(testController);
+    void testController.refresh();
+  }
   const configurationBridge = new VsCodeConfigurationBridge(settings);
   languageServer = new RobotLanguageClientAdapter(
     settings,

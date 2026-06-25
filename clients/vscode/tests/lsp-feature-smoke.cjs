@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 
 const { robotDocumentSelector, robotFrameworkLanguageId } = require("../out/application/buildClientOptions.js");
 const { planServerCommand, serverInitializationOptions } = require("../out/application/buildServerOptions.js");
+const { collectRobotTestsFromText } = require("../out/application/collectTests.js");
 const { serverRobotLspConfiguration } = require("../out/application/configurationBridge.js");
 const { defaultRobotLspSettings } = require("../out/domain/settings.js");
 
@@ -76,10 +77,36 @@ function testInitializationOptionsUseServerConfigurationShape() {
   assert.deepEqual(serverInitializationOptions(input), serverRobotLspConfiguration(input));
 }
 
+function testRobotTestCollection() {
+  const tests = collectRobotTestsFromText("file:///workspace/suite.robot", [
+    "*** Settings ***",
+    "Library    Collections",
+    "*** Test Cases ***",
+    "First Test",
+    "    Log    hello",
+    "# ignored comment",
+    "Second Test",
+    "    [Tags]    smoke",
+    "*** Keywords ***",
+    "Helper Keyword",
+    "    No Operation",
+    "*** Tasks ***",
+    "Runnable Task",
+  ].join("\n"));
+
+  assert.deepEqual(tests.map((test) => [test.name, test.line]), [
+    ["First Test", 3],
+    ["Second Test", 6],
+    ["Runnable Task", 12],
+  ]);
+  assert.ok(tests.every((test) => test.uri === "file:///workspace/suite.robot"));
+}
+
 testDocumentSelector();
 testDefaultServerStartup();
 testServerCommandOverride();
 testConfigurationBridge();
 testInitializationOptionsUseServerConfigurationShape();
+testRobotTestCollection();
 
 console.log("lsp feature smoke ok");
