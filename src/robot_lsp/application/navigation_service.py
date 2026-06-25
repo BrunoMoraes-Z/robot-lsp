@@ -14,6 +14,7 @@ from .workspace import WorkspaceIndex
 class SymbolKind(IntEnum):
     FILE = 1
     MODULE = 2
+    NAMESPACE = 3
     METHOD = 6
     FUNCTION = 12
     VARIABLE = 13
@@ -83,8 +84,10 @@ class NavigationService:
             symbols.append(_document_symbol(variable.name, SymbolKind.VARIABLE, variable.range, variable.kind))
         for test_case in suite.test_cases:
             symbols.append(_document_symbol(test_case.name, SymbolKind.METHOD, test_case.range, "test case"))
+            symbols.extend(_document_symbol(group.name, SymbolKind.NAMESPACE, group.range, "group") for group in test_case.groups)
         for keyword in suite.keywords:
             symbols.append(_document_symbol(keyword.name, SymbolKind.FUNCTION, keyword.range, "keyword"))
+            symbols.extend(_document_symbol(group.name, SymbolKind.NAMESPACE, group.range, "group") for group in keyword.groups)
         return symbols
 
     def folding_ranges(self, uri: str) -> list[dict[str, Any]]:
@@ -96,8 +99,12 @@ class NavigationService:
         if suite is not None:
             for test_case in suite.test_cases:
                 _append_folding_range(ranges, test_case.range)
+                for group in test_case.groups:
+                    _append_folding_range(ranges, group.range)
             for keyword in suite.keywords:
                 _append_folding_range(ranges, keyword.range)
+                for group in keyword.groups:
+                    _append_folding_range(ranges, group.range)
         return ranges
 
     def selection_ranges(self, uri: str, positions: list[LspPosition]) -> list[dict[str, Any]]:

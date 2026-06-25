@@ -33,6 +33,12 @@ class RobotStep:
 
 
 @dataclass
+class RobotGroup:
+    name: str
+    range: LspRange
+
+
+@dataclass
 class RobotSettings:
     suite_setup: str | None = None
     suite_teardown: str | None = None
@@ -75,6 +81,7 @@ class RobotTestCase:
     body: list[RobotStep]
     range: LspRange
     variables: list[RobotVariable] = field(default_factory=list)
+    groups: list[RobotGroup] = field(default_factory=list)
 
 
 @dataclass
@@ -86,6 +93,7 @@ class RobotKeyword:
     body: list[RobotStep]
     range: LspRange
     variables: list[RobotVariable] = field(default_factory=list)
+    groups: list[RobotGroup] = field(default_factory=list)
 
 
 @dataclass

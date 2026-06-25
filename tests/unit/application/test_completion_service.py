@@ -131,6 +131,22 @@ class TestCompletionService:
 
         assert "${local}" in labels(completion)
 
+    def test_completion_does_not_include_later_var_syntax_variable(self):
+        service, uri = make_service(
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    $\n"
+            "    VAR    ${later}    value\n"
+        )
+
+        completion = service.compute_completion(
+            uri,
+            LspPosition(line=2, character=12),
+            trigger_character="$",
+        )
+
+        assert "${later}" not in labels(completion)
+
     def test_completion_variable_type_annotation(self):
         service, uri = make_service("*** Test Cases ***\nT\n    VAR    ${value: ")
 

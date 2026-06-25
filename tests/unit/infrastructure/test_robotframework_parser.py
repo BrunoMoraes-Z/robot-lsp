@@ -111,6 +111,7 @@ class TestRobotFrameworkParser:
 
         assert [step.keyword for step in result.suite.test_cases[0].body] == ["Log"]
         assert result.suite.test_cases[0].body[0].args == ["inside"]
+        assert result.suite.test_cases[0].groups[0].name == "Setup"
 
     def test_parse_typed_secret_variable(self):
         result = RobotFrameworkParser().parse_text(

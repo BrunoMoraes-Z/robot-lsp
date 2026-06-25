@@ -347,8 +347,16 @@ def _scoped_variables(context: CompletionContext):
     variables = []
     for test_case in context.suite.test_cases:
         if test_case.range.start.line <= context.position.line <= test_case.range.end.line:
-            variables.extend(test_case.variables)
+            variables.extend(variable for variable in test_case.variables if _declared_before(variable, context.position))
     for keyword in context.suite.keywords:
         if keyword.range.start.line <= context.position.line <= keyword.range.end.line:
-            variables.extend(keyword.variables)
+            variables.extend(variable for variable in keyword.variables if _declared_before(variable, context.position))
     return variables
+
+
+def _declared_before(variable, position: LspPosition) -> bool:
+    if variable.range.start.line < position.line:
+        return True
+    if variable.range.start.line == position.line:
+        return variable.range.start.character < position.character
+    return False

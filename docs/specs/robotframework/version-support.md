@@ -31,15 +31,17 @@ from robot.version import VERSION
 
 - `VAR` syntax is parsed from test and keyword bodies, including variable kind, scope, value, and type annotation.
 - `GROUP` body statements are traversed so contained keyword calls participate in diagnostics and completion sources.
+- `GROUP` nodes are exposed as document symbols and folding ranges.
 - Variable type annotations such as `${value: int}` are parsed and validated against the built-in type allowlist.
+- Dotted Python type annotations are accepted when the module can be imported and the attribute exists.
 - Completion suggests built-in variable types while editing a variable type annotation.
+- `VAR` variables are resolved lexically: they are visible only after their declaration line.
 - `Secret` type annotations are represented as `secret` variables when Robot Framework 7.4+ is available.
 
 ## Remaining Future Scope
 
-- Rich `GROUP` document symbols and folding ranges.
-- Full type resolution for custom Python classes and user-provided converters.
-- Precise lexical scope ordering for `VAR` variables defined after the current cursor position.
+- Full resolution of user-provided type converters beyond importable Python classes.
+- Runtime-aware scope/priority modeling across nested suites and command-line variables.
 
 ## Feature Detection
 

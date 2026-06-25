@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import threading
 from collections.abc import Callable
+from importlib import import_module
 
 from robot_lsp.domain.diagnostics import DiagnosticSeverity, LspDiagnostic
 from robot_lsp.domain.models import LspRange, RobotDiagnostic, RobotStep, RobotSuite
@@ -139,11 +140,9 @@ class DiagnosticService:
         diagnostics = []
         for keyword in suite.keywords:
             defined_with_args = defined | {_normalize_variable(arg.name) for arg in keyword.args}
-            defined_with_args.update(_normalize_variable(variable.name) for variable in keyword.variables)
-            diagnostics.extend(_undefined_variable_diagnostics(keyword.body, defined_with_args))
+            diagnostics.extend(_undefined_variable_diagnostics(keyword.body, defined_with_args, keyword.variables))
         for test_case in suite.test_cases:
-            defined_with_vars = defined | {_normalize_variable(variable.name) for variable in test_case.variables}
-            diagnostics.extend(_undefined_variable_diagnostics(test_case.body, defined_with_vars))
+            diagnostics.extend(_undefined_variable_diagnostics(test_case.body, defined, test_case.variables))
         return diagnostics
 
     def _type_diagnostics(self, suite: RobotSuite) -> list[LspDiagnostic]:
@@ -228,23 +227,43 @@ def _steps(suite: RobotSuite) -> list[RobotStep]:
     ]
 
 
-def _undefined_variable_diagnostics(steps: list[RobotStep], defined: set[str]) -> list[LspDiagnostic]:
+def _undefined_variable_diagnostics(
+    steps: list[RobotStep],
+    defined: set[str],
+    variables: list | None = None,
+) -> list[LspDiagnostic]:
     diagnostics = []
     local_defined = set(defined)
-    for step in steps:
-        for value in [step.keyword, *step.args]:
-            for variable in _VARIABLE_PATTERN.findall(value):
-                if _normalize_variable(variable) not in local_defined:
-                    diagnostics.append(
-                        _diagnostic(
-                            step.range,
-                            DiagnosticSeverity.WARNING,
-                            f"Variable not found: {variable}",
-                            "variable_not_found",
-                        )
-                    )
+    for kind, item in _body_events(steps, variables or []):
+        if kind == "variable":
+            local_defined.add(_normalize_variable(item.name))
+            continue
+        step = item
+        diagnostics.extend(_step_variable_diagnostics(step, local_defined))
         local_defined.update(_normalize_variable(assign) for assign in step.assign)
     return diagnostics
+
+
+def _step_variable_diagnostics(step: RobotStep, defined: set[str]) -> list[LspDiagnostic]:
+    diagnostics = []
+    for value in [step.keyword, *step.args]:
+        for variable in _VARIABLE_PATTERN.findall(value):
+            if _normalize_variable(variable) not in defined:
+                diagnostics.append(
+                    _diagnostic(
+                        step.range,
+                        DiagnosticSeverity.WARNING,
+                        f"Variable not found: {variable}",
+                        "variable_not_found",
+                    )
+                )
+    return diagnostics
+
+
+def _body_events(steps, variables):
+    events = [("step", step) for step in steps]
+    events.extend(("variable", variable) for variable in variables)
+    return sorted(events, key=lambda event: (event[1].range.start.line, 0 if event[0] == "variable" else 1))
 
 
 def _normalize_variable(variable: str) -> str:
@@ -261,4 +280,17 @@ def _diagnostic(range_: LspRange, severity: DiagnosticSeverity, message: str, co
 
 def _is_valid_type_annotation(type_annotation: str) -> bool:
     parts = [part.strip() for part in type_annotation.replace("|", ",").split(",")]
-    return all(part in _BUILTIN_TYPES for part in parts if part)
+    return all(_is_valid_type_part(part) for part in parts if part)
+
+
+def _is_valid_type_part(type_part: str) -> bool:
+    if type_part in _BUILTIN_TYPES:
+        return True
+    module_name, sep, attr = type_part.rpartition(".")
+    if not sep:
+        return False
+    try:
+        module = import_module(module_name)
+    except Exception:
+        return False
+    return hasattr(module, attr)

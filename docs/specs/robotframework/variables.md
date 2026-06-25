@@ -28,12 +28,14 @@ Stage 04 — Robot Framework Model (parse), Stage 06 — Completion (completion)
 - Keyword argument variables (parse)
 - Variables created with `VAR` syntax in test and keyword bodies (parse, completion, diagnostics)
 - Variable type annotations for built-in types (parse, diagnostics, completion)
+- Importable dotted Python type annotations such as `pathlib.PurePath`
+- Lexical visibility for `VAR` declarations inside test and keyword bodies
 - Secret variables through the `Secret` type annotation in RF 7.4+
 - BuiltIn variables (completion)
 
 ## Future Scope
 
 - Environment variables
-- Full custom type/converter resolution
-- Exact cursor-aware lexical scope for `VAR` definitions
+- Full custom type/converter resolution beyond importable Python classes
+- Runtime-aware variable priority across nested suites and command-line variables
 - Shortcut: `$var` without braces (short syntax)

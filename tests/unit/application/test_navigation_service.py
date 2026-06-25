@@ -82,6 +82,21 @@ class TestNavigationService:
         variable = next(symbol for symbol in symbols if symbol["name"] == "${MESSAGE}")
         assert variable["kind"] == SymbolKind.VARIABLE
 
+    def test_document_symbols_include_groups(self):
+        service, uri = make_service(
+            "*** Test Cases ***\n"
+            "T\n"
+            "    GROUP    Setup Phase\n"
+            "        Log    ok\n"
+            "    END\n"
+        )
+
+        symbols = service.document_symbols(uri)
+        group = next(symbol for symbol in symbols if symbol["name"] == "Setup Phase")
+
+        assert group["kind"] == SymbolKind.NAMESPACE
+        assert group["detail"] == "group"
+
     def test_folding_ranges(self):
         service, uri = make_service()
 
@@ -90,6 +105,19 @@ class TestNavigationService:
         assert {"startLine": 0, "endLine": 2, "kind": "region"} in ranges
         assert any(item["startLine"] == 7 for item in ranges)
         assert any(item["startLine"] == 11 for item in ranges)
+
+    def test_folding_ranges_include_groups(self):
+        service, uri = make_service(
+            "*** Test Cases ***\n"
+            "T\n"
+            "    GROUP    Setup Phase\n"
+            "        Log    ok\n"
+            "    END\n"
+        )
+
+        ranges = service.folding_ranges(uri)
+
+        assert {"startLine": 2, "endLine": 4, "kind": "region"} in ranges
 
     def test_selection_ranges_symbol_and_line_parent(self):
         service, uri = make_service()

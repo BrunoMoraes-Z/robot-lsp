@@ -12,6 +12,7 @@ from robot_lsp.domain.models import (
     ParseResult,
     RobotArg,
     RobotDiagnostic,
+    RobotGroup,
     RobotImport,
     RobotKeyword,
     RobotSettings,
@@ -159,7 +160,7 @@ class RobotFrameworkASTAdapter:
         for node in getattr(section, "body", []):
             if type(node).__name__ != "TestCase":
                 continue
-            doc, tags, template, timeout, setup, teardown, body, variables = self._body_items(node)
+            doc, tags, template, timeout, setup, teardown, body, variables, groups = self._body_items(node)
             cases.append(
                 RobotTestCase(
                     name=getattr(node, "name", "") or "",
@@ -172,6 +173,7 @@ class RobotFrameworkASTAdapter:
                     body=body,
                     range=self._node_range(node),
                     variables=variables,
+                    groups=groups,
                 )
             )
         return cases
@@ -181,7 +183,7 @@ class RobotFrameworkASTAdapter:
         for node in getattr(section, "body", []):
             if type(node).__name__ != "Keyword":
                 continue
-            doc, tags, _template, _timeout, _setup, _teardown, body, variables = self._body_items(node)
+            doc, tags, _template, _timeout, _setup, _teardown, body, variables, groups = self._body_items(node)
             keywords.append(
                 RobotKeyword(
                     name=getattr(node, "name", "") or "",
@@ -191,13 +193,24 @@ class RobotFrameworkASTAdapter:
                     body=body,
                     range=self._node_range(node),
                     variables=variables,
+                    groups=groups,
                 )
             )
         return keywords
 
     def _body_items(
         self, node: Any
-    ) -> tuple[str, list[str], str | None, str | None, str | None, str | None, list[RobotStep], list[RobotVariable]]:
+    ) -> tuple[
+        str,
+        list[str],
+        str | None,
+        str | None,
+        str | None,
+        str | None,
+        list[RobotStep],
+        list[RobotVariable],
+        list[RobotGroup],
+    ]:
         doc = ""
         tags: list[str] = []
         template = None
@@ -206,6 +219,7 @@ class RobotFrameworkASTAdapter:
         teardown = None
         body: list[RobotStep] = []
         variables: list[RobotVariable] = []
+        groups: list[RobotGroup] = []
 
         for stmt in getattr(node, "body", []):
             stmt_type = type(stmt).__name__
@@ -222,14 +236,15 @@ class RobotFrameworkASTAdapter:
             elif stmt_type == "Teardown":
                 teardown = _call_text(stmt)
             else:
-                self._body_steps_and_variables(stmt, body, variables)
-        return doc, tags, template, timeout, setup, teardown, body, variables
+                self._body_steps_variables_and_groups(stmt, body, variables, groups)
+        return doc, tags, template, timeout, setup, teardown, body, variables, groups
 
-    def _body_steps_and_variables(
+    def _body_steps_variables_and_groups(
         self,
         stmt: Any,
         body: list[RobotStep],
         variables: list[RobotVariable],
+        groups: list[RobotGroup],
     ) -> None:
         stmt_type = type(stmt).__name__
         if stmt_type == "KeywordCall":
@@ -238,9 +253,13 @@ class RobotFrameworkASTAdapter:
             variable = self._var(stmt)
             if variable is not None:
                 variables.append(variable)
+        elif stmt_type == "Group":
+            groups.append(RobotGroup(name=getattr(stmt, "name", "") or "GROUP", range=self._node_range(stmt)))
+            for child in getattr(stmt, "body", []) or []:
+                self._body_steps_variables_and_groups(child, body, variables, groups)
         else:
             for child in getattr(stmt, "body", []) or []:
-                self._body_steps_and_variables(child, body, variables)
+                self._body_steps_variables_and_groups(child, body, variables, groups)
 
     def _keyword_args(self, node: Any) -> list[RobotArg]:
         for stmt in getattr(node, "body", []):
@@ -286,8 +305,14 @@ class RobotFrameworkASTAdapter:
         end = tokens[-1]
         start_line = max(0, (start.lineno or 1) - 1)
         start_col = start.col_offset or 0
-        end_line = max(0, (end.lineno or start.lineno or 1) - 1)
-        end_col = (end.col_offset or 0) + _utf16_len(end.value or "")
+        end_lineno = getattr(node, "end_lineno", None)
+        end_col_offset = getattr(node, "end_col_offset", None)
+        if end_lineno is not None and end_col_offset is not None:
+            end_line = max(0, end_lineno - 1)
+            end_col = end_col_offset
+        else:
+            end_line = max(0, (end.lineno or start.lineno or 1) - 1)
+            end_col = (end.col_offset or 0) + _utf16_len(end.value or "")
         return LspRange(
             start=LspPosition(start_line, start_col),
             end=LspPosition(end_line, end_col),
