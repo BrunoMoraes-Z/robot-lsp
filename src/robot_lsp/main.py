@@ -41,6 +41,7 @@ def create_server(publish_diagnostics: PublishDiagnostics | None = None) -> LspS
     parse_service = ParseService(server.document_store, parser)
     workspace_index = WorkspaceIndex(parser=parser)
 
+    server.workspace_index = workspace_index
     server.diagnostic_service = DiagnosticService(
         parse_service,
         publish_diagnostics or server.publish_diagnostics,

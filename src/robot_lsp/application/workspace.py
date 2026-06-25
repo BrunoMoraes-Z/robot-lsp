@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -57,10 +58,12 @@ class WorkspaceIndex:
         self._parser = parser or RobotFrameworkParser()
         self._entries: dict[str, WorkspaceEntry] = {}
         self._import_paths = tuple(path.resolve() for path in import_paths or [])
+        self._lock = threading.RLock()
 
     @property
     def entries(self) -> dict[str, WorkspaceEntry]:
-        return dict(self._entries)
+        with self._lock:
+            return dict(self._entries)
 
     @property
     def import_paths(self) -> tuple[Path, ...]:
@@ -83,7 +86,8 @@ class WorkspaceIndex:
         text = path.read_text(encoding="utf-8")
         content_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
         uri = path_to_uri(path)
-        existing = self._entries.get(uri)
+        with self._lock:
+            existing = self._entries.get(uri)
         mtime = path.stat().st_mtime
         if existing is not None and existing.content_hash == content_hash and existing.mtime == mtime:
             return existing
@@ -98,13 +102,36 @@ class WorkspaceIndex:
             mtime=mtime,
             content_hash=content_hash,
         )
-        self._entries[uri] = entry
+        with self._lock:
+            self._entries[uri] = entry
+        return entry
+
+    def update_from_text(self, path: Path, text: str) -> WorkspaceEntry | None:
+        """Index a file from in-memory text (e.g. an unsaved editor buffer)."""
+        path = path.resolve()
+        if path.suffix.lower() not in self.SUPPORTED_SUFFIXES:
+            return None
+        content_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        uri = path_to_uri(path)
+        with self._lock:
+            existing = self._entries.get(uri)
+        if existing is not None and existing.content_hash == content_hash:
+            return existing
+        result = self._parser.parse_text(text, source_name=path.name)
+        if result.suite is None:
+            return None
+        entry = WorkspaceEntry(uri=uri, path=path, suite=result.suite, mtime=0.0, content_hash=content_hash)
+        with self._lock:
+            self._entries[uri] = entry
         return entry
 
     def remove_file(self, path: Path) -> None:
-        self._entries.pop(path_to_uri(path.resolve()), None)
+        with self._lock:
+            self._entries.pop(path_to_uri(path.resolve()), None)
 
     def find_keyword(self, name: str) -> list[SymbolLocation]:
+        with self._lock:
+            entries = list(self._entries.values())
         return [
             SymbolLocation(
                 name=keyword.name,
@@ -112,12 +139,14 @@ class WorkspaceIndex:
                 range=keyword.range,
                 source_uri=entry.uri,
             )
-            for entry in self._entries.values()
+            for entry in entries
             for keyword in entry.suite.keywords
             if keyword.name == name
         ]
 
     def find_variable(self, name: str) -> list[SymbolLocation]:
+        with self._lock:
+            entries = list(self._entries.values())
         return [
             SymbolLocation(
                 name=variable.name,
@@ -125,7 +154,7 @@ class WorkspaceIndex:
                 range=variable.range,
                 source_uri=entry.uri,
             )
-            for entry in self._entries.values()
+            for entry in entries
             for variable in entry.suite.variables
             if variable.name == name
         ]
@@ -151,7 +180,8 @@ class WorkspaceIndex:
             resolution = self.resolve_import(source_path, import_)
             if resolution.resolved_uri is None:
                 continue
-            entry = self._entries.get(resolution.resolved_uri)
+            with self._lock:
+                entry = self._entries.get(resolution.resolved_uri)
             if entry is None:
                 continue
             locations.extend(
@@ -168,7 +198,8 @@ class WorkspaceIndex:
             resolution = self.resolve_import(source_path, import_)
             if resolution.resolved_uri is None:
                 continue
-            entry = self._entries.get(resolution.resolved_uri)
+            with self._lock:
+                entry = self._entries.get(resolution.resolved_uri)
             if entry is None:
                 continue
             locations.extend(

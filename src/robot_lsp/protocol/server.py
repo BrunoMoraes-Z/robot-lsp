@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from robot_lsp.application.completion_service import CompletionService
 from robot_lsp.application.code_action_service import CodeActionService
 from robot_lsp.application.configuration import ConfigurationService, LogLevel
 from robot_lsp.application.diagnostic_service import DiagnosticService
-from robot_lsp.application.document_store import DocumentStore
+from robot_lsp.application.document_store import DocumentStore, uri_to_path
 from robot_lsp.application.formatting_service import FormattingService
 from robot_lsp.application.hover_service import HoverService
 from robot_lsp.application.navigation_service import NavigationService
 from robot_lsp.application.refactoring_service import RefactoringService
+from robot_lsp.application.workspace import WorkspaceIndex
 from robot_lsp.domain.diagnostics import LspDiagnostic
 from robot_lsp.domain.models import LspPosition, LspRange
 
@@ -48,6 +51,7 @@ class LspServer:
         self.exit_requested = False
         self.exit_code: int | None = None
         self.document_store = DocumentStore()
+        self.workspace_index: WorkspaceIndex | None = None
         self.diagnostic_service = diagnostic_service
         self.completion_service = completion_service
         self.hover_service = hover_service
@@ -84,6 +88,7 @@ class LspServer:
         self._dispatcher.register("textDocument/rangeFormatting", self._handle_range_formatting)
         self._dispatcher.register("textDocument/codeAction", self._handle_code_action)
         self._dispatcher.register("workspace/didChangeConfiguration", self._handle_did_change_configuration)
+        self._dispatcher.register("workspace/didChangeWatchedFiles", self._handle_did_change_watched_files)
 
     def handle_message(self, message: JsonRpcMessage) -> JsonRpcMessage | None:
         if message.is_response:
@@ -144,7 +149,62 @@ class LspServer:
         token: CancelToken,
     ) -> None:
         self.request_workspace_configuration()
+        self._register_file_watchers()
+        self._start_workspace_scan()
         return None
+
+    def _register_file_watchers(self) -> None:
+        if not self._client_supports_dynamic_registration():
+            return
+        self.outgoing_requests.append(
+            create_request(
+                "client/registerCapability",
+                id=self._next_outgoing_id(),
+                params={
+                    "registrations": [
+                        {
+                            "id": "robot-lsp-file-watcher",
+                            "method": "workspace/didChangeWatchedFiles",
+                            "registerOptions": {
+                                "watchers": [
+                                    {"globPattern": "**/*.robot"},
+                                    {"globPattern": "**/*.resource"},
+                                ]
+                            },
+                        }
+                    ]
+                },
+            )
+        )
+
+    def _start_workspace_scan(self) -> None:
+        if self.workspace_index is None:
+            return
+        folder_uris = [f["uri"] for f in self.workspace_folders if isinstance(f.get("uri"), str)]
+        if not folder_uris:
+            return
+        thread = threading.Thread(
+            target=self._run_workspace_scan,
+            args=(folder_uris,),
+            daemon=True,
+            name="robot-lsp-workspace-scan",
+        )
+        thread.start()
+
+    def _run_workspace_scan(self, folder_uris: list[str]) -> None:
+        if self.workspace_index is None:
+            return
+        for uri in folder_uris:
+            root = uri_to_path(uri)
+            if root is not None and root.is_dir():
+                try:
+                    self.workspace_index.scan(root)
+                except Exception:
+                    pass
+        if self.diagnostic_service is not None:
+            for open_uri in self.document_store.get_open_uris():
+                if self._diagnostics_enabled(open_uri):
+                    self.diagnostic_service.schedule_diagnostics(open_uri)
 
     def request_workspace_configuration(self) -> JsonRpcMessage | None:
         if not self._client_supports_workspace_configuration():
@@ -253,6 +313,7 @@ class LspServer:
             version=version if isinstance(version, int) else 0,
             language_id=language_id if isinstance(language_id, str) else "robotframework",
         )
+        self._index_document(uri, text)
         if self._diagnostics_enabled(uri) and self.diagnostic_service is not None:
             self.diagnostic_service.schedule_diagnostics(uri)
         return None
@@ -287,6 +348,7 @@ class LspServer:
             text=text,
             version=version if isinstance(version, int) else 0,
         )
+        self._index_document(uri, text)
         if self._diagnostics_enabled(uri) and self.diagnostic_service is not None:
             self.diagnostic_service.schedule_diagnostics(uri)
         return None
@@ -337,6 +399,46 @@ class LspServer:
             for uri in self.document_store.get_open_uris():
                 if old_diagnostics_enabled.get(uri, True) and not self._diagnostics_enabled(uri):
                     self.diagnostic_service.clear(uri)
+        return None
+
+    def _index_document(self, uri: str, text: str) -> None:
+        if self.workspace_index is None:
+            return
+        path = uri_to_path(uri)
+        if path is not None:
+            self.workspace_index.update_from_text(path, text)
+
+    def _handle_did_change_watched_files(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> None:
+        if not isinstance(params, dict) or self.workspace_index is None:
+            return None
+        changes = params.get("changes")
+        if not isinstance(changes, list):
+            return None
+        affected = False
+        for change in changes:
+            if not isinstance(change, dict):
+                continue
+            file_uri = change.get("uri")
+            change_type = change.get("type")  # 1=created, 2=changed, 3=deleted
+            if not isinstance(file_uri, str):
+                continue
+            path = uri_to_path(file_uri)
+            if path is None:
+                continue
+            if change_type == 3:
+                self.workspace_index.remove_file(path)
+                affected = True
+            elif path.suffix.lower() in WorkspaceIndex.SUPPORTED_SUFFIXES:
+                self.workspace_index.update_file(path)
+                affected = True
+        if affected and self.diagnostic_service is not None:
+            for open_uri in self.document_store.get_open_uris():
+                if self._diagnostics_enabled(open_uri):
+                    self.diagnostic_service.schedule_diagnostics(open_uri)
         return None
 
     def _diagnostics_enabled(self, uri: str | None = None) -> bool:
@@ -407,6 +509,13 @@ class LspServer:
     def _client_supports_work_done_progress(self) -> bool:
         window = self.client_capabilities.get("window")
         return isinstance(window, dict) and window.get("workDoneProgress") is True
+
+    def _client_supports_dynamic_registration(self) -> bool:
+        workspace = self.client_capabilities.get("workspace")
+        if not isinstance(workspace, dict):
+            return False
+        watched = workspace.get("didChangeWatchedFiles")
+        return isinstance(watched, dict) and watched.get("dynamicRegistration") is True
 
     def _handle_hover(
         self,
