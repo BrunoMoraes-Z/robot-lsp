@@ -135,7 +135,7 @@ class WorkspaceIndex:
         if import_.type in {"resource", "variables"}:
             resolved_path = self._resolve_file_import(source_path, import_)
         elif import_.type == "library":
-            resolved_path = self._resolve_library_import(import_)
+            resolved_path = self._resolve_library_import(import_, source_path)
 
         return ImportResolution(
             import_=import_,
@@ -189,10 +189,36 @@ class WorkspaceIndex:
                         return with_suffix
         return None
 
-    def _resolve_library_import(self, import_: RobotImport) -> Path | None:
-        spec = importlib.util.find_spec(import_.name)
+    def _resolve_library_import(self, import_: RobotImport, source_path: Path | None = None) -> Path | None:
+        name = import_.name
+        if _is_path_import(name):
+            bases = [source_path.parent] if source_path is not None else []
+            bases.extend(self._import_paths)
+            for base in bases:
+                candidate = (base / name).resolve()
+                if candidate.exists():
+                    return candidate
+            candidate = Path(name).resolve()
+            return candidate if candidate.exists() else None
+
+        try:
+            spec = importlib.util.find_spec(name)
+        except (ImportError, ValueError, ModuleNotFoundError):
+            return None
         if spec is None:
-            spec = importlib.util.find_spec(f"robot.libraries.{import_.name}")
+            try:
+                spec = importlib.util.find_spec(f"robot.libraries.{name}")
+            except (ImportError, ValueError, ModuleNotFoundError):
+                return None
         if spec is None or spec.origin is None or spec.origin == "built-in":
             return None
         return Path(spec.origin).resolve()
+
+
+def _is_path_import(name: str) -> bool:
+    return (
+        name.endswith(".py")
+        or name.startswith(".")
+        or "/" in name
+        or "\\" in name
+    )

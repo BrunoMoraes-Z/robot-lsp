@@ -4,9 +4,14 @@ from robot_lsp.application.completion_service import CompletionService
 from robot_lsp.application.document_store import DocumentStore, path_to_uri
 from robot_lsp.application.navigation_service import NavigationService
 from robot_lsp.application.parse_service import ParseService
-from robot_lsp.application.workspace import WorkspaceIndex
-from robot_lsp.domain.models import LspPosition
+from robot_lsp.application.workspace import WorkspaceIndex, _is_path_import
+from robot_lsp.domain.models import LspPosition, LspRange, RobotImport
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
+
+
+def _dummy_import(name: str, type_: str = "library") -> RobotImport:
+    dummy_range = LspRange(LspPosition(0, 0), LspPosition(0, len(name)))
+    return RobotImport(type=type_, name=name, args=[], alias=None, range=dummy_range)  # type: ignore[arg-type]
 
 
 def write_workspace(root: Path):
@@ -184,3 +189,85 @@ class TestWorkspaceIndexIntegration:
         assert len(locations) == 1
         assert locations[0]["uri"] == path_to_uri(resource.resolve())
         assert locations[0]["range"]["start"]["line"] == 4
+
+
+class TestIsPathImport:
+    def test_py_extension_is_path(self):
+        assert _is_path_import("../../libs/Looper.py") is True
+
+    def test_relative_dotslash_is_path(self):
+        assert _is_path_import("./libs/Looper.py") is True
+
+    def test_forward_slash_is_path(self):
+        assert _is_path_import("src/libs/MyLib.py") is True
+
+    def test_backslash_is_path(self):
+        assert _is_path_import("src\\libs\\MyLib.py") is True
+
+    def test_module_name_is_not_path(self):
+        assert _is_path_import("Collections") is False
+        assert _is_path_import("SeleniumLibrary") is False
+        assert _is_path_import("robot.libraries.BuiltIn") is False
+
+    def test_dotted_module_is_not_path(self):
+        assert _is_path_import("my.company.Library") is False
+
+
+class TestPathBasedLibraryImport:
+    def test_resolves_relative_py_library(self, tmp_path):
+        libs = tmp_path / "libs"
+        libs.mkdir()
+        lib_file = libs / "Looper.py"
+        lib_file.write_text("# dummy library\n", encoding="utf-8")
+        suite_dir = tmp_path / "tests"
+        suite_dir.mkdir()
+        suite = suite_dir / "suite.robot"
+        suite.write_text("*** Settings ***\nLibrary    ../libs/Looper.py\n", encoding="utf-8")
+
+        index = WorkspaceIndex()
+        import_ = _dummy_import("../libs/Looper.py")
+        resolution = index.resolve_import(suite, import_)
+
+        assert resolution.resolved_path == lib_file.resolve()
+
+    def test_resolves_absolute_py_library(self, tmp_path):
+        lib_file = tmp_path / "MyLib.py"
+        lib_file.write_text("# dummy\n", encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        suite.write_text("*** Test Cases ***\n", encoding="utf-8")
+
+        index = WorkspaceIndex()
+        import_ = _dummy_import(str(lib_file))
+        resolution = index.resolve_import(suite, import_)
+
+        assert resolution.resolved_path == lib_file.resolve()
+
+    def test_returns_none_for_nonexistent_path(self, tmp_path):
+        suite = tmp_path / "suite.robot"
+        suite.write_text("*** Test Cases ***\n", encoding="utf-8")
+        index = WorkspaceIndex()
+        import_ = _dummy_import("../../nonexistent/Lib.py")
+        resolution = index.resolve_import(suite, import_)
+
+        assert resolution.resolved_path is None
+
+    def test_does_not_raise_for_path_with_dotdot(self, tmp_path):
+        suite = tmp_path / "suite.robot"
+        suite.write_text("*** Test Cases ***\n", encoding="utf-8")
+        index = WorkspaceIndex()
+        import_ = _dummy_import("../../src/libs/Looper.py")
+
+        resolution = index.resolve_import(suite, import_)
+
+        assert resolution.resolved_path is None  # doesn't exist, but no exception
+
+    def test_module_name_still_resolves(self, tmp_path):
+        main, _resource, _variables = write_workspace(tmp_path)
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        suite = index.entries[path_to_uri(main.resolve())].suite
+
+        resolution = index.resolve_import(main, suite.imports[2])
+
+        assert resolution.resolved_path is not None
+        assert resolution.resolved_path.name == "Collections.py"
