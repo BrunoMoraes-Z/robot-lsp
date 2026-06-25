@@ -13,6 +13,7 @@ Modern Language Server Protocol implementation for Robot Framework 7.x.
 - Completion, hover, navigation, rename, formatting, and code actions
 - Runtime configuration through initialization options and `workspace/configuration`
 - RF 7.x feature support including `VAR`, `GROUP`, typed variables, and secret variables
+- Planned first-party VS Code client under `clients/vscode`
 - Cross-platform CI target coverage for Linux, Windows, macOS, and Python 3.10-3.13
 
 ## Requirements
@@ -161,6 +162,9 @@ See `docs/release.md` for release artifact validation.
 ## Project Layout
 
 ```text
+clients/
+  vscode/          VS Code extension client documentation and future implementation
+
 src/robot_lsp/
   protocol/        JSON-RPC, LSP server, transport, dispatch
   application/     Completion, diagnostics, navigation, formatting, workspace services
@@ -171,9 +175,12 @@ src/robot_lsp/
 
 ## Documentation
 
+- `docs/clients/` - editor client overview and VS Code client plan
 - `docs/roadmap.md` - implementation stages and validation status
 - `docs/architecture.md` - architecture overview
 - `docs/specs/` - protocol, Robot Framework, workspace, performance, and testing specs
+- `docs/specs/clients/vscode/` - VS Code client specs
+- `clients/vscode/docs/` - VS Code client-local docs
 - `docs/decisions/` - ADRs
 - `docs/release.md` - release/build notes
 

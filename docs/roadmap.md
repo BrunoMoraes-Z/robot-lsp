@@ -29,6 +29,14 @@ The items below do not block the MVP, but remain pending for post-MVP evolution 
 | 09 | Expand CI to new targets when needed, such as macOS and Python 3.13 | compatibility matrix | done |
 | 10 | Implement semantic diagnostics/warnings beyond Robot Framework parse errors | diagnostics rules spec | done |
 
+## Client Roadmap
+
+The core LSP MVP is complete. Editor clients are tracked separately so that client-specific UX, packaging, and debug behavior do not pollute the core server roadmap.
+
+| Client | Stage | Status | Docs |
+|---|---|---|---|
+| VS Code | Stage 00 - Documentation And Architecture | in progress | `clients/vscode/docs/roadmap.md` |
+
 ---
 
 ## Stage Status

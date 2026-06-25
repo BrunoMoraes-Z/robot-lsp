@@ -139,11 +139,24 @@ tests/
       group_rf72.robot
 ```
 
-## Future Extensibility
+## Client Extensibility
 
-IDE extensions (VS Code, Neovim, etc.) will be adapters that:
-- Start the LSP process.
-- Manage `stdio` or TCP transport.
-- Map IDE features to the LSP protocol.
+Editor clients live under `clients/` and adapt editor-specific APIs to the core LSP server.
 
-Adapters will live in separate packages (`robot_lsp_ide_vscode`, etc.) without modifying the core.
+```text
+clients/
+  vscode/
+    docs/
+```
+
+Clients are responsible for:
+
+- Starting the LSP process.
+- Managing editor-specific language client integration.
+- Mapping editor settings to `robot.lsp` server configuration.
+- Providing editor UI such as commands, status, Test Explorer, and debug launch contributions.
+- Packaging and release workflows for each editor.
+
+The VS Code client follows its own Clean Architecture plan documented in `docs/specs/clients/vscode/clean-architecture.md`.
+
+The core server under `src/robot_lsp/` must remain editor-agnostic.
