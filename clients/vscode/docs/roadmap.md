@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Stage 05 - Syntax Highlighting And Language Configuration
+Stage 06 - LSP Feature Smoke Tests
 
 Status: `pending`
 
@@ -15,7 +15,7 @@ Status: `pending`
 | 02 | Language Client Startup | done |
 | 03 | Python Resolution | done |
 | 04 | Configuration Bridge | done |
-| 05 | Syntax Highlighting And Language Configuration | pending |
+| 05 | Syntax Highlighting And Language Configuration | done |
 | 06 | LSP Feature Smoke Tests | pending |
 | 07 | Test Explorer MVP | pending |
 | 08 | Run Support | pending |
@@ -67,4 +67,12 @@ Status: `pending`
 - Initialization options use the same configuration bridge as workspace configuration requests.
 - `${workspaceFolder}` is expanded in language server, runtime, env, python path, and Robot variable settings.
 - `robot-lsp.variables` reaches the core LSP and suppresses false undefined-variable diagnostics.
+- TypeScript compilation passes with `npm run compile`.
+
+## Stage 05 Acceptance Criteria
+
+- TextMate grammar contributed for `robotframework` files.
+- Grammar highlights section headers, comments, settings, Robot variables, typed variables, `VAR`, `GROUP`, `END`, control keywords, and keyword calls.
+- Language configuration includes comments, brackets, auto-closing pairs, surrounding pairs, folding markers, indentation rules, and Robot-aware word pattern.
+- Syntax highlighting works independently from the Python language server.
 - TypeScript compilation passes with `npm run compile`.

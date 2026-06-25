@@ -23,6 +23,8 @@ Aliases:
 - Line comment: `#`
 - Brackets: `[]`, `{}`, `()`
 - Auto-closing pairs for quotes and brackets
+- Folding markers for block keywords such as `GROUP`, `IF`, `FOR`, `WHILE`, and `TRY`
+- Indentation rules for Robot Framework block syntax
 - Word pattern that keeps Robot variables recognizable
 
 ## TextMate Grammar Scope
@@ -31,6 +33,12 @@ Root scope:
 
 ```text
 source.robotframework
+```
+
+Grammar file:
+
+```text
+clients/vscode/syntaxes/robot.tmLanguage.json
 ```
 
 Initial grammar coverage:
@@ -42,6 +50,7 @@ Initial grammar coverage:
 - Typed variables: `${x: int}`
 - `VAR` syntax
 - `GROUP` and `END`
+- Control keywords: `IF`, `ELSE IF`, `ELSE`, `FOR`, `WHILE`, `TRY`, `EXCEPT`, `FINALLY`, `RETURN`, `CONTINUE`, `BREAK`
 - Keyword calls and arguments
 
 ## LSP Relationship

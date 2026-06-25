@@ -21,5 +21,15 @@
     ["\"", "\""],
     ["'", "'"]
   ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*(GROUP|IF|FOR|WHILE|TRY)\\b",
+      "end": "^\\s*END\\b"
+    }
+  },
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*(GROUP|IF|ELSE IF|ELSE|FOR|WHILE|TRY|EXCEPT|FINALLY)\\b.*$",
+    "decreaseIndentPattern": "^\\s*(END|ELSE IF|ELSE|EXCEPT|FINALLY)\\b.*$"
+  },
   "wordPattern": "([$@&%]\\{[^}]+\\})|([^\\s]+)"
 }

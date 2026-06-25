@@ -1,0 +1,108 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Robot Framework",
+  "scopeName": "source.robotframework",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#sectionHeaders" },
+    { "include": "#settings" },
+    { "include": "#control" },
+    { "include": "#varSyntax" },
+    { "include": "#variables" },
+    { "include": "#bracketSettings" },
+    { "include": "#keywordCalls" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.robotframework",
+          "match": "(^|\\s)(#.*)$",
+          "captures": {
+            "2": { "name": "comment.line.number-sign.robotframework" }
+          }
+        }
+      ]
+    },
+    "sectionHeaders": {
+      "patterns": [
+        {
+          "name": "entity.name.section.robotframework",
+          "match": "^\\s*(\\*{2,}\\s*(Settings?|Variables?|Test Cases?|Tasks?|Keywords?|Comments?)\\s*\\*{2,})\\s*$",
+          "captures": {
+            "1": { "name": "entity.name.section.robotframework" },
+            "2": { "name": "support.type.section.robotframework" }
+          }
+        }
+      ]
+    },
+    "settings": {
+      "patterns": [
+        {
+          "name": "keyword.control.setting.robotframework",
+          "match": "^\\s*(Library|Resource|Variables|Documentation|Metadata|Suite Setup|Suite Teardown|Test Setup|Test Teardown|Test Tags|Test Template|Test Timeout|Force Tags|Default Tags)\\b"
+        }
+      ]
+    },
+    "bracketSettings": {
+      "patterns": [
+        {
+          "name": "keyword.control.setting.bracket.robotframework",
+          "match": "^\\s*(\\[(Documentation|Arguments|Tags|Setup|Teardown|Template|Timeout|Return)\\])\\b",
+          "captures": {
+            "1": { "name": "keyword.control.setting.bracket.robotframework" },
+            "2": { "name": "support.type.setting.robotframework" }
+          }
+        }
+      ]
+    },
+    "control": {
+      "patterns": [
+        {
+          "name": "keyword.control.robotframework",
+          "match": "^\\s*(IF|ELSE IF|ELSE|END|FOR|WHILE|TRY|EXCEPT|FINALLY|GROUP|RETURN|CONTINUE|BREAK)\\b"
+        }
+      ]
+    },
+    "varSyntax": {
+      "patterns": [
+        {
+          "name": "storage.type.variable.robotframework",
+          "match": "^\\s*(VAR)\\s+([$@&%]\\{[^}:]+(?::\\s*[^}]+)?\\})",
+          "captures": {
+            "1": { "name": "storage.type.variable.robotframework" },
+            "2": { "name": "variable.other.robotframework" }
+          }
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.typed.robotframework",
+          "match": "[$@&%]\\{([^}:]+)(:\\s*([^}]+))\\}",
+          "captures": {
+            "1": { "name": "variable.other.robotframework" },
+            "2": { "name": "punctuation.separator.type.robotframework" },
+            "3": { "name": "support.type.robotframework" }
+          }
+        },
+        {
+          "name": "variable.other.robotframework",
+          "match": "[$@&%]\\{[^}]+\\}"
+        }
+      ]
+    },
+    "keywordCalls": {
+      "patterns": [
+        {
+          "name": "entity.name.function.robotframework",
+          "match": "^\\s{2,}([^\\s#][^#]*?)(?=\\s{2,}|\\t|\\s*$)",
+          "captures": {
+            "1": { "name": "entity.name.function.robotframework" }
+          }
+        }
+      ]
+    }
+  }
+}

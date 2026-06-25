@@ -46,6 +46,13 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "grammars": [
+      {
+        "language": "robotframework",
+        "scopeName": "source.robotframework",
+        "path": "./syntaxes/robot.tmLanguage.json"
+      }
+    ],
     "commands": [
       {
         "command": "robot-lsp.restartLanguageServer",
