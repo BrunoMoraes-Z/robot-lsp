@@ -1,5 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { createServer, type Server, type Socket } from "node:net";
+import { createServer, type Server, type Socket, createConnection } from "node:net";
 import path from "node:path";
 import { platform } from "node:process";
 import type { RobotLaunchConfiguration } from "../domain/models";
@@ -61,12 +61,24 @@ export function robotRuntimeListenerArgument(endpoint: RobotRuntimeBridgeEndpoin
   return `robot_lsp.debug.listener.RobotLspDebugListener:${endpoint.port}:${endpoint.token}`;
 }
 
+export function normalizePath(value: string): string {
+  const normalized = path.resolve(path.normalize(value));
+  return platform === "win32" ? normalized.toLowerCase() : normalized;
+}
+
 export function planRobotCommand(
   config: RobotLaunchConfiguration,
   runtimeBridge: RobotRuntimeBridgeEndpoint | undefined = undefined,
+  debugpyPort: number | undefined = undefined,
 ): RobotCommandPlan {
   const command = config.python.trim() || (platform === "win32" ? "python" : "python3");
-  const args = ["-m", "robot"];
+  const args: string[] = [];
+
+  if (debugpyPort !== undefined) {
+    args.push("-m", "debugpy", "--listen", `127.0.0.1:${debugpyPort}`, "--wait-for-client", "-m", "robot");
+  } else {
+    args.push("-m", "robot");
+  }
 
   if (runtimeBridge !== undefined) {
     args.push("--listener", robotRuntimeListenerArgument(runtimeBridge));
@@ -92,13 +104,32 @@ export function planRobotCommand(
   };
 }
 
-class RobotDebugAdapterRuntime {
+function allocatePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = createServer();
+    srv.listen(0, "127.0.0.1", () => {
+      const addr = srv.address();
+      if (addr === null || typeof addr === "string") {
+        reject(new Error("Could not allocate port"));
+        return;
+      }
+      const { port } = addr;
+      srv.close(() => resolve(port));
+    });
+    srv.once("error", reject);
+  });
+}
+
+export class RobotDebugAdapterRuntime {
   private buffer = Buffer.alloc(0);
   private sequence = 1;
   private child: ChildProcessWithoutNullStreams | undefined;
   private runtimeBridge: RobotRuntimeBridge | undefined;
-  private readonly breakpoints = new Map<string, RuntimeBreakpoint[]>();
+  private debugpyBridge: DebugpyBridge | undefined;
+  private readonly breakpoints = new Map<string, SourceBreakpoint[]>();
+  private readonly robotBreakpoints = new Map<string, RuntimeBreakpoint[]>();
   private pausedFrame: PausedPayload | undefined;
+  private debugpyPausedThreadId: number | undefined;
   private nextVariablesReference = 1;
   private readonly variableHandles = new Map<number, PausedPayload>();
   private nextEvaluateRequestId = 1;
@@ -119,7 +150,7 @@ class RobotDebugAdapterRuntime {
     }
   }
 
-  private tryReadMessage(): DapMessage | undefined {
+  public tryReadMessage(): DapMessage | undefined {
     const headerEnd = this.buffer.indexOf("\r\n\r\n");
     if (headerEnd < 0) {
       return undefined;
@@ -143,7 +174,7 @@ class RobotDebugAdapterRuntime {
     return JSON.parse(payload) as DapMessage;
   }
 
-  private handleMessage(message: DapMessage): void {
+  public handleMessage(message: DapMessage): void {
     if (message.type !== "request") {
       return;
     }
@@ -159,7 +190,7 @@ class RobotDebugAdapterRuntime {
         this.event("initialized");
         break;
       case "setBreakpoints":
-        this.setBreakpoints(request);
+        void this.setBreakpoints(request);
         break;
       case "configurationDone":
         this.respond(request, true);
@@ -168,10 +199,10 @@ class RobotDebugAdapterRuntime {
         void this.launch(request);
         break;
       case "threads":
-        this.respond(request, true, { threads: [{ id: 1, name: "Robot Framework" }] });
+        this.threads(request);
         break;
       case "stackTrace":
-        this.stackTrace(request);
+        void this.stackTrace(request);
         break;
       case "scopes":
         this.scopes(request);
@@ -183,12 +214,22 @@ class RobotDebugAdapterRuntime {
         this.evaluate(request);
         break;
       case "continue":
-        this.continue(request);
+        void this.continueExecution(request);
+        break;
+      case "next":
+        void this.step(request, "next");
+        break;
+      case "stepIn":
+        void this.step(request, "step_in");
+        break;
+      case "stepOut":
+        void this.step(request, "step_out");
         break;
       case "disconnect":
       case "terminate":
         this.child?.kill();
         this.runtimeBridge?.dispose();
+        this.debugpyBridge?.dispose();
         this.respond(request, true);
         this.event("terminated");
         break;
@@ -204,12 +245,27 @@ class RobotDebugAdapterRuntime {
       this.acceptRuntimeEvent(event);
     });
     const endpoint = await this.runtimeBridge.start();
-    this.runtimeBridge.setBreakpoints(this.allBreakpoints());
-    const plan = planRobotCommand(config, endpoint);
+    this.runtimeBridge.setBreakpoints(this.allRobotBreakpoints());
+
+    let debugpyPort: number | undefined;
+    if (!config.noDebug) {
+      try {
+        debugpyPort = await allocatePort();
+        this.debugpyBridge = new DebugpyBridge((threadId, reason) => {
+          this.debugpyPausedThreadId = threadId;
+          this.event("stopped", { reason, threadId, allThreadsStopped: false });
+        });
+      } catch {
+        debugpyPort = undefined;
+        this.debugpyBridge = undefined;
+      }
+    }
+
+    const plan = planRobotCommand(config, endpoint, debugpyPort);
     this.output(`Running: ${plan.command} ${plan.args.join(" ")}\n`, "console");
     this.child = spawn(plan.command, [...plan.args], {
       cwd: plan.cwd,
-      env: plan.env,
+      env: plan.env as NodeJS.ProcessEnv,
     });
 
     this.child.stdout.on("data", (chunk: Buffer) => this.output(chunk.toString("utf8"), "stdout"));
@@ -217,18 +273,31 @@ class RobotDebugAdapterRuntime {
     this.child.on("error", (error) => {
       this.output(`${error.message}\n`, "stderr");
       this.runtimeBridge?.dispose();
+      this.debugpyBridge?.dispose();
       this.event("terminated");
     });
     this.child.on("close", (code) => {
       this.runtimeBridge?.dispose();
+      this.debugpyBridge?.dispose();
       this.event("exited", { exitCode: code ?? 0 });
       this.event("terminated");
     });
 
+    if (this.debugpyBridge !== undefined && debugpyPort !== undefined) {
+      try {
+        await this.debugpyBridge.connect(debugpyPort);
+        await this.sendPythonBreakpoints();
+        await this.debugpyBridge.configurationDone();
+      } catch (error) {
+        this.output(`debugpy connection failed: ${String(error)}\n`, "stderr");
+        this.debugpyBridge = undefined;
+      }
+    }
+
     this.respond(request, true);
   }
 
-  private setBreakpoints(request: DapRequest): void {
+  private async setBreakpoints(request: DapRequest): Promise<void> {
     const args = request.arguments as {
       readonly source?: { readonly path?: string };
       readonly breakpoints?: readonly SourceBreakpoint[];
@@ -241,19 +310,58 @@ class RobotDebugAdapterRuntime {
     }
 
     const normalized = normalizePath(sourcePath);
-    const runtimeBreakpoints = requested.map((breakpoint) => ({ source: normalized, line: breakpoint.line }));
-    this.breakpoints.set(normalized, runtimeBreakpoints);
-    this.runtimeBridge?.setBreakpoints(this.allBreakpoints());
+    this.breakpoints.set(normalized, [...requested]);
+
+    if (sourcePath.endsWith(".py")) {
+      if (this.debugpyBridge !== undefined) {
+        await this.debugpyBridge.setBreakpoints(sourcePath, requested);
+      }
+      this.respond(request, true, {
+        breakpoints: requested.map((bp) => ({
+          verified: this.debugpyBridge !== undefined,
+          source: { path: sourcePath },
+          line: bp.line,
+        })),
+      });
+      return;
+    }
+
+    const runtimeBreakpoints = requested.map((bp) => ({ source: normalized, line: bp.line }));
+    this.robotBreakpoints.set(normalized, runtimeBreakpoints);
+    this.runtimeBridge?.setBreakpoints(this.allRobotBreakpoints());
     this.respond(request, true, {
-      breakpoints: runtimeBreakpoints.map((breakpoint) => ({
+      breakpoints: runtimeBreakpoints.map((bp) => ({
         verified: true,
         source: { path: sourcePath },
-        line: breakpoint.line,
+        line: bp.line,
       })),
     });
   }
 
-  private stackTrace(request: DapRequest): void {
+  private async sendPythonBreakpoints(): Promise<void> {
+    for (const [normalized, bps] of this.breakpoints) {
+      if (normalized.endsWith(".py")) {
+        await this.debugpyBridge?.setBreakpoints(normalized, bps);
+      }
+    }
+  }
+
+  private threads(request: DapRequest): void {
+    const threads: Array<{ id: number; name: string }> = [{ id: 1, name: "Robot Framework" }];
+    if (this.debugpyBridge !== undefined) {
+      threads.push({ id: 2, name: "Python (debugpy)" });
+    }
+    this.respond(request, true, { threads });
+  }
+
+  private async stackTrace(request: DapRequest): Promise<void> {
+    const args = request.arguments as { readonly threadId?: number };
+    if (args.threadId === 2 && this.debugpyBridge !== undefined) {
+      const result = await this.debugpyBridge.stackTrace(this.debugpyPausedThreadId ?? 1);
+      this.respond(request, true, result);
+      return;
+    }
+
     const frame = this.pausedFrame;
     if (frame === undefined) {
       this.respond(request, true, { stackFrames: [], totalFrames: 0 });
@@ -315,17 +423,48 @@ class RobotDebugAdapterRuntime {
     this.runtimeBridge.evaluate(requestId, expression);
   }
 
-  private continue(request: DapRequest): void {
+  private async continueExecution(request: DapRequest): Promise<void> {
+    const args = request.arguments as { readonly threadId?: number };
+    if (args.threadId === 2 && this.debugpyBridge !== undefined && this.debugpyPausedThreadId !== undefined) {
+      const tid = this.debugpyPausedThreadId;
+      this.debugpyPausedThreadId = undefined;
+      await this.debugpyBridge.continue(tid);
+      this.respond(request, true, { allThreadsContinued: false });
+      this.event("continued", { threadId: 2, allThreadsContinued: false });
+      return;
+    }
     this.pausedFrame = undefined;
     this.runtimeBridge?.continue();
     this.respond(request, true, { allThreadsContinued: true });
     this.event("continued", { threadId: 1, allThreadsContinued: true });
   }
 
+  private async step(request: DapRequest, mode: "next" | "step_in" | "step_out"): Promise<void> {
+    const args = request.arguments as { readonly threadId?: number };
+    if (args.threadId === 2 && this.debugpyBridge !== undefined && this.debugpyPausedThreadId !== undefined) {
+      const tid = this.debugpyPausedThreadId;
+      this.debugpyPausedThreadId = undefined;
+      if (mode === "next") {
+        await this.debugpyBridge.next(tid);
+      } else if (mode === "step_in") {
+        await this.debugpyBridge.stepIn(tid);
+      } else {
+        await this.debugpyBridge.stepOut(tid);
+      }
+      this.respond(request, true);
+      this.event("continued", { threadId: 2, allThreadsContinued: false });
+      return;
+    }
+    this.pausedFrame = undefined;
+    this.runtimeBridge?.step(mode);
+    this.respond(request, true);
+    this.event("continued", { threadId: 1, allThreadsContinued: false });
+  }
+
   private acceptRuntimeEvent(event: RuntimeEventMessage): void {
     this.output(`Robot event: ${JSON.stringify(event)}\n`, "console");
     if (event.event === "listener_started") {
-      this.runtimeBridge?.setBreakpoints(this.allBreakpoints());
+      this.runtimeBridge?.setBreakpoints(this.allRobotBreakpoints());
       return;
     }
     if (event.event === "paused") {
@@ -361,8 +500,8 @@ class RobotDebugAdapterRuntime {
     });
   }
 
-  private allBreakpoints(): readonly RuntimeBreakpoint[] {
-    return [...this.breakpoints.values()].flat();
+  private allRobotBreakpoints(): readonly RuntimeBreakpoint[] {
+    return [...this.robotBreakpoints.values()].flat();
   }
 
   private respond(request: DapRequest, success: boolean, body?: unknown, message?: string): void {
@@ -397,7 +536,7 @@ class RobotDebugAdapterRuntime {
   }
 }
 
-class RobotRuntimeBridge {
+export class RobotRuntimeBridge {
   private readonly token = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   private readonly server: Server;
   private sockets: Socket[] = [];
@@ -436,6 +575,10 @@ class RobotRuntimeBridge {
 
   public continue(): void {
     this.command({ command: "continue" });
+  }
+
+  public step(mode: "next" | "step_in" | "step_out"): void {
+    this.command({ command: mode });
   }
 
   public evaluate(requestId: number, expression: string): void {
@@ -484,9 +627,121 @@ class RobotRuntimeBridge {
   }
 }
 
-function normalizePath(value: string): string {
-  const normalized = path.resolve(path.normalize(value));
-  return platform === "win32" ? normalized.toLowerCase() : normalized;
+interface DebugpyStoppedCallback {
+  (threadId: number, reason: string): void;
+}
+
+export class DebugpyBridge {
+  private socket: Socket | undefined;
+  private dapBuffer = Buffer.alloc(0);
+  private dapSequence = 1;
+  private readonly pendingRequests = new Map<number, (body: unknown) => void>();
+
+  public constructor(private readonly onStopped: DebugpyStoppedCallback) {}
+
+  public async connect(port: number): Promise<void> {
+    const socket = await new Promise<Socket>((resolve, reject) => {
+      const sock = createConnection({ host: "127.0.0.1", port }, () => resolve(sock));
+      sock.once("error", reject);
+    });
+    this.socket = socket;
+    socket.on("data", (chunk: Buffer) => this.acceptDapData(chunk));
+
+    await this.dapRequest("initialize", {
+      adapterID: "robot-lsp-debugpy",
+      linesStartAt1: true,
+      columnsStartAt1: true,
+      pathFormat: "path",
+    });
+    await this.dapRequest("attach", { connect: { host: "127.0.0.1", port } });
+  }
+
+  public async configurationDone(): Promise<void> {
+    await this.dapRequest("configurationDone", {});
+  }
+
+  public async setBreakpoints(source: string, breakpoints: readonly SourceBreakpoint[]): Promise<void> {
+    await this.dapRequest("setBreakpoints", {
+      source: { path: source },
+      breakpoints: breakpoints.map((bp) => ({ line: bp.line })),
+    });
+  }
+
+  public async stackTrace(threadId: number): Promise<unknown> {
+    return this.dapRequest("stackTrace", { threadId, startFrame: 0, levels: 20 });
+  }
+
+  public async next(threadId: number): Promise<void> {
+    await this.dapRequest("next", { threadId });
+  }
+
+  public async stepIn(threadId: number): Promise<void> {
+    await this.dapRequest("stepIn", { threadId });
+  }
+
+  public async stepOut(threadId: number): Promise<void> {
+    await this.dapRequest("stepOut", { threadId });
+  }
+
+  public async continue(threadId: number): Promise<void> {
+    await this.dapRequest("continue", { threadId });
+  }
+
+  public dispose(): void {
+    this.socket?.destroy();
+    this.socket = undefined;
+  }
+
+  private acceptDapData(chunk: Buffer): void {
+    this.dapBuffer = Buffer.concat([this.dapBuffer, chunk]);
+    while (true) {
+      const msg = this.tryReadDap();
+      if (msg === undefined) return;
+      this.dispatchDap(msg);
+    }
+  }
+
+  private tryReadDap(): Record<string, unknown> | undefined {
+    const sep = this.dapBuffer.indexOf("\r\n\r\n");
+    if (sep < 0) return undefined;
+    const header = this.dapBuffer.subarray(0, sep).toString("ascii");
+    const match = /Content-Length: (\d+)/i.exec(header);
+    if (!match) return undefined;
+    const len = Number.parseInt(match[1] ?? "0", 10);
+    const start = sep + 4;
+    if (this.dapBuffer.length < start + len) return undefined;
+    const body = JSON.parse(this.dapBuffer.subarray(start, start + len).toString("utf8")) as Record<string, unknown>;
+    this.dapBuffer = this.dapBuffer.subarray(start + len);
+    return body;
+  }
+
+  private dispatchDap(msg: Record<string, unknown>): void {
+    if (msg["type"] === "response") {
+      const seq = msg["request_seq"];
+      if (typeof seq === "number") {
+        const cb = this.pendingRequests.get(seq);
+        if (cb !== undefined) {
+          this.pendingRequests.delete(seq);
+          cb(msg["body"]);
+        }
+      }
+      return;
+    }
+    if (msg["type"] === "event" && msg["event"] === "stopped") {
+      const body = msg["body"] as { threadId?: number; reason?: string } | undefined;
+      this.onStopped(body?.threadId ?? 1, body?.reason ?? "breakpoint");
+    }
+  }
+
+  private dapRequest(command: string, args: object): Promise<unknown> {
+    return new Promise((resolve) => {
+      const seq = this.dapSequence;
+      this.dapSequence += 1;
+      this.pendingRequests.set(seq, resolve);
+      const msg = JSON.stringify({ seq, type: "request", command, arguments: args });
+      this.socket?.write(`Content-Length: ${Buffer.byteLength(msg, "utf8")}\r\n\r\n${msg}`);
+    });
+  }
 }
 
 if (require.main === module) {

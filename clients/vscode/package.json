@@ -41,6 +41,7 @@
     "watch": "tsc -watch -p ./",
     "check": "tsc -p ./ --noEmit",
     "test": "npm run compile && node ./tests/lsp-feature-smoke.cjs",
+    "test:unit": "jest",
     "package": "npm run test && vsce package --out robot-lsp-vscode.vsix",
     "package:check": "npm run compile && node ./tests/package-smoke.cjs"
   },
@@ -291,9 +292,12 @@
     }
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.14.10",
     "@types/vscode": "^1.92.0",
     "@vscode/vsce": "^3.2.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.5.4"
   },
   "dependencies": {
