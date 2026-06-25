@@ -19,13 +19,27 @@ from robot.version import VERSION
 
 ## Feature Matrix
 
-| Version | Group/END | Secret Variables | Notes |
-|---|---|---|---|
-| 7.0 | No | No | Minimum baseline |
-| 7.1 | No | No | No AST changes |
-| 7.2 | Yes | No | `Group`/`GroupHeader` added |
-| 7.3 | Yes | No | Syntax changes only |
-| 7.4 | Yes | Yes | `Secret` type |
+| Version | VAR Syntax | Group/END | Variable Type Conversion | Secret Variables | Notes |
+|---|---|---|---|---|---|
+| 7.0 | Yes | No | No | No | Minimum baseline |
+| 7.1 | Yes | No | No | No | No AST changes |
+| 7.2 | Yes | Yes | No | No | `Group`/`GroupHeader` added |
+| 7.3 | Yes | Yes | Yes | No | Variable type annotations supported |
+| 7.4 | Yes | Yes | Yes | Yes | `Secret` type supported |
+
+## Implemented 7.x Support
+
+- `VAR` syntax is parsed from test and keyword bodies, including variable kind, scope, value, and type annotation.
+- `GROUP` body statements are traversed so contained keyword calls participate in diagnostics and completion sources.
+- Variable type annotations such as `${value: int}` are parsed and validated against the built-in type allowlist.
+- Completion suggests built-in variable types while editing a variable type annotation.
+- `Secret` type annotations are represented as `secret` variables when Robot Framework 7.4+ is available.
+
+## Remaining Future Scope
+
+- Rich `GROUP` document symbols and folding ranges.
+- Full type resolution for custom Python classes and user-provided converters.
+- Precise lexical scope ordering for `VAR` variables defined after the current cursor position.
 
 ## Feature Detection
 

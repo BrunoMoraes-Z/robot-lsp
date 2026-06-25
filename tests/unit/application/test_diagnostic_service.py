@@ -141,6 +141,37 @@ class TestDiagnosticService:
 
         assert published == [(uri, [])]
 
+    def test_var_syntax_defines_variable_for_later_steps(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/var-syntax.robot"
+        store.open(
+            uri=uri,
+            text="*** Test Cases ***\nT\n    VAR    ${value}    ok\n    Log    ${value}\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
+
+    def test_unknown_variable_type_diagnostic(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/unknown-type.robot"
+        store.open(
+            uri=uri,
+            text="*** Variables ***\n${value: MissingType}    ok\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        diagnostic = published[0][1][0]
+        assert diagnostic.severity == DiagnosticSeverity.WARNING
+        assert diagnostic.code == "unknown_variable_type"
+        assert diagnostic.message == "Unknown variable type: MissingType"
+
     def test_semantic_diagnostic_for_missing_import(self, tmp_path):
         index = WorkspaceIndex()
         store, service, published = make_service(workspace_index=index)

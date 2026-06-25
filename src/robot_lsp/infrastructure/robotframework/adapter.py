@@ -138,7 +138,8 @@ class RobotFrameworkASTAdapter:
         for stmt in getattr(section, "body", []):
             if type(stmt).__name__ != "Variable":
                 continue
-            name = _token_value(stmt, Token.VARIABLE) or getattr(stmt, "name", "") or ""
+            raw_name = _token_value(stmt, Token.VARIABLE) or getattr(stmt, "name", "") or ""
+            name, type_annotation = _split_variable_type(raw_name)
             if not name:
                 continue
             values = _token_values(stmt, Token.ARGUMENT)
@@ -146,8 +147,9 @@ class RobotFrameworkASTAdapter:
                 RobotVariable(
                     name=name,
                     value=_variable_value(name, values),
-                    kind=_variable_kind(name, self._features),
+                    kind=_variable_kind(name, type_annotation, self._features),
                     range=self._node_range(stmt),
+                    type_annotation=type_annotation,
                 )
             )
         return variables
@@ -157,7 +159,7 @@ class RobotFrameworkASTAdapter:
         for node in getattr(section, "body", []):
             if type(node).__name__ != "TestCase":
                 continue
-            doc, tags, template, timeout, setup, teardown, body = self._body_items(node)
+            doc, tags, template, timeout, setup, teardown, body, variables = self._body_items(node)
             cases.append(
                 RobotTestCase(
                     name=getattr(node, "name", "") or "",
@@ -169,6 +171,7 @@ class RobotFrameworkASTAdapter:
                     teardown=teardown,
                     body=body,
                     range=self._node_range(node),
+                    variables=variables,
                 )
             )
         return cases
@@ -178,7 +181,7 @@ class RobotFrameworkASTAdapter:
         for node in getattr(section, "body", []):
             if type(node).__name__ != "Keyword":
                 continue
-            doc, tags, _template, _timeout, _setup, _teardown, body = self._body_items(node)
+            doc, tags, _template, _timeout, _setup, _teardown, body, variables = self._body_items(node)
             keywords.append(
                 RobotKeyword(
                     name=getattr(node, "name", "") or "",
@@ -187,13 +190,14 @@ class RobotFrameworkASTAdapter:
                     args=self._keyword_args(node),
                     body=body,
                     range=self._node_range(node),
+                    variables=variables,
                 )
             )
         return keywords
 
     def _body_items(
         self, node: Any
-    ) -> tuple[str, list[str], str | None, str | None, str | None, str | None, list[RobotStep]]:
+    ) -> tuple[str, list[str], str | None, str | None, str | None, str | None, list[RobotStep], list[RobotVariable]]:
         doc = ""
         tags: list[str] = []
         template = None
@@ -201,6 +205,7 @@ class RobotFrameworkASTAdapter:
         setup = None
         teardown = None
         body: list[RobotStep] = []
+        variables: list[RobotVariable] = []
 
         for stmt in getattr(node, "body", []):
             stmt_type = type(stmt).__name__
@@ -216,9 +221,26 @@ class RobotFrameworkASTAdapter:
                 setup = _call_text(stmt)
             elif stmt_type == "Teardown":
                 teardown = _call_text(stmt)
-            elif stmt_type == "KeywordCall":
-                body.append(self._step(stmt))
-        return doc, tags, template, timeout, setup, teardown, body
+            else:
+                self._body_steps_and_variables(stmt, body, variables)
+        return doc, tags, template, timeout, setup, teardown, body, variables
+
+    def _body_steps_and_variables(
+        self,
+        stmt: Any,
+        body: list[RobotStep],
+        variables: list[RobotVariable],
+    ) -> None:
+        stmt_type = type(stmt).__name__
+        if stmt_type == "KeywordCall":
+            body.append(self._step(stmt))
+        elif stmt_type == "Var":
+            variable = self._var(stmt)
+            if variable is not None:
+                variables.append(variable)
+        else:
+            for child in getattr(stmt, "body", []) or []:
+                self._body_steps_and_variables(child, body, variables)
 
     def _keyword_args(self, node: Any) -> list[RobotArg]:
         for stmt in getattr(node, "body", []):
@@ -232,6 +254,21 @@ class RobotFrameworkASTAdapter:
             args=_token_values(stmt, Token.ARGUMENT),
             assign=_token_values(stmt, Token.ASSIGN),
             range=self._node_range(stmt),
+        )
+
+    def _var(self, stmt: Any) -> RobotVariable | None:
+        raw_name = _token_value(stmt, Token.VARIABLE) or getattr(stmt, "name", "") or ""
+        name, type_annotation = _split_variable_type(raw_name)
+        if not name:
+            return None
+        values = _token_values(stmt, Token.ARGUMENT)
+        return RobotVariable(
+            name=name,
+            value=_variable_value(name, values),
+            kind=_variable_kind(name, type_annotation, self._features),
+            range=self._node_range(stmt),
+            scope=_var_scope(stmt),
+            type_annotation=type_annotation,
         )
 
     def _collect_errors(self, model: Any) -> list[RobotDiagnostic]:
@@ -311,8 +348,8 @@ def _variable_value(name: str, values: list[str]) -> str | list[str] | dict[str,
     return values[0] if values else None
 
 
-def _variable_kind(name: str, features: FeatureSet):
-    if features.has_secret_variables and name.startswith("${") and name.endswith("}") and name[2:].startswith("SECRET"):
+def _variable_kind(name: str, type_annotation: str | None, features: FeatureSet):
+    if features.has_secret_variables and type_annotation == "Secret":
         return "secret"
     if name.startswith("@{"):
         return "list"
@@ -322,7 +359,8 @@ def _variable_kind(name: str, features: FeatureSet):
 
 
 def _arg(value: str) -> RobotArg:
-    name, sep, default = value.partition("=")
+    name_part, sep, default = value.partition("=")
+    name, type_annotation = _split_variable_type(name_part)
     if name.startswith("@{"):
         kind = "varargs"
     elif name.startswith("&{"):
@@ -331,7 +369,30 @@ def _arg(value: str) -> RobotArg:
         kind = "optional"
     else:
         kind = "positional"
-    return RobotArg(name=name, default=default if sep else None, kind=kind)  # type: ignore[arg-type]
+    return RobotArg(name=name, default=default if sep else None, kind=kind, type_annotation=type_annotation)  # type: ignore[arg-type]
+
+
+def _split_variable_type(value: str) -> tuple[str, str | None]:
+    if not value.endswith("}") or "{" not in value:
+        return value, None
+    prefix, _, inner = value.partition("{")
+    if prefix not in {"$", "@", "&", "%"}:
+        return value, None
+    inner = inner[:-1]
+    name, sep, type_annotation = inner.partition(":")
+    if not sep:
+        return value, None
+    return f"{prefix}{{{name.strip()}}}", type_annotation.strip() or None
+
+
+def _var_scope(stmt: Any):
+    for option in _token_values(stmt, Token.OPTION):
+        name, sep, value = option.partition("=")
+        if sep and name.casefold() == "scope":
+            normalized = value.casefold()
+            if normalized in {"local", "test", "suite", "global"}:
+                return normalized
+    return "local"
 
 
 def _utf16_len(text: str) -> int:

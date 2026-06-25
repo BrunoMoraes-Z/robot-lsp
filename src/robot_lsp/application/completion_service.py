@@ -109,6 +109,24 @@ class CompletionService:
         "Default Tags",
     ]
     VARIABLE_TRIGGERS = {"$", "@", "&", "%"}
+    VARIABLE_TYPE_ITEMS = [
+        "str",
+        "int",
+        "float",
+        "bool",
+        "list",
+        "dict",
+        "tuple",
+        "set",
+        "bytes",
+        "datetime",
+        "date",
+        "timedelta",
+        "Decimal",
+        "Path",
+        "Secret",
+        "Any",
+    ]
 
     def __init__(
         self,
@@ -137,6 +155,8 @@ class CompletionService:
         if context is None:
             return CompletionList(items=[])
 
+        if self._is_variable_type_context(context):
+            return CompletionList(self._variable_type_items())
         if self._is_variable_context(context):
             return CompletionList(self._variable_items(context))
         if self._is_section_context(context):
@@ -179,6 +199,12 @@ class CompletionService:
         if context.trigger_character in self.VARIABLE_TRIGGERS:
             return True
         return any(context.line_prefix.endswith(trigger) for trigger in self.VARIABLE_TRIGGERS)
+
+    def _is_variable_type_context(self, context: CompletionContext) -> bool:
+        last_open = max(context.line_prefix.rfind(f"{prefix}{{") for prefix in self.VARIABLE_TRIGGERS)
+        if last_open == -1 or context.line_prefix.rfind("}") > last_open:
+            return False
+        return ":" in context.line_prefix[last_open:]
 
     def _section_items(self, *, snippets_enabled: bool) -> list[CompletionItem]:
         if not snippets_enabled:
@@ -238,6 +264,16 @@ class CompletionService:
             )
         return items
 
+    def _variable_type_items(self) -> list[CompletionItem]:
+        return [
+            CompletionItem(
+                label=item,
+                kind=CompletionItemKind.TEXT,
+                detail="Robot Framework variable type",
+            )
+            for item in self.VARIABLE_TYPE_ITEMS
+        ]
+
     def _variable_items(self, context: CompletionContext) -> list[CompletionItem]:
         if context.suite is None:
             return []
@@ -250,6 +286,16 @@ class CompletionService:
             )
             for variable in context.suite.variables
         ]
+        items.extend(
+            CompletionItem(
+                label=variable.name,
+                kind=CompletionItemKind.VARIABLE,
+                detail=f"Scoped {variable.kind} variable",
+                documentation=str(variable.value) if variable.value is not None else None,
+            )
+            for variable in _scoped_variables(context)
+            if variable.name not in {item.label for item in items}
+        )
         if self._workspace_index is not None and context.document.path is not None:
             items.extend(
                 CompletionItem(
@@ -293,3 +339,16 @@ def _current_section(lines: list[str], line: int) -> str | None:
         elif normalized == "*** keywords ***":
             section = "keywords"
     return section
+
+
+def _scoped_variables(context: CompletionContext):
+    if context.suite is None:
+        return []
+    variables = []
+    for test_case in context.suite.test_cases:
+        if test_case.range.start.line <= context.position.line <= test_case.range.end.line:
+            variables.extend(test_case.variables)
+    for keyword in context.suite.keywords:
+        if keyword.range.start.line <= context.position.line <= keyword.range.end.line:
+            variables.extend(keyword.variables)
+    return variables

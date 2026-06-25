@@ -115,6 +115,31 @@ class TestCompletionService:
         assert completion.items[0].kind == CompletionItemKind.VARIABLE
         assert completion.items[0].detail == "Local scalar variable"
 
+    def test_completion_var_syntax_scoped_variable(self):
+        service, uri = make_service(
+            "*** Test Cases ***\n"
+            "T\n"
+            "    VAR    ${local}    value\n"
+            "    Log    $"
+        )
+
+        completion = service.compute_completion(
+            uri,
+            LspPosition(line=3, character=12),
+            trigger_character="$",
+        )
+
+        assert "${local}" in labels(completion)
+
+    def test_completion_variable_type_annotation(self):
+        service, uri = make_service("*** Test Cases ***\nT\n    VAR    ${value: ")
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=20))
+
+        assert "int" in labels(completion)
+        assert "Secret" in labels(completion)
+        assert completion.items[0].detail == "Robot Framework variable type"
+
     def test_completion_trigger_characters(self):
         service, uri = make_service(
             "*** Variables ***\n${VAR}    value\n*** Test Cases ***\nT\n    Log    @"

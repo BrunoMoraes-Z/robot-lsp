@@ -21,6 +21,7 @@ class RobotArg:
     name: str
     default: str | None
     kind: Literal["positional", "optional", "varargs", "kwargs"]
+    type_annotation: str | None = None
 
 
 @dataclass
@@ -49,6 +50,8 @@ class RobotVariable:
     value: str | list | dict | None
     kind: Literal["scalar", "list", "dict", "secret"]
     range: LspRange
+    scope: Literal["local", "test", "suite", "global"] | None = None
+    type_annotation: str | None = None
 
 
 @dataclass
@@ -71,6 +74,7 @@ class RobotTestCase:
     teardown: str | None
     body: list[RobotStep]
     range: LspRange
+    variables: list[RobotVariable] = field(default_factory=list)
 
 
 @dataclass
@@ -81,6 +85,7 @@ class RobotKeyword:
     args: list[RobotArg]
     body: list[RobotStep]
     range: LspRange
+    variables: list[RobotVariable] = field(default_factory=list)
 
 
 @dataclass

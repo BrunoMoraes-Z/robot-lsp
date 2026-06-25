@@ -90,6 +90,49 @@ class TestRobotFrameworkParser:
         assert step.args == ["${arg}"]
         assert step.assign == []
 
+    def test_parse_var_syntax_variables(self):
+        result = RobotFrameworkParser().parse_text(
+            "*** Test Cases ***\nT\n    VAR    ${value: int}    1    scope=TEST\n    Log    ${value}\n",
+            source_name="var.robot",
+        )
+
+        variable = result.suite.test_cases[0].variables[0]
+        assert variable.name == "${value}"
+        assert variable.value == "1"
+        assert variable.kind == "scalar"
+        assert variable.scope == "test"
+        assert variable.type_annotation == "int"
+
+    def test_parse_group_body_keywords(self):
+        result = RobotFrameworkParser().parse_text(
+            "*** Test Cases ***\nT\n    GROUP    Setup\n        Log    inside\n    END\n",
+            source_name="group.robot",
+        )
+
+        assert [step.keyword for step in result.suite.test_cases[0].body] == ["Log"]
+        assert result.suite.test_cases[0].body[0].args == ["inside"]
+
+    def test_parse_typed_secret_variable(self):
+        result = RobotFrameworkParser().parse_text(
+            "*** Variables ***\n${password: Secret}    value\n",
+            source_name="secret.robot",
+        )
+
+        variable = result.suite.variables[0]
+        assert variable.name == "${password}"
+        assert variable.kind == "secret"
+        assert variable.type_annotation == "Secret"
+
+    def test_parse_keyword_argument_type_annotation(self):
+        result = RobotFrameworkParser().parse_text(
+            "*** Keywords ***\nK\n    [Arguments]    ${count: int}\n    Log    ${count}\n",
+            source_name="typed_arg.robot",
+        )
+
+        arg = result.suite.keywords[0].args[0]
+        assert arg.name == "${count}"
+        assert arg.type_annotation == "int"
+
     def test_parse_text(self):
         result = RobotFrameworkParser().parse_text(
             "*** Test Cases ***\nInline\n    Log    ok\n",

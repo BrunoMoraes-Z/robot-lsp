@@ -12,24 +12,28 @@ Stage 04 — Robot Framework Model (parse), Stage 06 — Completion (completion)
 | `@{name}` | List | `@{items}` |
 | `&{name}` | Dict | `&{config}` |
 | `%{name}` | Environment | `%{PATH}` |
-| `\${name}` (secret, >= 7.4) | Secret | `\${password}` |
+| `${name: Secret}` (>= 7.4) | Secret | `${password: Secret}` |
 
 ## Variable Sources
 
 1. **Variable section**: `*** Variables ***`
 2. **Arguments**: keyword/test arguments
-3. **Return values**: from called keywords
-4. **BuiltIn variables**: `${CURDIR}`, `${TEMPDIR}`, etc.
+3. **VAR syntax**: `VAR    ${name}    value    scope=TEST`
+4. **Return values**: from called keywords
+5. **BuiltIn variables**: `${CURDIR}`, `${TEMPDIR}`, etc.
 
 ## Initial Scope (MVP)
 
 - Variables from the `*** Variables ***` section (parse, completion, hover)
 - Keyword argument variables (parse)
+- Variables created with `VAR` syntax in test and keyword bodies (parse, completion, diagnostics)
+- Variable type annotations for built-in types (parse, diagnostics, completion)
+- Secret variables through the `Secret` type annotation in RF 7.4+
 - BuiltIn variables (completion)
 
 ## Future Scope
 
-- Scoped variables (resolution of which `@{list}` is being referenced)
 - Environment variables
-- Secret variables (7.4+)
+- Full custom type/converter resolution
+- Exact cursor-aware lexical scope for `VAR` definitions
 - Shortcut: `$var` without braces (short syntax)

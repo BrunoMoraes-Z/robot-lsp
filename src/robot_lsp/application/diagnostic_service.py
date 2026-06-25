@@ -78,6 +78,7 @@ class DiagnosticService:
     def _semantic_diagnostics(self, uri: str, suite: RobotSuite) -> list[LspDiagnostic]:
         diagnostics: list[LspDiagnostic] = []
         diagnostics.extend(self._import_diagnostics(uri, suite))
+        diagnostics.extend(self._type_diagnostics(suite))
         diagnostics.extend(self._keyword_diagnostics(uri, suite))
         diagnostics.extend(self._variable_diagnostics(uri, suite))
         return diagnostics
@@ -138,9 +139,30 @@ class DiagnosticService:
         diagnostics = []
         for keyword in suite.keywords:
             defined_with_args = defined | {_normalize_variable(arg.name) for arg in keyword.args}
+            defined_with_args.update(_normalize_variable(variable.name) for variable in keyword.variables)
             diagnostics.extend(_undefined_variable_diagnostics(keyword.body, defined_with_args))
         for test_case in suite.test_cases:
-            diagnostics.extend(_undefined_variable_diagnostics(test_case.body, defined))
+            defined_with_vars = defined | {_normalize_variable(variable.name) for variable in test_case.variables}
+            diagnostics.extend(_undefined_variable_diagnostics(test_case.body, defined_with_vars))
+        return diagnostics
+
+    def _type_diagnostics(self, suite: RobotSuite) -> list[LspDiagnostic]:
+        diagnostics = []
+        variables = list(suite.variables)
+        for keyword in suite.keywords:
+            variables.extend(keyword.variables)
+        for test_case in suite.test_cases:
+            variables.extend(test_case.variables)
+        for variable in variables:
+            if variable.type_annotation is not None and not _is_valid_type_annotation(variable.type_annotation):
+                diagnostics.append(
+                    _diagnostic(
+                        variable.range,
+                        DiagnosticSeverity.WARNING,
+                        f"Unknown variable type: {variable.type_annotation}",
+                        "unknown_variable_type",
+                    )
+                )
         return diagnostics
 
     def _source_path(self, uri: str):
@@ -179,6 +201,25 @@ _BUILTIN_KEYWORDS = {
     "create list",
     "create dictionary",
 }
+_BUILTIN_TYPES = {
+    "Any",
+    "bool",
+    "bytes",
+    "date",
+    "datetime",
+    "Decimal",
+    "dict",
+    "float",
+    "int",
+    "list",
+    "None",
+    "Path",
+    "Secret",
+    "set",
+    "str",
+    "timedelta",
+    "tuple",
+}
 
 
 def _steps(suite: RobotSuite) -> list[RobotStep]:
@@ -216,3 +257,8 @@ def _is_control_keyword(keyword: str) -> bool:
 
 def _diagnostic(range_: LspRange, severity: DiagnosticSeverity, message: str, code: str) -> LspDiagnostic:
     return LspDiagnostic(range=range_, severity=severity, message=message, source="robot-lsp", code=code)
+
+
+def _is_valid_type_annotation(type_annotation: str) -> bool:
+    parts = [part.strip() for part in type_annotation.replace("|", ",").split(",")]
+    return all(part in _BUILTIN_TYPES for part in parts if part)
