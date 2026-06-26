@@ -31,6 +31,7 @@ class TestCompletionService:
             "*** Settings ***",
             "*** Variables ***",
             "*** Test Cases ***",
+            "*** Tasks ***",
             "*** Keywords ***",
         ]
         assert completion.items[0].kind == CompletionItemKind.SNIPPET
@@ -52,6 +53,7 @@ class TestCompletionService:
             "*** Settings ***",
             "*** Variables ***",
             "*** Test Cases ***",
+            "*** Tasks ***",
             "*** Keywords ***",
         ]
         assert completion.items[0].kind == CompletionItemKind.TEXT
@@ -95,6 +97,95 @@ class TestCompletionService:
         assert completion.items[0].kind == CompletionItemKind.FUNCTION
         assert completion.items[0].detail == "Local keyword"
         assert completion.items[0].documentation == "Docs"
+
+    def test_completion_reserved_tags_in_test_tags_setting(self):
+        service, uri = make_service(
+            "*** Test Cases ***\n"
+            "T\n"
+            "    [Tags]    robot:"
+        )
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=len("    [Tags]    robot:")))
+        result = labels(completion)
+
+        assert "robot:skip" in result
+        assert "robot:exclude" in result
+        assert "robot:continue-on-failure" in result
+        assert "robot:private" not in result
+        assert completion.items[0].detail == "Reserved Robot Framework tag"
+        assert completion.items[0].documentation
+
+    def test_completion_reserved_tags_in_task_tags_setting(self):
+        service, uri = make_service(
+            "*** Tasks ***\n"
+            "T\n"
+            "    [Tags]    robot:skip"
+        )
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=len("    [Tags]    robot:skip")))
+        result = labels(completion)
+
+        assert "robot:skip" in result
+        assert "robot:skip-on-failure" in result
+        assert "robot:private" not in result
+
+    def test_completion_reserved_tags_in_keyword_tags_setting(self):
+        service, uri = make_service(
+            "*** Keywords ***\n"
+            "My Keyword\n"
+            "    [Tags]    robot:"
+        )
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=len("    [Tags]    robot:")))
+        result = labels(completion)
+
+        assert "robot:private" in result
+        assert "robot:no-dry-run" in result
+        assert "robot:flatten" in result
+        assert "robot:continue-on-failure" in result
+        assert "robot:skip" not in result
+
+    def test_completion_reserved_tags_in_continued_tags_setting(self):
+        service, uri = make_service(
+            "*** Test Cases ***\n"
+            "T\n"
+            "    [Tags]    smoke\n"
+            "    ...    robot:"
+        )
+
+        completion = service.compute_completion(uri, LspPosition(line=3, character=len("    ...    robot:")))
+        result = labels(completion)
+
+        assert "robot:skip" in result
+        assert "robot:skip-on-failure" in result
+        assert "robot:private" not in result
+
+    def test_completion_reserved_tags_after_empty_tags_cell(self):
+        service, uri = make_service(
+            "*** Keywords ***\n"
+            "My Keyword\n"
+            "    [Tags]    "
+        )
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=len("    [Tags]    ")))
+        result = labels(completion)
+
+        assert "robot:private" in result
+        assert "robot:flatten" in result
+
+    def test_completion_outside_tags_still_returns_keywords(self):
+        service, uri = make_service(
+            "*** Test Cases ***\n"
+            "T\n"
+            "    robot:\n"
+            "*** Keywords ***\n"
+            "My Keyword\n"
+            "    No Operation\n"
+        )
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=len("    robot:")))
+
+        assert labels(completion) == ["My Keyword"]
 
     def test_completion_local_variable(self):
         service, uri = make_service(

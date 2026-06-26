@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
@@ -85,12 +86,14 @@ class CompletionService:
         "*** Settings ***",
         "*** Variables ***",
         "*** Test Cases ***",
+        "*** Tasks ***",
         "*** Keywords ***",
     ]
     SECTION_SNIPPETS = {
         "*** Settings ***": "*** Settings ***\n$0",
         "*** Variables ***": "*** Variables ***\n$0",
         "*** Test Cases ***": "*** Test Cases ***\n${1:Test Case}\n    $0",
+        "*** Tasks ***": "*** Tasks ***\n${1:Task Name}\n    $0",
         "*** Keywords ***": "*** Keywords ***\n${1:Keyword Name}\n    $0",
     }
     SETTING_ITEMS = [
@@ -128,6 +131,56 @@ class CompletionService:
         "Secret",
         "Any",
     ]
+    RESERVED_TAGS = {
+        "robot:skip": {
+            "contexts": {"test cases", "tasks"},
+            "documentation": "Skips the test/task before execution. Valid in tests and tasks.",
+        },
+        "robot:exclude": {
+            "contexts": {"test cases", "tasks"},
+            "documentation": "Excludes the test/task completely from execution and output. Valid in tests and tasks.",
+        },
+        "robot:exit": {
+            "contexts": {"test cases", "tasks"},
+            "documentation": "Reserved tag added automatically when execution is stopped. Valid in tests and tasks.",
+        },
+        "robot:skip-on-failure": {
+            "contexts": {"test cases", "tasks"},
+            "documentation": "Converts a failure into SKIP. Valid in tests and tasks.",
+        },
+        "robot:exit-on-failure": {
+            "contexts": {"test cases", "tasks"},
+            "documentation": "Stops the whole execution if this test/task fails. Valid in tests and tasks.",
+        },
+        "robot:continue-on-failure": {
+            "contexts": {"test cases", "tasks", "keywords"},
+            "documentation": "Continues execution after failures in the immediate scope. Valid in tests, tasks and keywords.",
+        },
+        "robot:recursive-continue-on-failure": {
+            "contexts": {"test cases", "tasks", "keywords"},
+            "documentation": "Continues execution after failures recursively in called keywords. Valid in tests, tasks and keywords.",
+        },
+        "robot:stop-on-failure": {
+            "contexts": {"test cases", "tasks", "keywords"},
+            "documentation": "Disables continue-on-failure behavior in the immediate scope. Valid in tests, tasks and keywords.",
+        },
+        "robot:recursive-stop-on-failure": {
+            "contexts": {"test cases", "tasks", "keywords"},
+            "documentation": "Disables recursive continue-on-failure behavior. Valid in tests, tasks and keywords.",
+        },
+        "robot:private": {
+            "contexts": {"keywords"},
+            "documentation": "Marks a user keyword private and warns when it is used outside its defining file. Valid in keywords.",
+        },
+        "robot:no-dry-run": {
+            "contexts": {"keywords"},
+            "documentation": "Excludes the user keyword from normal dry-run validation. Valid in keywords.",
+        },
+        "robot:flatten": {
+            "contexts": {"keywords"},
+            "documentation": "Flattens/suppresses detailed keyword logging in output. Valid in keywords.",
+        },
+    }
 
     def __init__(
         self,
@@ -165,9 +218,12 @@ class CompletionService:
             return CompletionList(self._variable_items(context))
         if self._is_section_context(context):
             return CompletionList(self._section_items(snippets_enabled=snippets_enabled))
+        tag_items = self._tag_items(context)
+        if tag_items is not None:
+            return CompletionList(tag_items)
         if context.section == "settings":
             return CompletionList(self._setting_items())
-        if context.section in {"test cases", "keywords"}:
+        if context.section in {"test cases", "tasks", "keywords"}:
             return CompletionList(self._keyword_items(context))
 
         return CompletionList(items=[])
@@ -292,6 +348,24 @@ class CompletionService:
             for item in self.VARIABLE_TYPE_ITEMS
         ]
 
+    def _tag_items(self, context: CompletionContext) -> list[CompletionItem] | None:
+        if context.section not in {"test cases", "tasks", "keywords"}:
+            return None
+        prefix = _tag_prefix(context)
+        if prefix is None:
+            return None
+        normalized_prefix = prefix.casefold()
+        return [
+            CompletionItem(
+                label=tag,
+                kind=CompletionItemKind.KEYWORD,
+                detail="Reserved Robot Framework tag",
+                documentation=metadata["documentation"],
+            )
+            for tag, metadata in self.RESERVED_TAGS.items()
+            if context.section in metadata["contexts"] and tag.casefold().startswith(normalized_prefix)
+        ]
+
     def _variable_items(self, context: CompletionContext) -> list[CompletionItem]:
         if context.suite is None:
             return []
@@ -387,9 +461,63 @@ def _current_section(lines: list[str], line: int) -> str | None:
             section = "variables"
         elif normalized == "*** test cases ***":
             section = "test cases"
+        elif normalized == "*** tasks ***":
+            section = "tasks"
         elif normalized == "*** keywords ***":
             section = "keywords"
     return section
+
+
+def _tag_prefix(context: CompletionContext) -> str | None:
+    lines = _logical_lines(context.document.text)
+    if context.position.line < 0 or context.position.line >= len(lines):
+        return None
+    tag_start_line = _tag_statement_start_line(lines, context.position.line)
+    if tag_start_line is None:
+        return None
+    return _tag_value_prefix(context.line_prefix)
+
+
+def _tag_statement_start_line(lines: list[str], line: int) -> int | None:
+    cursor = line
+    while cursor >= 0:
+        if cursor != line and not _is_continuation_line(lines[cursor + 1]):
+            return None
+        if _is_continuation_line(lines[cursor]):
+            cursor -= 1
+            continue
+        return cursor if _is_tags_line(lines[cursor]) else None
+    return None
+
+
+def _is_tags_line(line: str) -> bool:
+    cells = _robot_cells(line)
+    return bool(cells) and cells[0].casefold() == "[tags]"
+
+
+def _is_continuation_line(line: str) -> bool:
+    cells = _robot_cells(line)
+    return bool(cells) and cells[0] == "..."
+
+
+def _tag_value_prefix(line_prefix: str) -> str | None:
+    cells = _robot_cells(line_prefix)
+    if not cells:
+        return ""
+    first = cells[0].casefold()
+    if first not in {"[tags]", "..."}:
+        return None
+    if _ends_with_separator(line_prefix):
+        return ""
+    return cells[-1] if len(cells) > 1 else ""
+
+
+def _robot_cells(line: str) -> list[str]:
+    return [cell for cell in re.split(r"(?: {2,}|\t+)", line.strip()) if cell]
+
+
+def _ends_with_separator(text: str) -> bool:
+    return text.endswith("\t") or len(text) >= 2 and text[-2:] == "  "
 
 
 def _scoped_variables(context: CompletionContext):
