@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
 
-from robot_lsp.domain.models import LspPosition, LspRange, RobotSuite
+from robot_lsp.domain.models import LspPosition, LspRange, RobotSuite, RobotVariable
 
 from .document_store import Document, DocumentStore
 from .parse_service import ParseService
@@ -40,7 +40,7 @@ class NavigationService:
         self._parse_service = parse_service
         self._workspace_index = workspace_index
 
-    def definition(self, uri: str, position: LspPosition) -> list[dict[str, Any]]:
+    def definition(self, uri: str, position: LspPosition, *, link_support: bool = False) -> list[dict[str, Any]]:
         document, suite = self._document_and_suite(uri)
         if document is None or suite is None:
             return []
@@ -48,6 +48,8 @@ class NavigationService:
         match = self._symbol_at(document, suite, position)
         if match is None:
             return []
+        if link_support:
+            return [_location_link(match.definition_uri, match.definition_range, match.reference_range)]
         return [_location(match.definition_uri, match.definition_range)]
 
     def references(
@@ -138,7 +140,10 @@ class NavigationService:
         line_text = lines[position.line]
 
         candidates: list[tuple[str, str, str, LspRange]] = []
-        candidates.extend((variable.name, "variable", document.uri, variable.range) for variable in suite.variables)
+        candidates.extend(
+            (variable.name, "variable", document.uri, variable.range)
+            for variable in _visible_variables(suite, position)
+        )
         candidates.extend((import_.name, "import", document.uri, import_.range) for import_ in suite.imports)
         candidates.extend((keyword.name, "keyword", document.uri, keyword.range) for keyword in suite.keywords)
         candidates.extend((test_case.name, "test_case", document.uri, test_case.range) for test_case in suite.test_cases)
@@ -150,6 +155,14 @@ class NavigationService:
             candidates.extend(
                 (location.name, "imported_variable", location.uri, location.range)
                 for location in self._workspace_index.imported_variable_locations(document.path, suite)
+            )
+            library_locations, _has_unloadable_library = self._workspace_index.imported_library_keyword_locations(
+                document.path,
+                suite,
+            )
+            candidates.extend(
+                (location.name, "library_keyword", location.uri, location.range)
+                for location in library_locations
             )
         candidates.sort(key=lambda item: len(item[0]), reverse=True)
 
@@ -174,6 +187,15 @@ def _location(uri: str, range: LspRange) -> dict[str, Any]:
     return {"uri": uri, "range": _range_to_lsp(range)}
 
 
+def _location_link(uri: str, target_range: LspRange, origin_range: LspRange) -> dict[str, Any]:
+    return {
+        "originSelectionRange": _range_to_lsp(origin_range),
+        "targetUri": uri,
+        "targetRange": _range_to_lsp(target_range),
+        "targetSelectionRange": _range_to_lsp(target_range),
+    }
+
+
 def _range_to_lsp(range: LspRange) -> dict[str, Any]:
     return {
         "start": {"line": range.start.line, "character": range.start.character},
@@ -183,15 +205,67 @@ def _range_to_lsp(range: LspRange) -> dict[str, Any]:
 
 def _symbol_range_on_line(line_text: str, line: int, symbol: str, position: LspPosition) -> LspRange | None:
     start = 0
+    search_text = line_text.casefold()
+    search_symbol = symbol.casefold()
     while True:
-        index = line_text.find(symbol, start)
+        index = search_text.find(search_symbol, start)
         if index == -1:
             return None
-        start_character = _utf16_len(line_text[:index])
+        expanded_index = _expand_keyword_qualifier(line_text, index)
+        start_character = _utf16_len(line_text[:expanded_index])
         end_character = start_character + _utf16_len(symbol)
+        if expanded_index != index:
+            end_character = _utf16_len(line_text[:index]) + _utf16_len(symbol)
         if start_character <= position.character <= end_character:
             return LspRange(LspPosition(line, start_character), LspPosition(line, end_character))
         start = index + max(1, len(symbol))
+
+
+def _expand_keyword_qualifier(line_text: str, symbol_index: int) -> int:
+    if symbol_index <= 0 or line_text[symbol_index - 1] != ".":
+        return symbol_index
+    cursor = symbol_index - 2
+    while cursor >= 0 and not line_text[cursor].isspace():
+        cursor -= 1
+    return cursor + 1
+
+
+def _visible_variables(suite: RobotSuite, position: LspPosition) -> list[RobotVariable]:
+    variables = list(suite.variables)
+    for test_case in suite.test_cases:
+        if test_case.range.start.line <= position.line <= test_case.range.end.line:
+            variables.extend(variable for variable in test_case.variables if _declared_before(variable, position))
+            variables.extend(_assigned_variables_before(test_case.body, position))
+    for keyword in suite.keywords:
+        if keyword.range.start.line <= position.line <= keyword.range.end.line:
+            variables.extend(variable for variable in keyword.variables if _declared_before(variable, position))
+            variables.extend(_assigned_variables_before(keyword.body, position))
+            variables.extend(
+                RobotVariable(arg.name, None, "scalar", keyword.range)
+                for arg in keyword.args
+                if arg.name.startswith(("${", "@{", "&{", "%{"))
+            )
+    return variables
+
+
+def _assigned_variables_before(steps, position: LspPosition) -> list[RobotVariable]:
+    variables: list[RobotVariable] = []
+    for step in steps:
+        if step.range.start.line > position.line:
+            continue
+        for assign in step.assign:
+            name = assign.rstrip("=")
+            if name:
+                variables.append(RobotVariable(name, None, "scalar", step.range))
+    return variables
+
+
+def _declared_before(variable: RobotVariable, position: LspPosition) -> bool:
+    if variable.range.start.line < position.line:
+        return True
+    if variable.range.start.line == position.line:
+        return variable.range.start.character < position.character
+    return False
 
 
 def _find_symbol_ranges(text: str, symbol: str) -> list[LspRange]:

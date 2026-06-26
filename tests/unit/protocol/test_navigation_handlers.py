@@ -60,6 +60,25 @@ class TestNavigationHandlers:
         assert response.result[0]["uri"] == uri
         assert response.result[0]["range"]["start"] == {"line": 1, "character": 0}
 
+    def test_text_document_definition_returns_location_link_when_supported(self):
+        server, uri, _capabilities = make_server()
+        server.client_capabilities = {"textDocument": {"definition": {"linkSupport": True}}}
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/definition",
+                id=2,
+                params={"textDocument": {"uri": uri}, "position": {"line": 5, "character": 12}},
+            )
+        )
+
+        assert response.result[0]["targetUri"] == uri
+        assert response.result[0]["targetSelectionRange"]["start"] == {"line": 1, "character": 0}
+        assert response.result[0]["originSelectionRange"] == {
+            "start": {"line": 5, "character": 11},
+            "end": {"line": 5, "character": 21},
+        }
+
     def test_text_document_references(self):
         server, uri, _capabilities = make_server()
 

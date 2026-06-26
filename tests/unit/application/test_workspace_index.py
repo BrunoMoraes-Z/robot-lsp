@@ -193,6 +193,86 @@ class TestWorkspaceIndexIntegration:
         assert locations[0]["uri"] == path_to_uri(resource.resolve())
         assert locations[0]["range"]["start"]["line"] == 4
 
+    def test_definition_points_to_python_library_keyword(self, tmp_path):
+        lib = tmp_path / "MyLib.py"
+        lib.write_text("def custom_keyword():\n    pass\n", encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        text = "*** Settings ***\nLibrary    MyLib.py\n*** Test Cases ***\nT\n    Custom Keyword\n"
+        suite.write_text(text, encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite)
+        store = DocumentStore()
+        parser = RobotFrameworkParser()
+        service = NavigationService(store, ParseService(store, parser), index)
+        uri = path_to_uri(suite.resolve())
+        store.open(uri=uri, text=text, version=1, language_id="robotframework")
+
+        locations = service.definition(uri, LspPosition(line=4, character=8))
+
+        assert len(locations) == 1
+        assert locations[0]["uri"] == path_to_uri(lib.resolve())
+        assert locations[0]["range"]["start"] == {"line": 0, "character": 4}
+
+    def test_definition_points_to_python_variable_file(self, tmp_path):
+        var_file = tmp_path / "vars.py"
+        var_file.write_text('USER = {"name": "Ana"}\n', encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        text = "*** Settings ***\nVariables    vars.py\n*** Test Cases ***\nT\n    Log    ${USER}\n"
+        suite.write_text(text, encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite)
+        store = DocumentStore()
+        parser = RobotFrameworkParser()
+        service = NavigationService(store, ParseService(store, parser), index)
+        uri = path_to_uri(suite.resolve())
+        store.open(uri=uri, text=text, version=1, language_id="robotframework")
+
+        locations = service.definition(uri, LspPosition(line=4, character=len("    Log    ${USER}") - 2))
+
+        assert len(locations) == 1
+        assert locations[0]["uri"] == path_to_uri(var_file.resolve())
+        assert locations[0]["range"]["start"] == {"line": 0, "character": 0}
+        assert locations[0]["range"]["end"] == {"line": 0, "character": 4}
+
+    def test_definition_points_to_yaml_variable_file(self, tmp_path):
+        var_file = tmp_path / "vars.yaml"
+        var_file.write_text("USER:\n  name: Ana\n", encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        text = "*** Settings ***\nVariables    vars.yaml\n*** Test Cases ***\nT\n    Log    ${USER}\n"
+        suite.write_text(text, encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite)
+        store = DocumentStore()
+        parser = RobotFrameworkParser()
+        service = NavigationService(store, ParseService(store, parser), index)
+        uri = path_to_uri(suite.resolve())
+        store.open(uri=uri, text=text, version=1, language_id="robotframework")
+
+        locations = service.definition(uri, LspPosition(line=4, character=len("    Log    ${USER}") - 2))
+
+        assert len(locations) == 1
+        assert locations[0]["uri"] == path_to_uri(var_file.resolve())
+        assert locations[0]["range"]["start"] == {"line": 0, "character": 0}
+        assert locations[0]["range"]["end"] == {"line": 0, "character": 4}
+
+    def test_definition_points_to_scoped_var_syntax_variable(self, tmp_path):
+        suite = tmp_path / "suite.robot"
+        text = "*** Test Cases ***\nT\n    VAR    ${value}    ok\n    Log    ${value}\n"
+        suite.write_text(text, encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite)
+        store = DocumentStore()
+        parser = RobotFrameworkParser()
+        service = NavigationService(store, ParseService(store, parser), index)
+        uri = path_to_uri(suite.resolve())
+        store.open(uri=uri, text=text, version=1, language_id="robotframework")
+
+        locations = service.definition(uri, LspPosition(line=3, character=len("    Log    ${value}") - 2))
+
+        assert len(locations) == 1
+        assert locations[0]["uri"] == uri
+        assert locations[0]["range"]["start"]["line"] == 2
+
 
 class TestScanFollowsImports:
     def test_scan_indexes_resource_outside_root(self, tmp_path):

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib.util
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 
-from robot_lsp.domain.models import LspRange, RobotImport, RobotSuite, RobotVariable
+from robot_lsp.domain.models import LspPosition, LspRange, RobotImport, RobotSuite, RobotVariable
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
 from robot_lsp.infrastructure.robotframework.variable_files import parse_python_variable_file, parse_yaml_variable_file
 
@@ -72,6 +73,7 @@ class WorkspaceIndex:
         self._import_paths = tuple(path.resolve() for path in import_paths or [])
         self._lock = threading.RLock()
         self._library_keywords_cache: dict[str, list[str] | None] = {}
+        self._library_keyword_locations_cache: dict[str, list[SymbolLocation] | None] = {}
         self._variable_file_cache: dict[str, VariableFileEntry] = {}
 
     @property
@@ -243,6 +245,13 @@ class WorkspaceIndex:
                 if resolution.resolved_uri is None or resolution.resolved_uri in visited:
                     continue
                 visited.add(resolution.resolved_uri)
+                if resolution.resolved_path is not None and resolution.resolved_path.suffix.lower() in self.SUPPORTED_VARIABLE_FILE_SUFFIXES:
+                    uri = path_to_uri(resolution.resolved_path)
+                    locations.extend(
+                        SymbolLocation(variable.name, uri, variable.range, uri)
+                        for variable in self._load_variable_file(resolution.resolved_path)
+                    )
+                    continue
                 with self._lock:
                     entry = self._entries.get(resolution.resolved_uri)
                 if entry is None and resolution.resolved_path is not None:
@@ -359,6 +368,45 @@ class WorkspaceIndex:
         _collect_libs(source_path, suite)
         return names, has_unloadable
 
+    def imported_library_keyword_locations(
+        self,
+        source_path: Path,
+        suite: RobotSuite,
+    ) -> tuple[list[SymbolLocation], bool]:
+        locations: list[SymbolLocation] = []
+        has_unloadable = False
+        seen_lib_keys: set[str] = set()
+        visited_resources: set[str] = set()
+
+        def _collect_libs(path: Path, s: RobotSuite) -> None:
+            nonlocal has_unloadable
+            for import_ in s.imports:
+                if import_.type == "library":
+                    key = self._library_cache_key(import_, path)
+                    if key in seen_lib_keys:
+                        continue
+                    seen_lib_keys.add(key)
+                    result = self._get_library_keyword_locations(import_, path)
+                    if result is None:
+                        has_unloadable = True
+                    else:
+                        locations.extend(result)
+                elif import_.type == "resource":
+                    resolution = self.resolve_import(path, import_)
+                    if resolution.resolved_uri is None or resolution.resolved_uri in visited_resources:
+                        continue
+                    visited_resources.add(resolution.resolved_uri)
+                    with self._lock:
+                        entry = self._entries.get(resolution.resolved_uri)
+                    if entry is None and resolution.resolved_path is not None:
+                        entry = self.update_file(resolution.resolved_path)
+                    if entry is None:
+                        continue
+                    _collect_libs(entry.path, entry.suite)
+
+        _collect_libs(source_path, suite)
+        return locations, has_unloadable
+
     def _library_cache_key(self, import_: RobotImport, source_path: Path | None) -> str:
         resolved = self._resolve_library_import(import_, source_path)
         return str(resolved) if resolved is not None else import_.name
@@ -377,6 +425,22 @@ class WorkspaceIndex:
         with self._lock:
             self._library_keywords_cache[key] = names
         return names
+
+    def _get_library_keyword_locations(
+        self, import_: RobotImport, source_path: Path | None = None
+    ) -> list[SymbolLocation] | None:
+        key = self._library_cache_key(import_, source_path)
+        with self._lock:
+            cached = self._library_keyword_locations_cache.get(key, _CACHE_MISSING)
+        if cached is not _CACHE_MISSING:
+            return cached  # type: ignore[return-value]
+
+        resolved = self._resolve_library_import(import_, source_path)
+        target = str(resolved) if resolved is not None else import_.name
+        locations = _load_library_keyword_locations(target)
+        with self._lock:
+            self._library_keyword_locations_cache[key] = locations
+        return locations
 
     def _resolve_file_import(self, source_path: Path, import_: RobotImport) -> Path | None:
         for base_path in (source_path.parent, *self._import_paths):
@@ -428,6 +492,75 @@ def _load_library_keywords(target: str) -> list[str] | None:
         return [kw.name for kw in libdoc.keywords]
     except Exception:
         return None
+
+
+def _load_library_keyword_locations(target: str) -> list[SymbolLocation] | None:
+    try:
+        from robot.libdocpkg import LibraryDocumentation  # type: ignore[import]
+
+        libdoc = LibraryDocumentation(target)
+        locations: list[SymbolLocation] = []
+        for keyword in libdoc.keywords:
+            source = getattr(keyword, "source", None) or getattr(libdoc, "source", None)
+            if not source:
+                continue
+            path = Path(source).resolve()
+            lineno = getattr(keyword, "lineno", None)
+            line = max(0, lineno - 1) if isinstance(lineno, int) and lineno > 0 else 0
+            range_ = _python_keyword_range(path, line, keyword.name)
+            uri = path_to_uri(path)
+            locations.append(SymbolLocation(keyword.name, uri, range_, uri))
+        return locations
+    except Exception:
+        return None
+
+
+def _python_keyword_range(path: Path, line: int, keyword_name: str) -> LspRange:
+    try:
+        text = path.read_text(encoding="utf-8")
+        tree = ast.parse(text, filename=str(path))
+    except (OSError, SyntaxError, UnicodeDecodeError):
+        return LspRange(LspPosition(line, 0), LspPosition(line, 0))
+
+    normalized_keyword = _normalize_robot_name(keyword_name)
+    fallback = LspRange(LspPosition(line, 0), LspPosition(line, 0))
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        node_line = max(0, getattr(node, "lineno", 1) - 1)
+        node_range = LspRange(
+            LspPosition(node_line, getattr(node, "col_offset", 0) + 4),
+            LspPosition(node_line, getattr(node, "col_offset", 0) + 4 + len(node.name)),
+        )
+        if node_line == line:
+            return node_range
+        decorator_name = _robot_keyword_decorator_name(node)
+        if decorator_name is not None and _normalize_robot_name(decorator_name) == normalized_keyword:
+            return node_range
+        if _normalize_robot_name(node.name) == normalized_keyword:
+            fallback = node_range
+    return fallback
+
+
+def _robot_keyword_decorator_name(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str | None:
+    for decorator in node.decorator_list:
+        if not isinstance(decorator, ast.Call):
+            continue
+        function = decorator.func
+        function_name = function.id if isinstance(function, ast.Name) else getattr(function, "attr", None)
+        if function_name != "keyword":
+            continue
+        for arg in decorator.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                return arg.value
+        for keyword in decorator.keywords:
+            if keyword.arg == "name" and isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                return keyword.value.value
+    return None
+
+
+def _normalize_robot_name(name: str) -> str:
+    return "".join(char for char in name.casefold() if char not in " _")
 
 
 def _is_path_import(name: str) -> bool:

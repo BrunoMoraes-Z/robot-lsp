@@ -540,6 +540,13 @@ class LspServer:
         watched = workspace.get("didChangeWatchedFiles")
         return isinstance(watched, dict) and watched.get("dynamicRegistration") is True
 
+    def _client_supports_definition_links(self) -> bool:
+        text_document = self.client_capabilities.get("textDocument")
+        if not isinstance(text_document, dict):
+            return False
+        definition = text_document.get("definition")
+        return isinstance(definition, dict) and definition.get("linkSupport") is True
+
     def _handle_hover(
         self,
         params: dict[str, Any] | list[Any] | None,
@@ -571,7 +578,11 @@ class LspServer:
         if self.navigation_service is None or parsed is None:
             return []
         uri, position = parsed
-        return self.navigation_service.definition(uri, position)
+        return self.navigation_service.definition(
+            uri,
+            position,
+            link_support=self._client_supports_definition_links(),
+        )
 
     def _handle_references(
         self,

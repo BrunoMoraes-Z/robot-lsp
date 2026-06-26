@@ -25,11 +25,11 @@ def parse_python_variable_file(path: Path) -> list[RobotVariable]:
                 continue
             for target in node.targets:
                 if isinstance(target, ast.Name):
-                    variables.append(_robot_variable(target.id, value, _node_range(node)))
+                    variables.append(_robot_variable(target.id, value, _node_name_range(target)))
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             value = _literal_value(node.value)
             if value is not None:
-                variables.append(_robot_variable(node.target.id, value, _node_range(node)))
+                variables.append(_robot_variable(node.target.id, value, _node_name_range(node.target)))
         elif isinstance(node, ast.FunctionDef) and node.name in {"get_variables", "getVariables"}:
             variables.extend(_variables_from_get_variables(node))
     return variables
@@ -48,7 +48,8 @@ def parse_yaml_variable_file(path: Path) -> list[RobotVariable]:
         return []
     if not isinstance(contents, dict):
         return []
-    return [_robot_variable(str(name), value, _ZERO_RANGE) for name, value in contents.items()]
+    ranges = _yaml_key_ranges(path)
+    return [_robot_variable(str(name), value, ranges.get(str(name), _ZERO_RANGE)) for name, value in contents.items()]
 
 
 def has_yaml_support() -> bool:
@@ -60,6 +61,13 @@ def _variables_from_get_variables(node: ast.FunctionDef) -> list[RobotVariable]:
     for child in ast.walk(node):
         if not isinstance(child, ast.Return):
             continue
+        if isinstance(child.value, ast.Dict):
+            for key_node, value_node in zip(child.value.keys, child.value.values):
+                key = _literal_value(key_node)
+                value = _literal_value(value_node)
+                if key is not None and value is not None:
+                    variables.append(_robot_variable(str(key), value, _node_range(key_node)))
+            break
         value = _literal_value(child.value)
         if not isinstance(value, dict):
             continue
@@ -119,3 +127,33 @@ def _node_range(node: ast.AST) -> LspRange:
     end_lineno = max(0, getattr(node, "end_lineno", lineno + 1) - 1)
     end_col = getattr(node, "end_col_offset", col)
     return LspRange(LspPosition(lineno, col), LspPosition(end_lineno, end_col))
+
+
+def _node_name_range(node: ast.Name) -> LspRange:
+    lineno = max(0, getattr(node, "lineno", 1) - 1)
+    col = getattr(node, "col_offset", 0)
+    return LspRange(LspPosition(lineno, col), LspPosition(lineno, col + len(node.id)))
+
+
+def _yaml_key_ranges(path: Path) -> dict[str, LspRange]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return {}
+
+    ranges: dict[str, LspRange] = {}
+    for line_number, line in enumerate(lines):
+        stripped = line.lstrip()
+        if not stripped or stripped.startswith("#") or len(stripped) != len(line):
+            continue
+        separator = stripped.find(":")
+        if separator <= 0:
+            continue
+        key = stripped[:separator].strip().strip('"\'')
+        if not key:
+            continue
+        start = line.find(stripped[:separator])
+        start = max(0, start)
+        end = start + len(stripped[:separator])
+        ranges[key] = LspRange(LspPosition(line_number, start), LspPosition(line_number, end))
+    return ranges
