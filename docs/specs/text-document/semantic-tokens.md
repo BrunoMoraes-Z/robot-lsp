@@ -91,6 +91,8 @@ Status: implemented.
 
 ### Step 4: Named Arguments
 
+Status: implemented.
+
 - Split `name=value` arguments into `parameterName`, `variableOperator`, and `argumentValue`.
 - Handle escaped equals and Robot Framework syntax differences conservatively.
 

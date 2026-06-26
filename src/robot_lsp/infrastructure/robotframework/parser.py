@@ -113,22 +113,54 @@ def _semantic_tokens_for_raw_token(raw_token) -> list[SemanticToken]:
             SemanticToken(line=line, start=start + 1, length=_utf16_len(value[1:-1]), token_type="setting"),
             SemanticToken(line=line, start=start + _utf16_len(value[:-1]), length=1, token_type="settingOperator"),
         ]
+    if token_type == "argumentValue":
+        named_argument_tokens = _split_named_argument_tokens(value, line=line, start=start)
+        if named_argument_tokens is not None:
+            return named_argument_tokens
     if token_type in {"argumentValue", "variable"}:
         return _split_variable_tokens(value, line=line, start=start, fallback_token_type=token_type)
     return [SemanticToken(line=line, start=start, length=_utf16_len(value), token_type=token_type)]
+
+
+def _split_named_argument_tokens(value: str, *, line: int, start: int) -> list[SemanticToken] | None:
+    split_index = _find_unescaped_equal(value)
+    if split_index is None or split_index == 0:
+        return None
+    name = value[:split_index]
+    argument_value = value[split_index + 1 :]
+    value_start = start + _utf16_len(value[: split_index + 1])
+    result = [
+        *_split_variable_tokens(name, line=line, start=start, fallback_token_type="parameterName"),
+        SemanticToken(
+            line=line,
+            start=start + _utf16_len(value[:split_index]),
+            length=1,
+            token_type="variableOperator",
+        ),
+    ]
+    if argument_value:
+        result.extend(
+            _split_variable_tokens(
+                argument_value,
+                line=line,
+                start=value_start,
+                fallback_token_type="argumentValue",
+            )
+        )
+    return [token for token in result if token.length > 0]
 
 
 def _split_variable_tokens(value: str, *, line: int, start: int, fallback_token_type: str) -> list[SemanticToken]:
     result: list[SemanticToken] = []
     current = 0
     for match in _VARIABLE_RE.finditer(value):
-        if match.start() > current and fallback_token_type == "argumentValue":
+        if match.start() > current and fallback_token_type in {"argumentValue", "parameterName"}:
             result.append(
                 SemanticToken(
                     line=line,
                     start=start + _utf16_len(value[:current]),
                     length=_utf16_len(value[current : match.start()]),
-                    token_type="argumentValue",
+                    token_type=fallback_token_type,
                 )
             )
         variable = match.group(0)
@@ -141,18 +173,34 @@ def _split_variable_tokens(value: str, *, line: int, start: int, fallback_token_
             ]
         )
         current = match.end()
-    if current < len(value) and fallback_token_type == "argumentValue":
+    if current < len(value) and fallback_token_type in {"argumentValue", "parameterName"}:
         result.append(
             SemanticToken(
                 line=line,
                 start=start + _utf16_len(value[:current]),
                 length=_utf16_len(value[current:]),
-                token_type="argumentValue",
+                token_type=fallback_token_type,
             )
         )
     if result:
         return [token for token in result if token.length > 0]
     return [SemanticToken(line=line, start=start, length=_utf16_len(value), token_type=fallback_token_type)]
+
+
+def _find_unescaped_equal(value: str) -> int | None:
+    for index, character in enumerate(value):
+        if character == "=" and not _is_escaped(value, index):
+            return index
+    return None
+
+
+def _is_escaped(value: str, index: int) -> bool:
+    slash_count = 0
+    cursor = index - 1
+    while cursor >= 0 and value[cursor] == "\\":
+        slash_count += 1
+        cursor -= 1
+    return slash_count % 2 == 1
 
 
 def _header_tokens() -> set[str]:

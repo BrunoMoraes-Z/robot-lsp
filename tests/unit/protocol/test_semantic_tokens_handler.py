@@ -131,3 +131,64 @@ class TestSemanticTokensHandler:
         assert (2, 19, 2, "variableOperator") in tokens
         assert (2, 21, 5, "variable") in tokens
         assert (2, 26, 1, "variableOperator") in tokens
+
+    def test_semantic_tokens_split_named_arguments(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    Log    name=value\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 11, 4, "parameterName") in tokens
+        assert (2, 15, 1, "variableOperator") in tokens
+        assert (2, 16, 5, "argumentValue") in tokens
+
+    def test_semantic_tokens_split_named_arguments_with_variable_value(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    Log    name=${value}\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 11, 4, "parameterName") in tokens
+        assert (2, 15, 1, "variableOperator") in tokens
+        assert (2, 16, 2, "variableOperator") in tokens
+        assert (2, 18, 5, "variable") in tokens
+        assert (2, 23, 1, "variableOperator") in tokens
+
+    def test_semantic_tokens_do_not_split_escaped_equals(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    Log    name\\=value\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 11, 11, "argumentValue") in tokens
+        assert "parameterName" not in [token_type for _line, _start, _length, token_type in tokens]
