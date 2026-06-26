@@ -105,3 +105,113 @@ class TestCompletionHandler:
         )
 
         assert response.result == {"isIncomplete": False, "items": []}
+
+    def test_text_document_completion_dictionary_keys_uses_explicit_text_edit(self):
+        text = (
+            "*** Variables ***\n"
+            "&{DISPLAY_SALES_ORDER}\n"
+            "...    input_sales_order=id=M0:46:::2:22\n"
+            "...    btn_continue=id=M0:50::btn[0]\n"
+            "...    input_payment_terms=id=M0:46:2:3B256:1::4:17\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${DISPLAY_SALES_ORDER.}\n"
+        )
+        server, uri = make_server(text)
+        character = len("    Log    ${DISPLAY_SALES_ORDER.")
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/completion",
+                id=2,
+                params={
+                    "textDocument": {"uri": uri},
+                    "position": {"line": 7, "character": character},
+                    "context": {"triggerCharacter": "."},
+                },
+            )
+        )
+
+        items = response.result["items"]
+        assert [item["label"] for item in items] == [
+            "input_sales_order",
+            "btn_continue",
+            "input_payment_terms",
+        ]
+        assert items[0]["textEdit"] == {
+            "range": {
+                "start": {"line": 7, "character": character},
+                "end": {"line": 7, "character": character},
+            },
+            "newText": "input_sales_order",
+        }
+
+    def test_text_document_completion_dictionary_bracket_keys_quotes_and_closes_bracket(self):
+        text = (
+            "*** Variables ***\n"
+            "&{DISPLAY_SALES_ORDER}\n"
+            "...    input_sales_order=id=M0:46:::2:22\n"
+            "...    btn_continue=id=M0:50::btn[0]\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${DISPLAY_SALES_ORDER[}\n"
+        )
+        server, uri = make_server(text)
+        character = len("    Log    ${DISPLAY_SALES_ORDER[")
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/completion",
+                id=2,
+                params={
+                    "textDocument": {"uri": uri},
+                    "position": {"line": 6, "character": character},
+                    "context": {"triggerCharacter": "["},
+                },
+            )
+        )
+
+        first_item = response.result["items"][0]
+        assert first_item["label"] == "input_sales_order"
+        assert first_item["textEdit"] == {
+            "range": {
+                "start": {"line": 6, "character": character},
+                "end": {"line": 6, "character": character},
+            },
+            "newText": '"input_sales_order"]',
+        }
+
+    def test_text_document_completion_dictionary_bracket_keys_reuses_auto_closed_bracket(self):
+        text = (
+            "*** Variables ***\n"
+            "&{DISPLAY_SALES_ORDER}\n"
+            "...    input_sales_order=id=M0:46:::2:22\n"
+            "...    btn_continue=id=M0:50::btn[0]\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${DISPLAY_SALES_ORDER[]}\n"
+        )
+        server, uri = make_server(text)
+        character = len("    Log    ${DISPLAY_SALES_ORDER[")
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/completion",
+                id=2,
+                params={
+                    "textDocument": {"uri": uri},
+                    "position": {"line": 6, "character": character},
+                    "context": {"triggerCharacter": "["},
+                },
+            )
+        )
+
+        first_item = response.result["items"][0]
+        assert first_item["label"] == "input_sales_order"
+        assert first_item["textEdit"] == {
+            "range": {
+                "start": {"line": 6, "character": character},
+                "end": {"line": 6, "character": character},
+            },
+            "newText": '"input_sales_order"',
+        }

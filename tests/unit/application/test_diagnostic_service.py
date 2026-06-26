@@ -189,6 +189,83 @@ class TestDiagnosticService:
         assert diagnostic.code == "variable_not_found"
         assert diagnostic.message == "Variable not found: ${value}"
 
+    def test_eval_variable_does_not_report_inner_variables(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/eval-variable.robot"
+        store.open(
+            uri=uri,
+            text='*** Test Cases ***\nT\n    Log    ${{ $URL.tcode.format("${tcode}") }}\n',
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
+
+    def test_dictionary_variable_cross_type_access_does_not_report_missing(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/dictionary-cross-type.robot"
+        store.open(
+            uri=uri,
+            text="*** Variables ***\n&{USER}    name=Ana\n*** Test Cases ***\nT\n    Log    ${USER.name}\n",
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
+
+    def test_empty_test_case_local_settings_do_not_report_diagnostics(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/empty-test-settings.robot"
+        store.open(
+            uri=uri,
+            text=(
+                "*** Test Cases ***\n"
+                "T\n"
+                "    [Documentation]\n"
+                "    [Tags]\n"
+                "    [Setup]\n"
+                "    [Teardown]\n"
+                "    [Template]\n"
+                "    [Timeout]\n"
+                "    No Operation\n"
+            ),
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
+
+    def test_empty_keyword_local_settings_do_not_report_diagnostics(self):
+        store, service, published = make_service()
+        uri = "file:///c:/projects/empty-keyword-settings.robot"
+        store.open(
+            uri=uri,
+            text=(
+                "*** Keywords ***\n"
+                "Keyword\n"
+                "    [Documentation]\n"
+                "    [Arguments]\n"
+                "    [Setup]\n"
+                "    [Teardown]\n"
+                "    [Timeout]\n"
+                "    [Tags]\n"
+                "    [Return]\n"
+                "    No Operation\n"
+            ),
+            version=1,
+            language_id="robotframework",
+        )
+
+        service.flush(uri)
+
+        assert published == [(uri, [])]
+
     def test_unknown_variable_type_diagnostic(self):
         store, service, published = make_service()
         uri = "file:///c:/projects/unknown-type.robot"

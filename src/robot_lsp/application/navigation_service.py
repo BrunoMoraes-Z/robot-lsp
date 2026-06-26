@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
@@ -167,7 +168,10 @@ class NavigationService:
         candidates.sort(key=lambda item: len(item[0]), reverse=True)
 
         for name, kind, definition_uri, definition_range in candidates:
-            reference_range = _symbol_range_on_line(line_text, position.line, name, position)
+            if kind in {"variable", "imported_variable"}:
+                reference_range = _variable_range_on_line(line_text, position.line, name, position)
+            else:
+                reference_range = _symbol_range_on_line(line_text, position.line, name, position)
             if reference_range is not None:
                 return SymbolMatch(name, kind, definition_uri, definition_range, reference_range)
         return None
@@ -219,6 +223,34 @@ def _symbol_range_on_line(line_text: str, line: int, symbol: str, position: LspP
         if start_character <= position.character <= end_character:
             return LspRange(LspPosition(line, start_character), LspPosition(line, end_character))
         start = index + max(1, len(symbol))
+
+
+_VARIABLE_RE = re.compile(r"[$@&%]\{[^}]+\}")
+
+
+def _variable_range_on_line(line_text: str, line: int, variable_name: str, position: LspPosition) -> LspRange | None:
+    expected_base = _variable_base(variable_name)
+    if expected_base is None:
+        return _symbol_range_on_line(line_text, line, variable_name, position)
+    for match in _VARIABLE_RE.finditer(line_text):
+        candidate = match.group(0)
+        if _variable_base(candidate) != expected_base:
+            continue
+        start_character = _utf16_len(line_text[: match.start()])
+        end_character = _utf16_len(line_text[: match.end()])
+        if start_character <= position.character <= end_character:
+            return LspRange(LspPosition(line, start_character), LspPosition(line, end_character))
+    return None
+
+
+def _variable_base(variable_name: str) -> str | None:
+    if len(variable_name) < 4 or variable_name[1] != "{" or not variable_name.endswith("}"):
+        return None
+    inner = variable_name[2:-1]
+    base = re.split(r"[.\[]", inner, 1)[0]
+    if not base:
+        return None
+    return "".join(char for char in base.casefold() if char not in " _")
 
 
 def _expand_keyword_qualifier(line_text: str, symbol_index: int) -> int:

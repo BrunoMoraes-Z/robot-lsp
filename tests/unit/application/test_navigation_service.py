@@ -49,6 +49,20 @@ class TestNavigationService:
         assert len(locations) == 1
         assert locations[0]["range"]["start"] == {"line": 4, "character": 0}
 
+    def test_definition_variable_cross_type_dictionary_dot_access(self):
+        service, uri = make_service(
+            "*** Variables ***\n"
+            "&{USER}    name=Ana\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${USER.name}\n"
+        )
+
+        locations = service.definition(uri, LspPosition(line=4, character=len("    Log    ${USER.na")))
+
+        assert len(locations) == 1
+        assert locations[0]["range"]["start"] == {"line": 1, "character": 0}
+
     def test_references_variable(self):
         service, uri = make_service()
 

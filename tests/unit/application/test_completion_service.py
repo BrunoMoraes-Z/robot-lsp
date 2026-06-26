@@ -93,10 +93,44 @@ class TestCompletionService:
 
         completion = service.compute_completion(uri, LspPosition(line=2, character=4))
 
-        assert labels(completion) == ["My Keyword"]
+        result = labels(completion)
+        assert result[0] == "My Keyword"
+        assert "Should Be Equal" in result
         assert completion.items[0].kind == CompletionItemKind.FUNCTION
         assert completion.items[0].detail == "Local keyword"
         assert completion.items[0].documentation == "Docs"
+
+    def test_completion_builtin_keyword(self):
+        service, uri = make_service("*** Test Cases ***\nT\n    ")
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=4))
+        result = labels(completion)
+
+        assert "Should Be Equal" in result
+        assert "Run Keyword If" in result
+
+    def test_completion_test_case_local_settings(self):
+        service, uri = make_service("*** Test Cases ***\nT\n    [")
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=len("    [")), trigger_character="[")
+        result = labels(completion)
+
+        assert "[Tags]" in result
+        assert "[Setup]" in result
+        assert "[Teardown]" in result
+        assert "[Documentation]" in result
+        assert "[Template]" in result
+
+    def test_completion_keyword_local_settings(self):
+        service, uri = make_service("*** Keywords ***\nKeyword\n    [")
+
+        completion = service.compute_completion(uri, LspPosition(line=2, character=len("    [")), trigger_character="[")
+        result = labels(completion)
+
+        assert "[Arguments]" in result
+        assert "[Return]" in result
+        assert "[Tags]" in result
+        assert "[Template]" not in result
 
     def test_completion_reserved_tags_in_test_tags_setting(self):
         service, uri = make_service(
@@ -185,13 +219,16 @@ class TestCompletionService:
 
         completion = service.compute_completion(uri, LspPosition(line=2, character=len("    robot:")))
 
-        assert labels(completion) == ["My Keyword"]
+        result = labels(completion)
+        assert result[0] == "My Keyword"
+        assert "Should Be Equal" in result
 
     def test_completion_local_variable(self):
         service, uri = make_service(
             "*** Variables ***\n"
             "${MESSAGE}    Hello\n"
             "@{ITEMS}      one    two\n"
+            "&{USER}       name=Ana\n"
             "*** Test Cases ***\n"
             "T\n"
             "    Log    $"
@@ -203,9 +240,61 @@ class TestCompletionService:
             trigger_character="$",
         )
 
-        assert labels(completion) == ["${MESSAGE}", "@{ITEMS}"]
+        assert labels(completion) == ["${MESSAGE}", "${ITEMS}", "${USER}"]
         assert completion.items[0].kind == CompletionItemKind.VARIABLE
         assert completion.items[0].detail == "Local scalar variable"
+
+    def test_completion_local_variables_converted_to_list_sigil(self):
+        service, uri = make_service(
+            "*** Variables ***\n"
+            "${MESSAGE}    Hello\n"
+            "@{ITEMS}      one    two\n"
+            "&{USER}       name=Ana\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log Many    @"
+        )
+
+        completion = service.compute_completion(
+            uri,
+            LspPosition(line=5, character=len("    Log Many    @")),
+            trigger_character="@",
+        )
+
+        assert labels(completion) == ["@{MESSAGE}", "@{ITEMS}", "@{USER}"]
+
+    def test_completion_local_variables_converted_to_dict_sigil(self):
+        service, uri = make_service(
+            "*** Variables ***\n"
+            "${MESSAGE}    Hello\n"
+            "@{ITEMS}      one    two\n"
+            "&{USER}       name=Ana\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    &"
+        )
+
+        completion = service.compute_completion(
+            uri,
+            LspPosition(line=5, character=len("    Log    &")),
+            trigger_character="&",
+        )
+
+        assert labels(completion) == ["&{MESSAGE}", "&{ITEMS}", "&{USER}"]
+
+    def test_completion_variables_converted_inside_braces(self):
+        service, uri = make_service(
+            "*** Variables ***\n"
+            "@{ITEMS}      one    two\n"
+            "&{USER}       name=Ana\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${"
+        )
+
+        completion = service.compute_completion(uri, LspPosition(line=5, character=len("    Log    ${")))
+
+        assert labels(completion) == ["${ITEMS}", "${USER}"]
 
     def test_completion_var_syntax_scoped_variable(self):
         service, uri = make_service(
@@ -259,7 +348,7 @@ class TestCompletionService:
             trigger_character="@",
         )
 
-        assert labels(completion) == ["${VAR}"]
+        assert labels(completion) == ["@{VAR}"]
 
     def test_completion_empty_result(self):
         service, uri = make_service("*** Variables ***\n${VAR}    value\n")
@@ -332,6 +421,71 @@ class TestCompletionService:
         completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}.e")))
 
         assert labels(completion) == ["email"]
+
+    def test_completion_dictionary_key_inline_dot(self):
+        text = (
+            "*** Variables ***\n"
+            "&{USER}    name=Ana    email=ana@example.com\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${USER.na"
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER.na")))
+
+        assert labels(completion) == ["name"]
+
+    def test_completion_dictionary_key_multiline_inline_dot_with_closing_brace(self):
+        text = (
+            "*** Variables ***\n"
+            "&{DISPLAY_SALES_ORDER}\n"
+            "...    input_sales_order=id=M0:46:::2:22\n"
+            "...    btn_continue=id=M0:50::btn[0]\n"
+            "...    input_payment_terms=id=M0:46:2:3B256:1::4:17\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${DISPLAY_SALES_ORDER.}"
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=7, character=len("    Log    ${DISPLAY_SALES_ORDER.")))
+
+        assert labels(completion) == ["input_sales_order", "btn_continue", "input_payment_terms"]
+
+    def test_completion_dictionary_key_multiline_inline_dot_with_filter(self):
+        text = (
+            "*** Variables ***\n"
+            "&{DISPLAY_SALES_ORDER}\n"
+            "...    input_sales_order=id=M0:46:::2:22\n"
+            "...    btn_continue=id=M0:50::btn[0]\n"
+            "...    input_payment_terms=id=M0:46:2:3B256:1::4:17\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${DISPLAY_SALES_ORDER.input_p}"
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=7, character=len("    Log    ${DISPLAY_SALES_ORDER.input_p")))
+
+        assert labels(completion) == ["input_payment_terms"]
+
+    def test_completion_dictionary_key_multiline_inline_bracket_with_closing_brace(self):
+        text = (
+            "*** Variables ***\n"
+            "&{DISPLAY_SALES_ORDER}\n"
+            "...    input_sales_order=id=M0:46:::2:22\n"
+            "...    btn_continue=id=M0:50::btn[0]\n"
+            "...    input_payment_terms=id=M0:46:2:3B256:1::4:17\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${DISPLAY_SALES_ORDER[}"
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=7, character=len("    Log    ${DISPLAY_SALES_ORDER[")))
+
+        assert labels(completion) == ["input_sales_order", "btn_continue", "input_payment_terms"]
 
     def test_completion_dictionary_key_ignores_non_dict(self):
         text = (

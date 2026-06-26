@@ -215,7 +215,6 @@ def _severity(severity: str) -> DiagnosticSeverity:
     return DiagnosticSeverity.ERROR
 
 
-_VARIABLE_PATTERN = re.compile(r"[$@&%]\{[^}]+\}")
 _COMPOSITE_ACCESS_RE = re.compile(r"[.\[]")
 _BUILTIN_VARIABLES: frozenset[str] = frozenset({
     # Paths & separators
@@ -299,7 +298,7 @@ def _undefined_variable_diagnostics(
 def _step_variable_diagnostics(step: RobotStep, defined: set[str]) -> list[LspDiagnostic]:
     diagnostics = []
     for value in [step.keyword, *step.args]:
-        for variable in _VARIABLE_PATTERN.findall(value):
+        for variable in _iter_variables(value):
             if not _variable_is_defined(variable, defined):
                 diagnostics.append(
                     _diagnostic(
@@ -310,6 +309,25 @@ def _step_variable_diagnostics(step: RobotStep, defined: set[str]) -> list[LspDi
                     )
                 )
     return diagnostics
+
+
+def _iter_variables(value: str):
+    index = 0
+    while index < len(value):
+        starts = [(value.find(f"{sigil}{{", index), sigil) for sigil in "$@&%"]
+        starts = [(start, sigil) for start, sigil in starts if start != -1]
+        if not starts:
+            return
+        start, sigil = min(starts, key=lambda item: item[0])
+        if sigil == "$" and value.startswith("${{", start):
+            end = value.find("}}", start + 3)
+            index = len(value) if end == -1 else end + 2
+            continue
+        end = value.find("}", start + 2)
+        if end == -1:
+            return
+        yield value[start : end + 1]
+        index = end + 1
 
 
 def _variable_is_defined(variable: str, defined: set[str]) -> bool:

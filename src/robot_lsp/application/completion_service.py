@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import IntEnum
+from functools import lru_cache
 from typing import Any
 
 from robot_lsp.domain.models import LspPosition, RobotSuite
@@ -37,6 +38,7 @@ class CompletionItem:
     documentation: str | None = None
     insert_text: str | None = None
     insert_text_format: InsertTextFormat | None = None
+    text_edit: dict[str, Any] | None = None
     data: Any = None
 
     def to_lsp(self) -> dict[str, Any]:
@@ -52,6 +54,8 @@ class CompletionItem:
             payload["insertText"] = self.insert_text
         if self.insert_text_format is not None:
             payload["insertTextFormat"] = int(self.insert_text_format)
+        if self.text_edit is not None:
+            payload["textEdit"] = self.text_edit
         if self.data is not None:
             payload["data"] = self.data
         return payload
@@ -111,6 +115,23 @@ class CompletionService:
         "Test Timeout",
         "Force Tags",
         "Default Tags",
+    ]
+    TEST_CASE_SETTING_ITEMS = [
+        "Documentation",
+        "Tags",
+        "Setup",
+        "Teardown",
+        "Template",
+        "Timeout",
+    ]
+    KEYWORD_SETTING_ITEMS = [
+        "Documentation",
+        "Arguments",
+        "Setup",
+        "Teardown",
+        "Timeout",
+        "Tags",
+        "Return",
     ]
     VARIABLE_TRIGGERS = {"$", "@", "&", "%"}
     VARIABLE_TYPE_ITEMS = [
@@ -218,6 +239,9 @@ class CompletionService:
             return CompletionList(self._variable_items(context))
         if self._is_section_context(context):
             return CompletionList(self._section_items(snippets_enabled=snippets_enabled))
+        local_setting_items = self._local_setting_items(context)
+        if local_setting_items is not None:
+            return CompletionList(local_setting_items)
         tag_items = self._tag_items(context)
         if tag_items is not None:
             return CompletionList(tag_items)
@@ -258,6 +282,9 @@ class CompletionService:
     def _is_variable_context(self, context: CompletionContext) -> bool:
         if context.trigger_character in self.VARIABLE_TRIGGERS:
             return True
+        last_open = max(context.line_prefix.rfind(f"{prefix}{{") for prefix in self.VARIABLE_TRIGGERS)
+        if last_open != -1 and context.line_prefix.rfind("}") < last_open:
+            return True
         return any(context.line_prefix.endswith(trigger) for trigger in self.VARIABLE_TRIGGERS)
 
     def _is_variable_type_context(self, context: CompletionContext) -> bool:
@@ -295,6 +322,27 @@ class CompletionService:
                 detail="Robot Framework setting",
             )
             for item in self.SETTING_ITEMS
+        ]
+
+    def _local_setting_items(self, context: CompletionContext) -> list[CompletionItem] | None:
+        if context.section not in {"test cases", "tasks", "keywords"}:
+            return None
+        stripped = context.line_prefix.lstrip()
+        if not stripped.startswith("[") and context.trigger_character != "[":
+            return None
+        if "]" in stripped:
+            return None
+
+        source = self.KEYWORD_SETTING_ITEMS if context.section == "keywords" else self.TEST_CASE_SETTING_ITEMS
+        prefix = stripped[1:].casefold()
+        return [
+            CompletionItem(
+                label=f"[{item}]",
+                kind=CompletionItemKind.KEYWORD,
+                detail="Robot Framework local setting",
+            )
+            for item in source
+            if item.casefold().startswith(prefix)
         ]
 
     def _keyword_items(self, context: CompletionContext) -> list[CompletionItem]:
@@ -336,6 +384,16 @@ class CompletionService:
                 for name in lib_keywords
                 if name not in existing_labels
             )
+        existing_labels = {item.label for item in items}
+        items.extend(
+            CompletionItem(
+                label=name,
+                kind=CompletionItemKind.FUNCTION,
+                detail="BuiltIn keyword",
+            )
+            for name in _builtin_keywords()
+            if name not in existing_labels
+        )
         return items
 
     def _variable_type_items(self) -> list[CompletionItem]:
@@ -369,38 +427,33 @@ class CompletionService:
     def _variable_items(self, context: CompletionContext) -> list[CompletionItem]:
         if context.suite is None:
             return []
-        items = [
-            CompletionItem(
-                label=variable.name,
-                kind=CompletionItemKind.VARIABLE,
-                detail=f"Local {variable.kind} variable",
-                documentation=str(variable.value) if variable.value is not None else None,
+        sigil = _variable_completion_sigil(context)
+        items: list[CompletionItem] = []
+        seen: set[str] = set()
+        for variable in context.suite.variables:
+            _append_variable_item(
+                items,
+                seen,
+                variable.name,
+                f"Local {variable.kind} variable",
+                str(variable.value) if variable.value is not None else None,
+                sigil,
             )
-            for variable in context.suite.variables
-        ]
-        items.extend(
-            CompletionItem(
-                label=variable.name,
-                kind=CompletionItemKind.VARIABLE,
-                detail=f"Scoped {variable.kind} variable",
-                documentation=str(variable.value) if variable.value is not None else None,
+        for variable in _scoped_variables(context):
+            _append_variable_item(
+                items,
+                seen,
+                variable.name,
+                f"Scoped {variable.kind} variable",
+                str(variable.value) if variable.value is not None else None,
+                sigil,
             )
-            for variable in _scoped_variables(context)
-            if variable.name not in {item.label for item in items}
-        )
         if self._workspace_index is not None and context.document.path is not None:
-            items.extend(
-                CompletionItem(
-                    label=location.name,
-                    kind=CompletionItemKind.VARIABLE,
-                    detail="Imported variable",
-                )
-                for location in self._workspace_index.imported_variable_locations(
-                    context.document.path,
-                    context.suite,
-                )
-                if location.name not in {item.label for item in items}
-            )
+            for location in self._workspace_index.imported_variable_locations(
+                context.document.path,
+                context.suite,
+            ):
+                _append_variable_item(items, seen, location.name, "Imported variable", None, sigil)
         return items
 
     def _dictionary_key_items(self, context: CompletionContext) -> list[CompletionItem] | None:
@@ -431,6 +484,7 @@ class CompletionService:
                 kind=CompletionItemKind.FIELD,
                 detail="Dictionary key",
                 documentation=str(value) if value is not None else None,
+                text_edit=_dictionary_key_text_edit(context, access.filter_text, key, quote_key=access.quote_key),
             )
             for key, value in dictionary.items()
             if key.casefold().startswith(filter_text)
@@ -538,6 +592,7 @@ class _DictionaryAccess:
     base_name: str
     path: list[str]
     filter_text: str
+    quote_key: bool = False
 
 
 def _dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
@@ -548,6 +603,10 @@ def _dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
 
 
 def _bracket_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
+    inline = _inline_bracket_dictionary_access(line_prefix)
+    if inline is not None:
+        return inline
+
     open_index = line_prefix.rfind("[")
     if open_index == -1 or "]" in line_prefix[open_index:]:
         return None
@@ -569,7 +628,25 @@ def _bracket_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
     path = _completed_bracket_path(prefix[close_index + 1 :])
     if path is None:
         return None
-    return _DictionaryAccess(base_name=base_name, path=path, filter_text=filter_text)
+    return _DictionaryAccess(base_name=base_name, path=path, filter_text=filter_text, quote_key=True)
+
+
+def _inline_bracket_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
+    open_brace_index = max(line_prefix.rfind("${"), line_prefix.rfind("&{"))
+    if open_brace_index == -1:
+        return None
+    close_index = line_prefix.find("}", open_brace_index + 2)
+    inner_end = close_index if close_index != -1 else len(line_prefix)
+    inner = line_prefix[open_brace_index + 2 : inner_end]
+    if not inner or any(char.isspace() for char in inner):
+        return None
+    if "[" not in inner:
+        return None
+
+    base_name, _, remainder = inner.partition("[")
+    if not base_name or "]" in remainder:
+        return None
+    return _DictionaryAccess(base_name=base_name, path=[], filter_text=remainder, quote_key=True)
 
 
 def _completed_bracket_path(text: str) -> list[str] | None:
@@ -587,6 +664,10 @@ def _completed_bracket_path(text: str) -> list[str] | None:
 
 
 def _dot_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
+    inline = _inline_dot_dictionary_access(line_prefix)
+    if inline is not None:
+        return inline
+
     close_index = line_prefix.rfind("}")
     if close_index == -1:
         return None
@@ -604,10 +685,119 @@ def _dot_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
     return _DictionaryAccess(base_name=base_name, path=parts[:-1], filter_text=parts[-1])
 
 
+def _inline_dot_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
+    open_brace_index = max(line_prefix.rfind("${"), line_prefix.rfind("&{"))
+    if open_brace_index == -1:
+        return None
+    close_index = line_prefix.find("}", open_brace_index + 2)
+    inner_end = close_index if close_index != -1 else len(line_prefix)
+    inner = line_prefix[open_brace_index + 2 : inner_end]
+    if not inner or any(char.isspace() for char in inner):
+        return None
+    if "." not in inner:
+        return None
+    parts = inner.split(".")
+    if not parts[0]:
+        return None
+    return _DictionaryAccess(base_name=parts[0], path=parts[1:-1], filter_text=parts[-1])
+
+
 def _visible_variables(context: CompletionContext):
     if context.suite is None:
         return []
     return [*context.suite.variables, *_scoped_variables(context)]
+
+
+def _dictionary_key_text_edit(
+    context: CompletionContext,
+    filter_text: str,
+    key: str,
+    *,
+    quote_key: bool = False,
+) -> dict[str, Any]:
+    start_character = max(0, context.position.character - _utf16_len(filter_text))
+    new_text = _dictionary_key_new_text(context, key, quote_key=quote_key)
+    return {
+        "range": {
+            "start": {"line": context.position.line, "character": start_character},
+            "end": {"line": context.position.line, "character": context.position.character},
+        },
+        "newText": new_text,
+    }
+
+
+def _dictionary_key_new_text(context: CompletionContext, key: str, *, quote_key: bool) -> str:
+    if not quote_key:
+        return key
+    if _character_at_utf16(context.line_text, context.position.character) == "]":
+        return f'"{key}"'
+    return f'"{key}"]'
+
+
+def _character_at_utf16(text: str, character: int) -> str | None:
+    offset = position_to_utf16_offset(text, 0, character)
+    if offset is None or offset < 0 or offset >= len(text):
+        return None
+    return text[offset]
+
+
+def _utf16_len(text: str) -> int:
+    return sum(1 if ord(ch) < 0x10000 else 2 for ch in text)
+
+
+def _append_variable_item(
+    items: list[CompletionItem],
+    seen: set[str],
+    name: str,
+    detail: str,
+    documentation: str | None,
+    sigil: str | None,
+) -> None:
+    base = _variable_base_name(name)
+    if base is None:
+        label = name
+        key = name.casefold()
+    else:
+        label = _format_variable_name(sigil, base) if sigil is not None else name
+        key = _normalize_variable_base(base)
+    if key in seen:
+        return
+    seen.add(key)
+    items.append(
+        CompletionItem(
+            label=label,
+            kind=CompletionItemKind.VARIABLE,
+            detail=detail,
+            documentation=documentation,
+        )
+    )
+
+
+def _variable_completion_sigil(context: CompletionContext) -> str | None:
+    if context.trigger_character in CompletionService.VARIABLE_TRIGGERS:
+        return context.trigger_character
+    for sigil in CompletionService.VARIABLE_TRIGGERS:
+        if context.line_prefix.endswith(sigil):
+            return sigil
+    last_open = max((context.line_prefix.rfind(f"{sigil}{{"), sigil) for sigil in CompletionService.VARIABLE_TRIGGERS)
+    index, sigil = last_open
+    if index != -1 and context.line_prefix.rfind("}") < index:
+        return sigil
+    return None
+
+
+def _variable_base_name(name: str) -> str | None:
+    if len(name) >= 4 and name[1] == "{" and name.endswith("}") and name[0] in CompletionService.VARIABLE_TRIGGERS:
+        return name[2:-1]
+    return None
+
+
+def _format_variable_name(sigil: str, base: str) -> str:
+    return f"{sigil}{{{base}}}"
+
+
+def _normalize_variable_base(base: str) -> str:
+    return "".join(char for char in base.casefold() if char not in " _")
 
 
 def _resolve_dictionary(base_name: str, path: list[str], variables) -> dict[str, Any] | None:
@@ -645,3 +835,26 @@ def _declared_before(variable, position: LspPosition) -> bool:
     if variable.range.start.line == position.line:
         return variable.range.start.character < position.character
     return False
+
+
+@lru_cache(maxsize=1)
+def _builtin_keywords() -> tuple[str, ...]:
+    try:
+        from robot.libdocpkg import LibraryDocumentation  # type: ignore[import]
+
+        libdoc = LibraryDocumentation("BuiltIn")
+        return tuple(keyword.name for keyword in libdoc.keywords)
+    except Exception:
+        return (
+            "Log",
+            "No Operation",
+            "Should Be Equal",
+            "Should Not Be Equal",
+            "Should Be True",
+            "Should Be False",
+            "Fail",
+            "Set Variable",
+            "Create List",
+            "Create Dictionary",
+            "Run Keyword If",
+        )
