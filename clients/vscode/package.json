@@ -68,6 +68,74 @@
         "path": "./syntaxes/robot.tmLanguage.json"
       }
     ],
+    "semanticTokenScopes": [
+      {
+        "language": "robotframework",
+        "scopes": {
+          "variable": [
+            "variable.other.robotframework",
+            "variable.parameter.robot"
+          ],
+          "comment": [
+            "comment.line.number-sign.robotframework",
+            "comment.line.robot"
+          ],
+          "header": [
+            "entity.name.section.robotframework",
+            "entity.name.type.class.robot"
+          ],
+          "setting": [
+            "keyword.control.setting.robotframework",
+            "storage.type.setting.robot"
+          ],
+          "name": [
+            "entity.other.inherited-class.robot",
+            "support.class.robotframework"
+          ],
+          "keywordNameDefinition": [
+            "entity.name.function.robotframework",
+            "entity.name.function.robot"
+          ],
+          "variableOperator": [
+            "keyword.operator.variable.robot",
+            "punctuation.definition.variable.robotframework"
+          ],
+          "keywordNameCall": [
+            "meta.keyword.call.robot",
+            "support.function.robotframework",
+            "entity.name.function.robotframework"
+          ],
+          "settingOperator": [
+            "punctuation.definition.setting.robot",
+            "punctuation.section.brackets.robotframework"
+          ],
+          "control": [
+            "keyword.control.flow.robot",
+            "keyword.control.robotframework"
+          ],
+          "testCaseName": [
+            "entity.name.function.robotframework",
+            "entity.name.function.robot"
+          ],
+          "parameterName": [
+            "variable.parameter.robot",
+            "variable.parameter.robotframework"
+          ],
+          "argumentValue": [
+            "string.quoted.single.robot",
+            "string.unquoted.robotframework"
+          ],
+          "error": [
+            "invalid.illegal.robot",
+            "invalid.illegal.robotframework"
+          ],
+          "documentation": [
+            "comment.block.documentation.robot",
+            "comment.block.documentation.robotframework"
+          ]
+        }
+      }
+    ],
     "commands": [
       {
         "command": "robot-lsp.runCurrentFile",

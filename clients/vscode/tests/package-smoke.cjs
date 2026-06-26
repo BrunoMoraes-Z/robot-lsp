@@ -21,6 +21,34 @@ function testManifest() {
   assert.ok(manifest.scripts.package.includes("vsce package"));
 }
 
+function testSemanticTokenScopes() {
+  const manifest = readJson("package.json");
+  const contribution = manifest.contributes.semanticTokenScopes.find((item) => item.language === "robotframework");
+  const expectedTokenTypes = [
+    "variable",
+    "comment",
+    "header",
+    "setting",
+    "name",
+    "keywordNameDefinition",
+    "variableOperator",
+    "keywordNameCall",
+    "settingOperator",
+    "control",
+    "testCaseName",
+    "parameterName",
+    "argumentValue",
+    "error",
+    "documentation",
+  ];
+
+  assert.ok(contribution);
+  for (const tokenType of expectedTokenTypes) {
+    assert.ok(Array.isArray(contribution.scopes[tokenType]), tokenType);
+    assert.ok(contribution.scopes[tokenType].length > 0, tokenType);
+  }
+}
+
 function testRequiredFilesExistAfterCompile() {
   assert.equal(exists("out/extension.js"), true);
   assert.equal(exists("out/infrastructure/debugAdapterRuntime.js"), true);
@@ -44,6 +72,7 @@ function testWorkflowExists() {
 }
 
 testManifest();
+testSemanticTokenScopes();
 testRequiredFilesExistAfterCompile();
 testVsCodeIgnoreDoesNotExcludeRuntimeDependencies();
 testWorkflowExists();
