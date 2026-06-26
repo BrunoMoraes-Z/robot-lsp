@@ -16,6 +16,7 @@ from .version import RobotFrameworkVersionDetector
 
 
 _VARIABLE_RE = re.compile(r"[$@&%]\{[^}\r\n]+\}")
+_BDD_PREFIXES = ("Given", "When", "Then", "And", "But")
 
 
 class RobotFrameworkParser:
@@ -117,6 +118,8 @@ def _semantic_tokens_for_raw_token(raw_token) -> list[SemanticToken]:
         named_argument_tokens = _split_named_argument_tokens(value, line=line, start=start)
         if named_argument_tokens is not None:
             return named_argument_tokens
+    if token_type == "keywordNameCall":
+        return _split_keyword_call_tokens(value, line=line, start=start)
     if token_type in {"argumentValue", "variable"}:
         return _split_variable_tokens(value, line=line, start=start, fallback_token_type=token_type)
     return [SemanticToken(line=line, start=start, length=_utf16_len(value), token_type=token_type)]
@@ -148,6 +151,55 @@ def _split_named_argument_tokens(value: str, *, line: int, start: int) -> list[S
             )
         )
     return [token for token in result if token.length > 0]
+
+
+def _split_keyword_call_tokens(value: str, *, line: int, start: int) -> list[SemanticToken]:
+    bdd_prefix = _bdd_prefix(value)
+    if bdd_prefix is not None:
+        rest_start_index = _keyword_rest_start(value, len(bdd_prefix))
+        if rest_start_index is not None:
+            return [
+                SemanticToken(line=line, start=start, length=_utf16_len(bdd_prefix), token_type="control"),
+                *_split_library_qualified_keyword(
+                    value[rest_start_index:],
+                    line=line,
+                    start=start + _utf16_len(value[:rest_start_index]),
+                ),
+            ]
+    return _split_library_qualified_keyword(value, line=line, start=start)
+
+
+def _bdd_prefix(value: str) -> str | None:
+    normalized = value.casefold()
+    for prefix in _BDD_PREFIXES:
+        prefix_length = len(prefix)
+        if normalized.startswith(prefix.casefold()) and len(value) > prefix_length and value[prefix_length].isspace():
+            return value[:prefix_length]
+    return None
+
+
+def _keyword_rest_start(value: str, index: int) -> int | None:
+    cursor = index
+    while cursor < len(value) and value[cursor].isspace():
+        cursor += 1
+    return cursor if cursor < len(value) else None
+
+
+def _split_library_qualified_keyword(value: str, *, line: int, start: int) -> list[SemanticToken]:
+    separator_index = value.rfind(".")
+    if separator_index <= 0 or separator_index == len(value) - 1:
+        return [SemanticToken(line=line, start=start, length=_utf16_len(value), token_type="keywordNameCall")]
+    prefix = value[: separator_index + 1]
+    keyword = value[separator_index + 1 :]
+    return [
+        SemanticToken(line=line, start=start, length=_utf16_len(prefix), token_type="name"),
+        SemanticToken(
+            line=line,
+            start=start + _utf16_len(prefix),
+            length=_utf16_len(keyword),
+            token_type="keywordNameCall",
+        ),
+    ]
 
 
 def _split_variable_tokens(value: str, *, line: int, start: int, fallback_token_type: str) -> list[SemanticToken]:

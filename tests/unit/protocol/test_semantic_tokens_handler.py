@@ -192,3 +192,61 @@ class TestSemanticTokensHandler:
         tokens = decoded_tokens(response.result["data"])
         assert (2, 11, 11, "argumentValue") in tokens
         assert "parameterName" not in [token_type for _line, _start, _length, token_type in tokens]
+
+    def test_semantic_tokens_split_bdd_keyword_prefix(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    When Log    done\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 4, 4, "control") in tokens
+        assert (2, 9, 3, "keywordNameCall") in tokens
+
+    def test_semantic_tokens_split_library_qualified_keyword_call(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    Collections.Append To List    item\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 4, 12, "name") in tokens
+        assert (2, 16, 14, "keywordNameCall") in tokens
+
+    def test_semantic_tokens_split_bdd_and_library_qualified_keyword_call(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    Given Collections.Append To List    item\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 4, 5, "control") in tokens
+        assert (2, 10, 12, "name") in tokens
+        assert (2, 22, 14, "keywordNameCall") in tokens

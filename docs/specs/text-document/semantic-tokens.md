@@ -98,6 +98,8 @@ Status: implemented.
 
 ### Step 5: Keyword Call Refinement
 
+Status: partially implemented. English BDD prefixes and qualified keyword calls are supported. Localized BDD prefixes remain deferred.
+
 - Split `Library.Keyword` into library/resource prefix as `name` and callable part as `keywordNameCall`.
 - Color BDD prefixes such as `Given`, `When`, `Then`, `And`, `But` as `control`.
 - Add localized BDD prefix support when localization data is available.
