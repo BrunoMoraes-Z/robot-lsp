@@ -113,6 +113,8 @@ Status: implemented.
 
 ### Step 7: Performance and Caching
 
+Status: implemented with a document-version/content-hash cache in `SemanticTokensService`. Raw parser token sharing with `ParseService` remains deferred until metrics justify the extra coupling.
+
 - Avoid duplicate parsing if metrics show semantic tokens become expensive.
 - Either cache raw parser token data or extend parse results with a stable syntax-token model.
 - Keep semantic token generation cancellation-aware for large files.

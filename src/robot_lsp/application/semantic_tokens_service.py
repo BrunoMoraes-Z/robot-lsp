@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -41,18 +43,64 @@ class SemanticTokenProvider(Protocol):
         ...
 
 
+@dataclass(frozen=True)
+class SemanticTokensCacheEntry:
+    uri: str
+    version: int
+    content_hash: str
+    data: list[int]
+
+
 class SemanticTokensService:
-    def __init__(self, document_store: DocumentStore, token_provider: SemanticTokenProvider) -> None:
+    def __init__(
+        self,
+        document_store: DocumentStore,
+        token_provider: SemanticTokenProvider,
+        *,
+        max_cache_entries: int = 50,
+    ) -> None:
         self._document_store = document_store
         self._token_provider = token_provider
+        self._max_cache_entries = max(0, max_cache_entries)
+        self._cache: OrderedDict[str, SemanticTokensCacheEntry] = OrderedDict()
+
+    @property
+    def cache_size(self) -> int:
+        return len(self._cache)
 
     def full(self, uri: str) -> dict[str, list[int]] | None:
         document = self._document_store.get(uri)
         if document is None:
             return None
+        content_hash = _content_hash(document.text)
+        cached = self._cache.get(uri)
+        if cached is not None and cached.version == document.version and cached.content_hash == content_hash:
+            self._cache.move_to_end(uri)
+            return {"data": list(cached.data)}
         source_name = document.path.name if document.path is not None else "document.robot"
         tokens = self._token_provider.semantic_tokens(document.text, source_name=source_name)
-        return {"data": encode_semantic_tokens(tokens)}
+        data = encode_semantic_tokens(tokens)
+        self._set_cache(uri, document.version, content_hash, data)
+        return {"data": data}
+
+    def clear_uri(self, uri: str) -> None:
+        self._cache.pop(uri, None)
+
+    def clear(self) -> None:
+        self._cache.clear()
+
+    def _set_cache(self, uri: str, version: int, content_hash: str, data: list[int]) -> None:
+        if self._max_cache_entries == 0:
+            return
+        self._cache[uri] = SemanticTokensCacheEntry(
+            uri=uri,
+            version=version,
+            content_hash=content_hash,
+            data=list(data),
+        )
+        self._cache.move_to_end(uri)
+        while len(self._cache) > self._max_cache_entries:
+            self._cache.popitem(last=False)
 
 
 def encode_semantic_tokens(tokens: list[SemanticToken]) -> list[int]:
@@ -81,3 +129,7 @@ def encode_semantic_tokens(tokens: list[SemanticToken]) -> list[int]:
         previous_start = semantic_token.start
         first = False
     return encoded
+
+
+def _content_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()

@@ -352,6 +352,8 @@ class LspServer:
             text=text,
             version=version if isinstance(version, int) else 0,
         )
+        if self.semantic_tokens_service is not None:
+            self.semantic_tokens_service.clear_uri(uri)
         self._index_document(uri, text)
         if self._diagnostics_enabled(uri) and self.diagnostic_service is not None:
             self.diagnostic_service.schedule_diagnostics(uri)
@@ -370,6 +372,8 @@ class LspServer:
         uri = text_document.get("uri")
         if isinstance(uri, str):
             self.document_store.close(uri)
+            if self.semantic_tokens_service is not None:
+                self.semantic_tokens_service.clear_uri(uri)
             if self.diagnostic_service is not None:
                 self.diagnostic_service.clear(uri)
         return None
