@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+import re
 from pathlib import Path
 
 from robot.api.parsing import get_model
@@ -12,6 +13,9 @@ from robot_lsp.domain.models import ParseResult
 
 from .adapter import RobotFrameworkASTAdapter
 from .version import RobotFrameworkVersionDetector
+
+
+_VARIABLE_RE = re.compile(r"[$@&%]\{[^}\r\n]+\}")
 
 
 class RobotFrameworkParser:
@@ -42,17 +46,12 @@ def _semantic_tokens(model) -> list[SemanticToken]:
     seen: set[tuple[int, int, int, str]] = set()
     for node in _iter_nodes(model):
         for raw_token in _node_tokens(node):
-            token_type = _semantic_token_type(raw_token)
-            if token_type is None:
-                continue
-            line = max(0, (raw_token.lineno or 1) - 1)
-            start = raw_token.col_offset or 0
-            length = _utf16_len(raw_token.value or "")
-            key = (line, start, length, token_type)
-            if key in seen:
-                continue
-            seen.add(key)
-            result.append(SemanticToken(line=line, start=start, length=length, token_type=token_type))
+            for semantic_token in _semantic_tokens_for_raw_token(raw_token):
+                key = (semantic_token.line, semantic_token.start, semantic_token.length, semantic_token.token_type)
+                if key in seen:
+                    continue
+                seen.add(key)
+                result.append(semantic_token)
     return result
 
 
@@ -99,6 +98,61 @@ def _semantic_token_type(raw_token) -> str | None:
     if token_type in {Token.ERROR, Token.FATAL_ERROR}:
         return "error"
     return None
+
+
+def _semantic_tokens_for_raw_token(raw_token) -> list[SemanticToken]:
+    token_type = _semantic_token_type(raw_token)
+    if token_type is None:
+        return []
+    value = raw_token.value or ""
+    line = max(0, (raw_token.lineno or 1) - 1)
+    start = raw_token.col_offset or 0
+    if token_type == "setting" and value.startswith("[") and value.endswith("]") and len(value) > 2:
+        return [
+            SemanticToken(line=line, start=start, length=1, token_type="settingOperator"),
+            SemanticToken(line=line, start=start + 1, length=_utf16_len(value[1:-1]), token_type="setting"),
+            SemanticToken(line=line, start=start + _utf16_len(value[:-1]), length=1, token_type="settingOperator"),
+        ]
+    if token_type in {"argumentValue", "variable"}:
+        return _split_variable_tokens(value, line=line, start=start, fallback_token_type=token_type)
+    return [SemanticToken(line=line, start=start, length=_utf16_len(value), token_type=token_type)]
+
+
+def _split_variable_tokens(value: str, *, line: int, start: int, fallback_token_type: str) -> list[SemanticToken]:
+    result: list[SemanticToken] = []
+    current = 0
+    for match in _VARIABLE_RE.finditer(value):
+        if match.start() > current and fallback_token_type == "argumentValue":
+            result.append(
+                SemanticToken(
+                    line=line,
+                    start=start + _utf16_len(value[:current]),
+                    length=_utf16_len(value[current : match.start()]),
+                    token_type="argumentValue",
+                )
+            )
+        variable = match.group(0)
+        variable_start = start + _utf16_len(value[: match.start()])
+        result.extend(
+            [
+                SemanticToken(line=line, start=variable_start, length=2, token_type="variableOperator"),
+                SemanticToken(line=line, start=variable_start + 2, length=_utf16_len(variable[2:-1]), token_type="variable"),
+                SemanticToken(line=line, start=variable_start + _utf16_len(variable[:-1]), length=1, token_type="variableOperator"),
+            ]
+        )
+        current = match.end()
+    if current < len(value) and fallback_token_type == "argumentValue":
+        result.append(
+            SemanticToken(
+                line=line,
+                start=start + _utf16_len(value[:current]),
+                length=_utf16_len(value[current:]),
+                token_type="argumentValue",
+            )
+        )
+    if result:
+        return [token for token in result if token.length > 0]
+    return [SemanticToken(line=line, start=start, length=_utf16_len(value), token_type=fallback_token_type)]
 
 
 def _header_tokens() -> set[str]:

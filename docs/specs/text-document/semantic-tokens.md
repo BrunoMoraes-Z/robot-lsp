@@ -83,6 +83,8 @@ Initial token mapping:
 
 ### Step 3: Variable and Setting Operators
 
+Status: implemented.
+
 - Split `${name}` into variable operators and variable body where useful.
 - Split `[Arguments]` into setting operators and setting name.
 - Keep UTF-16 offsets correct for non-ASCII text.

@@ -29,6 +29,18 @@ def token_types(data: list[int]) -> list[str]:
     return [TOKEN_TYPES[data[index + 3]] for index in range(0, len(data), 5)]
 
 
+def decoded_tokens(data: list[int]) -> list[tuple[int, int, int, str]]:
+    tokens: list[tuple[int, int, int, str]] = []
+    line = 0
+    start = 0
+    for index in range(0, len(data), 5):
+        delta_line, delta_start, length, token_type_index, _modifiers = data[index : index + 5]
+        line += delta_line
+        start = delta_start if delta_line else start + delta_start
+        tokens.append((line, start, length, TOKEN_TYPES[token_type_index]))
+    return tokens
+
+
 class TestSemanticTokensHandler:
     def test_semantic_tokens_full_returns_tokens_for_open_document(self):
         server, uri = make_server(
@@ -74,3 +86,48 @@ class TestSemanticTokensHandler:
 
         assert response is not None
         assert response.result is None
+
+    def test_semantic_tokens_split_variables_inside_arguments(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    Log    prefix ${value} suffix\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 18, 2, "variableOperator") in tokens
+        assert (2, 20, 5, "variable") in tokens
+        assert (2, 25, 1, "variableOperator") in tokens
+        assert (2, 11, 7, "argumentValue") in tokens
+        assert (2, 26, 7, "argumentValue") in tokens
+
+    def test_semantic_tokens_split_bracket_settings(self):
+        server, uri = make_server(
+            "*** Keywords ***\n"
+            "Keyword\n"
+            "    [Arguments]    ${value}\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 4, 1, "settingOperator") in tokens
+        assert (2, 5, 9, "setting") in tokens
+        assert (2, 14, 1, "settingOperator") in tokens
+        assert (2, 19, 2, "variableOperator") in tokens
+        assert (2, 21, 5, "variable") in tokens
+        assert (2, 26, 1, "variableOperator") in tokens
