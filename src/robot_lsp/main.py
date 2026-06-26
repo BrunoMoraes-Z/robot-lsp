@@ -14,6 +14,7 @@ from robot_lsp.application.logging_config import apply_log_level, configure_logg
 from robot_lsp.application.navigation_service import NavigationService
 from robot_lsp.application.parse_service import ParseService
 from robot_lsp.application.refactoring_service import RefactoringService
+from robot_lsp.application.semantic_tokens_service import SemanticTokensService
 from robot_lsp.application.workspace import WorkspaceIndex
 from robot_lsp.domain.diagnostics import LspDiagnostic
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
@@ -54,6 +55,7 @@ def create_server(publish_diagnostics: PublishDiagnostics | None = None) -> LspS
     server.refactoring_service = RefactoringService(server.document_store, parse_service, workspace_index)
     server.formatting_service = FormattingService(server.document_store)
     server.code_action_service = CodeActionService(server.document_store)
+    server.semantic_tokens_service = SemanticTokensService(server.document_store, parser)
     return server
 
 

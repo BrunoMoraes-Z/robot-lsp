@@ -55,4 +55,21 @@ Initial grammar coverage:
 
 ## LSP Relationship
 
-Syntax highlighting is independent from the LSP and must not require the Python server to start.
+Syntax highlighting must not require the Python server to start. The TextMate grammar provides immediate fallback colorization while the LSP starts.
+
+When the LSP is available, semantic tokens provide the richer second colorization pass. The client relies on the server capability documented in:
+
+```text
+docs/specs/text-document/semantic-tokens.md
+```
+
+## Semantic Token Scope Mapping
+
+The VS Code extension should map server semantic token types to TextMate scopes with `semanticTokenScopes` in `package.json`.
+
+Roadmap:
+
+- Keep the current TextMate grammar for startup and fallback highlighting.
+- Add semantic token scope mappings after the server emits stable token types.
+- Prefer broadly supported scopes so common VS Code themes color tokens without custom theme rules.
+- Evaluate compatibility with Robot Framework scopes used by existing extensions, especially `.robot` scopes.

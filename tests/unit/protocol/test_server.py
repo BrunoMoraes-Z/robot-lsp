@@ -4,6 +4,7 @@ from robot_lsp.protocol.jsonrpc import (
     create_notification,
     create_request,
 )
+from robot_lsp.application.semantic_tokens_service import TOKEN_MODIFIERS, TOKEN_TYPES
 from robot_lsp.protocol.lsp_types import ServerState, TextDocumentSyncKind
 from robot_lsp.protocol.server import LspServer
 
@@ -56,6 +57,14 @@ class TestLspServerLifecycle:
             "resolveProvider": False,
         }
         assert capabilities["hoverProvider"] is True
+        assert capabilities["semanticTokensProvider"] == {
+            "legend": {
+                "tokenTypes": TOKEN_TYPES,
+                "tokenModifiers": TOKEN_MODIFIERS,
+            },
+            "full": True,
+            "range": False,
+        }
 
     def test_initialized(self):
         server = LspServer()

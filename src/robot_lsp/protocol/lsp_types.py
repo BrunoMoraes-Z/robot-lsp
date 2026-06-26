@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Enum, IntEnum
 from typing import Any, Final
 
+from robot_lsp.application.semantic_tokens_service import TOKEN_MODIFIERS, TOKEN_TYPES
+
 SERVER_NAME: Final = "robot-lsp"
 SERVER_VERSION: Final = "0.1.0"
 
@@ -42,6 +44,14 @@ def server_capabilities() -> dict[str, Any]:
         "codeActionProvider": {
             "codeActionKinds": ["quickfix"],
             "resolveProvider": False,
+        },
+        "semanticTokensProvider": {
+            "legend": {
+                "tokenTypes": TOKEN_TYPES,
+                "tokenModifiers": TOKEN_MODIFIERS,
+            },
+            "full": True,
+            "range": False,
         },
         "workspace": {
             "didChangeConfiguration": {"dynamicRegistration": False},

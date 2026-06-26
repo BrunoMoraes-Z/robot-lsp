@@ -14,6 +14,7 @@ from robot_lsp.application.formatting_service import FormattingService
 from robot_lsp.application.hover_service import HoverService
 from robot_lsp.application.navigation_service import NavigationService
 from robot_lsp.application.refactoring_service import RefactoringService
+from robot_lsp.application.semantic_tokens_service import SemanticTokensService
 from robot_lsp.application.workspace import WorkspaceIndex
 from robot_lsp.domain.diagnostics import LspDiagnostic
 from robot_lsp.domain.models import LspPosition, LspRange
@@ -40,6 +41,7 @@ class LspServer:
         refactoring_service: RefactoringService | None = None,
         formatting_service: FormattingService | None = None,
         code_action_service: CodeActionService | None = None,
+        semantic_tokens_service: SemanticTokensService | None = None,
         configuration_service: ConfigurationService | None = None,
         log_level_applier: Callable[[LogLevel], None] | None = None,
     ) -> None:
@@ -59,6 +61,7 @@ class LspServer:
         self.refactoring_service = refactoring_service
         self.formatting_service = formatting_service
         self.code_action_service = code_action_service
+        self.semantic_tokens_service = semantic_tokens_service
         self.configuration_service = configuration_service or ConfigurationService()
         self.log_level_applier = log_level_applier
         self.outgoing_notifications: list[JsonRpcMessage] = []
@@ -87,6 +90,7 @@ class LspServer:
         self._dispatcher.register("textDocument/formatting", self._handle_formatting)
         self._dispatcher.register("textDocument/rangeFormatting", self._handle_range_formatting)
         self._dispatcher.register("textDocument/codeAction", self._handle_code_action)
+        self._dispatcher.register("textDocument/semanticTokens/full", self._handle_semantic_tokens_full)
         self._dispatcher.register("workspace/didChangeConfiguration", self._handle_did_change_configuration)
         self._dispatcher.register("workspace/didChangeWatchedFiles", self._handle_did_change_watched_files)
 
@@ -482,6 +486,21 @@ class LspServer:
         if completion is None:
             return {"isIncomplete": False, "items": []}
         return completion.to_lsp()
+
+    def _handle_semantic_tokens_full(
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        token: CancelToken,
+    ) -> dict[str, list[int]] | None:
+        if self.semantic_tokens_service is None or not isinstance(params, dict):
+            return None
+        text_document = params.get("textDocument")
+        if not isinstance(text_document, dict):
+            return None
+        uri = text_document.get("uri")
+        if not isinstance(uri, str):
+            return None
+        return self.semantic_tokens_service.full(uri)
 
     def _handle_response(self, message: JsonRpcMessage) -> None:
         if not isinstance(message.id, int):
