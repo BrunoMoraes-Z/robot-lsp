@@ -185,6 +185,7 @@ function testDebugContribution() {
   assert.equal(debuggerContribution.initialConfigurations[0].type, "robot-lsp");
   assert.equal(debuggerContribution.initialConfigurations[0].target, "${file}");
   assert.equal(debuggerContribution.configurationSnippets[0].body.request, "launch");
+  assert.deepEqual(manifest.contributes.breakpoints, [{ language: "robotframework" }]);
   assert.ok(commands.includes("robot-lsp.debugCurrentFile"));
   assert.ok(commands.includes("robot-lsp.debugCurrentTest"));
   assert.ok(manifest.activationEvents.includes("onCommand:robot-lsp.debugCurrentFile"));

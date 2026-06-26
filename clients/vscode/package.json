@@ -262,6 +262,11 @@
         ]
       }
     ],
+    "breakpoints": [
+      {
+        "language": "robotframework"
+      }
+    ],
     "configuration": {
       "title": "Robot LSP",
       "properties": {
