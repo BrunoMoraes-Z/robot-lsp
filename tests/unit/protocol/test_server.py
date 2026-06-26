@@ -53,7 +53,7 @@ class TestLspServerLifecycle:
         }
         assert capabilities["textDocumentSync"]["change"] == 1
         assert capabilities["completionProvider"] == {
-            "triggerCharacters": [" ", "$", "@", "&", "%"],
+            "triggerCharacters": [" ", "$", "@", "&", "%", "[", "."],
             "resolveProvider": False,
         }
         assert capabilities["hoverProvider"] is True

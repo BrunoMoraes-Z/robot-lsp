@@ -29,7 +29,7 @@ def server_capabilities() -> dict[str, Any]:
             "change": TextDocumentSyncKind.FULL,
         },
         "completionProvider": {
-            "triggerCharacters": [" ", "$", "@", "&", "%"],
+            "triggerCharacters": [" ", "$", "@", "&", "%", "[", "."],
             "resolveProvider": False,
         },
         "hoverProvider": True,

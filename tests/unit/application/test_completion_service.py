@@ -1,6 +1,7 @@
 from robot_lsp.application.completion_service import CompletionItemKind, CompletionService
-from robot_lsp.application.document_store import DocumentStore
+from robot_lsp.application.document_store import DocumentStore, path_to_uri
 from robot_lsp.application.parse_service import ParseService
+from robot_lsp.application.workspace import WorkspaceIndex
 from robot_lsp.domain.models import LspPosition
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
 
@@ -181,3 +182,107 @@ class TestCompletionService:
         service, _uri = make_service("")
 
         assert service.compute_completion("file:///missing.robot", LspPosition(0, 0)) is None
+
+    def test_completion_dictionary_key_bracket(self):
+        text = (
+            "*** Variables ***\n"
+            "&{USER}    name=Ana    email=ana@example.com\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${USER}["
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}[")))
+
+        assert labels(completion) == ["name", "email"]
+        assert completion.items[0].kind == CompletionItemKind.FIELD
+        assert completion.items[0].detail == "Dictionary key"
+        assert completion.items[0].documentation == "Ana"
+
+    def test_completion_dictionary_key_bracket_with_filter(self):
+        text = (
+            "*** Variables ***\n"
+            "&{USER}    name=Ana    email=ana@example.com\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${USER}[em"
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}[em")))
+
+        assert labels(completion) == ["email"]
+
+    def test_completion_dictionary_key_ampersand_bracket(self):
+        text = (
+            "*** Variables ***\n"
+            "&{USER}    name=Ana\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    &{USER}["
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    &{USER}[")))
+
+        assert labels(completion) == ["name"]
+
+    def test_completion_dictionary_key_dot(self):
+        text = (
+            "*** Variables ***\n"
+            "&{USER}    name=Ana    email=ana@example.com\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${USER}.e"
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}.e")))
+
+        assert labels(completion) == ["email"]
+
+    def test_completion_dictionary_key_ignores_non_dict(self):
+        text = (
+            "*** Variables ***\n"
+            "@{ITEMS}    one    two\n"
+            "*** Test Cases ***\n"
+            "T\n"
+            "    Log    ${ITEMS}["
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${ITEMS}[")))
+
+        assert labels(completion) == []
+
+    def test_completion_dictionary_key_scoped_variable(self):
+        text = (
+            "*** Test Cases ***\n"
+            "T\n"
+            "    VAR    &{USER}    name=Ana    email=ana@example.com\n"
+            "    Log    ${USER}["
+        )
+        service, uri = make_service(text)
+
+        completion = service.compute_completion(uri, LspPosition(line=3, character=len("    Log    ${USER}[")))
+
+        assert labels(completion) == ["name", "email"]
+
+    def test_completion_dictionary_key_imported_resource(self, tmp_path):
+        resource = tmp_path / "vars.resource"
+        resource.write_text("*** Variables ***\n&{USER}    name=Ana    email=ana@example.com\n", encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        suite_text = "*** Settings ***\nResource    vars.resource\n*** Test Cases ***\nT\n    Log    ${USER}["
+        suite.write_text(suite_text, encoding="utf-8")
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        store = DocumentStore()
+        parser = RobotFrameworkParser()
+        service = CompletionService(store, ParseService(store, parser), index)
+        uri = path_to_uri(suite.resolve())
+        store.open(uri=uri, text=suite_text, version=1, language_id="robotframework")
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}[")))
+
+        assert labels(completion) == ["name", "email"]

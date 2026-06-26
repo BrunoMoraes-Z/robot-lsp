@@ -16,6 +16,7 @@ class CompletionItemKind(IntEnum):
     TEXT = 1
     METHOD = 2
     FUNCTION = 3
+    FIELD = 5
     VARIABLE = 6
     MODULE = 9
     KEYWORD = 14
@@ -155,6 +156,9 @@ class CompletionService:
         if context is None:
             return CompletionList(items=[])
 
+        dictionary_items = self._dictionary_key_items(context)
+        if dictionary_items is not None:
+            return CompletionList(dictionary_items)
         if self._is_variable_type_context(context):
             return CompletionList(self._variable_type_items())
         if self._is_variable_context(context):
@@ -325,6 +329,39 @@ class CompletionService:
             )
         return items
 
+    def _dictionary_key_items(self, context: CompletionContext) -> list[CompletionItem] | None:
+        access = _dictionary_access(context.line_prefix)
+        if access is None:
+            return None
+        if context.suite is None:
+            return []
+
+        variables = []
+        if self._workspace_index is not None and context.document.path is not None:
+            variables.extend(
+                self._workspace_index.imported_variables(
+                    context.document.path,
+                    context.suite,
+                )
+            )
+        variables.extend(_visible_variables(context))
+
+        dictionary = _resolve_dictionary(access.base_name, access.path, variables)
+        if dictionary is None:
+            return []
+
+        filter_text = access.filter_text.casefold()
+        return [
+            CompletionItem(
+                label=key,
+                kind=CompletionItemKind.FIELD,
+                detail="Dictionary key",
+                documentation=str(value) if value is not None else None,
+            )
+            for key, value in dictionary.items()
+            if key.casefold().startswith(filter_text)
+        ]
+
 
 def _prefix_for_utf16_character(line_text: str, character: int) -> str:
     offset = position_to_utf16_offset(line_text, 0, character)
@@ -366,6 +403,112 @@ def _scoped_variables(context: CompletionContext):
         if keyword.range.start.line <= context.position.line <= keyword.range.end.line:
             variables.extend(variable for variable in keyword.variables if _declared_before(variable, context.position))
     return variables
+
+
+@dataclass(frozen=True)
+class _DictionaryAccess:
+    base_name: str
+    path: list[str]
+    filter_text: str
+
+
+def _dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
+    bracket = _bracket_dictionary_access(line_prefix)
+    if bracket is not None:
+        return bracket
+    return _dot_dictionary_access(line_prefix)
+
+
+def _bracket_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
+    open_index = line_prefix.rfind("[")
+    if open_index == -1 or "]" in line_prefix[open_index:]:
+        return None
+    prefix = line_prefix[:open_index]
+    filter_text = line_prefix[open_index + 1 :]
+    if any(char.isspace() for char in filter_text):
+        return None
+
+    close_index = prefix.rfind("}")
+    if close_index == -1:
+        return None
+    open_brace_index = max(prefix.rfind("${", 0, close_index), prefix.rfind("&{", 0, close_index))
+    if open_brace_index == -1:
+        return None
+
+    base_name = prefix[open_brace_index + 2 : close_index]
+    if not base_name:
+        return None
+    path = _completed_bracket_path(prefix[close_index + 1 :])
+    if path is None:
+        return None
+    return _DictionaryAccess(base_name=base_name, path=path, filter_text=filter_text)
+
+
+def _completed_bracket_path(text: str) -> list[str] | None:
+    path: list[str] = []
+    index = 0
+    while index < len(text):
+        if text[index] != "[":
+            return None
+        end_index = text.find("]", index + 1)
+        if end_index == -1:
+            return None
+        path.append(text[index + 1 : end_index])
+        index = end_index + 1
+    return path
+
+
+def _dot_dictionary_access(line_prefix: str) -> _DictionaryAccess | None:
+    close_index = line_prefix.rfind("}")
+    if close_index == -1:
+        return None
+    open_brace_index = max(line_prefix.rfind("${", 0, close_index), line_prefix.rfind("&{", 0, close_index))
+    if open_brace_index == -1:
+        return None
+
+    suffix = line_prefix[close_index + 1 :]
+    if not suffix.startswith("."):
+        return None
+    base_name = line_prefix[open_brace_index + 2 : close_index]
+    if not base_name:
+        return None
+    parts = suffix[1:].split(".")
+    return _DictionaryAccess(base_name=base_name, path=parts[:-1], filter_text=parts[-1])
+
+
+def _visible_variables(context: CompletionContext):
+    if context.suite is None:
+        return []
+    return [*context.suite.variables, *_scoped_variables(context)]
+
+
+def _resolve_dictionary(base_name: str, path: list[str], variables) -> dict[str, Any] | None:
+    by_name = {_normalize_variable_name(variable.name): variable for variable in variables}
+    current = _dictionary_value(base_name, by_name)
+    for key in path:
+        if current is None or key not in current:
+            return None
+        value = current[key]
+        if isinstance(value, dict):
+            current = value
+        elif isinstance(value, str) and value.startswith("&{") and value.endswith("}"):
+            current = _dictionary_value(value[2:-1], by_name)
+        else:
+            return None
+    return current
+
+
+def _dictionary_value(name: str, by_name: dict[str, Any]) -> dict[str, Any] | None:
+    variable = by_name.get(_normalize_variable_name(name))
+    if variable is None or variable.kind != "dict" or not isinstance(variable.value, dict):
+        return None
+    return variable.value
+
+
+def _normalize_variable_name(name: str) -> str:
+    if len(name) >= 4 and name[1] == "{" and name.endswith("}") and name[0] in "$@&%":
+        name = name[2:-1]
+    return "".join(char for char in name.casefold() if char not in " _")
 
 
 def _declared_before(variable, position: LspPosition) -> bool:

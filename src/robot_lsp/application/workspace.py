@@ -6,7 +6,7 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 
-from robot_lsp.domain.models import LspRange, RobotImport, RobotSuite
+from robot_lsp.domain.models import LspRange, RobotImport, RobotSuite, RobotVariable
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
 
 from .document_store import path_to_uri
@@ -247,6 +247,31 @@ class WorkspaceIndex:
 
         _collect(source_path, suite)
         return locations
+
+    def imported_variables(self, source_path: Path, suite: RobotSuite) -> list[RobotVariable]:
+        variables: list[RobotVariable] = []
+        visited: set[str] = set()
+
+        def _collect(path: Path, s: RobotSuite) -> None:
+            for import_ in s.imports:
+                if import_.type not in {"resource", "variables"}:
+                    continue
+                resolution = self.resolve_import(path, import_)
+                if resolution.resolved_uri is None or resolution.resolved_uri in visited:
+                    continue
+                visited.add(resolution.resolved_uri)
+                with self._lock:
+                    entry = self._entries.get(resolution.resolved_uri)
+                if entry is None and resolution.resolved_path is not None:
+                    entry = self.update_file(resolution.resolved_path)
+                if entry is None:
+                    continue
+                variables.extend(entry.suite.variables)
+                if import_.type == "resource":
+                    _collect(entry.path, entry.suite)
+
+        _collect(source_path, suite)
+        return variables
 
     def imported_library_keywords(
         self, source_path: Path, suite: RobotSuite
