@@ -116,6 +116,10 @@ class DiagnosticService:
                 location.name.casefold()
                 for location in self._workspace_index.imported_keyword_locations(source_path, suite)
             )
+            lib_keywords, has_unloadable_lib = self._workspace_index.imported_library_keywords(source_path, suite)
+            known_keywords.update(name.casefold() for name in lib_keywords)
+            if has_unloadable_lib:
+                return []
 
         diagnostics = []
         for step in _steps(suite):
@@ -134,7 +138,7 @@ class DiagnosticService:
 
     def _variable_diagnostics(self, uri: str, suite: RobotSuite) -> list[LspDiagnostic]:
         defined = {_normalize_variable(variable.name) for variable in suite.variables}
-        defined.update(_BUILTIN_VARIABLES)
+        defined.update(_normalize_variable(v) for v in _BUILTIN_VARIABLES)
         defined.update(_normalize_variable(_robot_variable_name(name)) for name in self._configured_variables(uri))
         source_path = self._source_path(uri)
         if self._workspace_index is not None and source_path is not None:
@@ -197,7 +201,30 @@ def _severity(severity: str) -> DiagnosticSeverity:
 
 
 _VARIABLE_PATTERN = re.compile(r"[$@&%]\{[^}]+\}")
-_BUILTIN_VARIABLES = {"${CURDIR}", "${TEMPDIR}", "${EXECDIR}", "${/}", "${:}", "${SPACE}", "${EMPTY}", "${TRUE}", "${FALSE}", "${NONE}", "${NULL}"}
+_COMPOSITE_ACCESS_RE = re.compile(r"[.\[]")
+_BUILTIN_VARIABLES: frozenset[str] = frozenset({
+    # Paths & separators
+    "${CURDIR}", "${TEMPDIR}", "${EXECDIR}", "${/}", "${:}", "${\n}", "${\\n}",
+    # Strings
+    "${SPACE}", "${EMPTY}",
+    # Booleans / null
+    "${TRUE}", "${FALSE}", "${NONE}", "${NULL}",
+    # CLI positional args ${0}–${9}
+    *(f"${{{i}}}" for i in range(10)),
+    # Output paths
+    "${OUTPUT_DIR}", "${OUTPUT_FILE}", "${LOG_FILE}", "${REPORT_FILE}", "${DEBUG_FILE}",
+    "${LOG_LEVEL}",
+    # Previous test
+    "${PREV_TEST_NAME}", "${PREV_TEST_STATUS}", "${PREV_TEST_MESSAGE}",
+    # Suite scope
+    "${SUITE_NAME}", "${SUITE_SOURCE}", "${SUITE_DOCUMENTATION}", "${SUITE_STATUS}", "${SUITE_MESSAGE}",
+    "@{SUITE_METADATA}", "&{SUITE_METADATA}",
+    # Test scope
+    "${TEST_NAME}", "${TEST_DOCUMENTATION}", "${TEST_STATUS}", "${TEST_MESSAGE}",
+    "@{TEST_TAGS}", "${TEST_TAGS}",
+    # Keyword scope (teardown)
+    "${KEYWORD_STATUS}", "${KEYWORD_MESSAGE}",
+})
 _BUILTIN_KEYWORDS = {
     "log",
     "no operation",
@@ -258,7 +285,7 @@ def _step_variable_diagnostics(step: RobotStep, defined: set[str]) -> list[LspDi
     diagnostics = []
     for value in [step.keyword, *step.args]:
         for variable in _VARIABLE_PATTERN.findall(value):
-            if _normalize_variable(variable) not in defined:
+            if not _variable_is_defined(variable, defined):
                 diagnostics.append(
                     _diagnostic(
                         step.range,
@@ -268,6 +295,21 @@ def _step_variable_diagnostics(step: RobotStep, defined: set[str]) -> list[LspDi
                     )
                 )
     return diagnostics
+
+
+def _variable_is_defined(variable: str, defined: set[str]) -> bool:
+    norm = _normalize_variable(variable)
+    if norm in defined:
+        return True
+    # Handle composite access patterns: ${dict.key} -> ${dict}, ${list[0]} -> ${list} or @{list}
+    inner = norm[2:-1]  # strip sigil+{ and closing }
+    base = _COMPOSITE_ACCESS_RE.split(inner, 1)[0]
+    if not base:
+        return False
+    for sigil in ("$", "@", "&", "%"):
+        if f"{sigil}{{{base}}}" in defined:
+            return True
+    return False
 
 
 def _body_events(steps, variables):

@@ -128,16 +128,19 @@ class TestWorkspaceIndex:
         assert locations[0].uri == path_to_uri(resource.resolve())
 
     def test_imported_variable_locations(self, tmp_path):
-        main, resource, _variables = write_workspace(tmp_path)
+        main, resource, variables = write_workspace(tmp_path)
         index = WorkspaceIndex()
         index.scan(tmp_path)
         suite = index.entries[path_to_uri(main.resolve())].suite
 
         locations = index.imported_variable_locations(main, suite)
 
-        assert len(locations) == 1
-        assert locations[0].name == "${RESOURCE_VAR}"
-        assert locations[0].uri == path_to_uri(resource.resolve())
+        names = {loc.name for loc in locations}
+        # variables from Resource import
+        assert "${RESOURCE_VAR}" in names
+        assert any(loc.uri == path_to_uri(resource.resolve()) for loc in locations if loc.name == "${RESOURCE_VAR}")
+        # variables from Variables import
+        assert "${VAR_FILE_VALUE}" in names
 
     def test_update_file_reuses_cache_when_unchanged(self, tmp_path):
         main, _resource, _variables = write_workspace(tmp_path)
@@ -189,6 +192,136 @@ class TestWorkspaceIndexIntegration:
         assert len(locations) == 1
         assert locations[0]["uri"] == path_to_uri(resource.resolve())
         assert locations[0]["range"]["start"]["line"] == 4
+
+
+class TestScanFollowsImports:
+    def test_scan_indexes_resource_outside_root(self, tmp_path):
+        workspace = tmp_path / "workspace"
+        shared = tmp_path / "shared"
+        workspace.mkdir()
+        shared.mkdir()
+        resource = shared / "shared.resource"
+        resource.write_text("*** Keywords ***\nShared Keyword\n    Log    ok\n", encoding="utf-8")
+        main = workspace / "main.robot"
+        main.write_text("*** Settings ***\nResource    ../shared/shared.resource\n", encoding="utf-8")
+        index = WorkspaceIndex()
+
+        index.scan(workspace)
+
+        assert path_to_uri(resource.resolve()) in index.entries
+
+    def test_scan_follows_transitive_imports(self, tmp_path):
+        workspace = tmp_path / "ws"
+        external = tmp_path / "ext"
+        workspace.mkdir()
+        external.mkdir()
+        deep = external / "deep.resource"
+        deep.write_text("*** Keywords ***\nDeep Keyword\n    Log    deep\n", encoding="utf-8")
+        middle = workspace / "middle.resource"
+        middle.write_text("*** Settings ***\nResource    ../ext/deep.resource\n", encoding="utf-8")
+        main = workspace / "main.robot"
+        main.write_text("*** Settings ***\nResource    middle.resource\n", encoding="utf-8")
+        index = WorkspaceIndex()
+
+        index.scan(workspace)
+
+        assert path_to_uri(deep.resolve()) in index.entries
+
+
+class TestLazyLoadingImports:
+    def test_imported_keyword_locations_lazy_loads_unindexed_file(self, tmp_path):
+        shared = tmp_path / "shared"
+        shared.mkdir()
+        resource = shared / "kw.resource"
+        resource.write_text("*** Keywords ***\nExternal Keyword\n    Log    hi\n", encoding="utf-8")
+        tests = tmp_path / "tests"
+        tests.mkdir()
+        suite = tests / "suite.robot"
+        suite.write_text("*** Settings ***\nResource    ../shared/kw.resource\n", encoding="utf-8")
+
+        index = WorkspaceIndex()
+        index.update_file(suite)
+        entry = index.entries[path_to_uri(suite.resolve())]
+
+        # resource is NOT in the index yet (scan was never called on shared/)
+        assert path_to_uri(resource.resolve()) not in index.entries
+
+        locations = index.imported_keyword_locations(suite, entry.suite)
+
+        assert len(locations) == 1
+        assert locations[0].name == "External Keyword"
+        # and it was lazily indexed
+        assert path_to_uri(resource.resolve()) in index.entries
+
+    def test_imported_keyword_locations_transitive(self, tmp_path):
+        # A imports B (hub), B imports C (has keywords) — A should see C's keywords
+        c = tmp_path / "c.resource"
+        c.write_text("*** Keywords ***\nDeep Keyword\n    Log    deep\n", encoding="utf-8")
+        b = tmp_path / "b.resource"
+        b.write_text("*** Settings ***\nResource    c.resource\n", encoding="utf-8")
+        a = tmp_path / "a.robot"
+        a.write_text("*** Settings ***\nResource    b.resource\n", encoding="utf-8")
+
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        entry = index.entries[path_to_uri(a.resolve())]
+
+        locations = index.imported_keyword_locations(a, entry.suite)
+
+        assert any(loc.name == "Deep Keyword" for loc in locations)
+
+    def test_imported_keyword_locations_circular_safe(self, tmp_path):
+        # A imports B, B imports A — must not recurse infinitely
+        a = tmp_path / "a.resource"
+        b = tmp_path / "b.resource"
+        a.write_text("*** Settings ***\nResource    b.resource\n*** Keywords ***\nKw A\n    Log    a\n", encoding="utf-8")
+        b.write_text("*** Settings ***\nResource    a.resource\n*** Keywords ***\nKw B\n    Log    b\n", encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        suite.write_text("*** Settings ***\nResource    a.resource\n", encoding="utf-8")
+
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        entry = index.entries[path_to_uri(suite.resolve())]
+
+        locations = index.imported_keyword_locations(suite, entry.suite)
+        names = {loc.name for loc in locations}
+
+        assert "Kw A" in names
+        assert "Kw B" in names
+
+    def test_imported_variable_locations_handles_variables_import(self, tmp_path):
+        var_file = tmp_path / "vars.resource"
+        var_file.write_text("*** Variables ***\n${MY_VAR}    hello\n", encoding="utf-8")
+        suite_file = tmp_path / "suite.robot"
+        suite_file.write_text(
+            "*** Settings ***\nVariables    vars.resource\n*** Test Cases ***\nT\n    Log    ${MY_VAR}\n",
+            encoding="utf-8",
+        )
+
+        index = WorkspaceIndex()
+        index.update_file(suite_file)
+        entry = index.entries[path_to_uri(suite_file.resolve())]
+
+        locations = index.imported_variable_locations(suite_file, entry.suite)
+
+        assert any(loc.name == "${MY_VAR}" for loc in locations)
+
+    def test_imported_variable_locations_transitive(self, tmp_path):
+        # a.robot imports b.resource (hub) which imports c.resource (has vars)
+        c = tmp_path / "c.resource"
+        c.write_text("*** Variables ***\n${DEEP_VAR}    value\n", encoding="utf-8")
+        b = tmp_path / "b.resource"
+        b.write_text("*** Settings ***\nResource    c.resource\n", encoding="utf-8")
+        a = tmp_path / "a.robot"
+        a.write_text("*** Settings ***\nResource    b.resource\n", encoding="utf-8")
+
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        entry = index.entries[path_to_uri(a.resolve())]
+
+        locations = index.imported_variable_locations(a, entry.suite)
+
+        assert any(loc.name == "${DEEP_VAR}" for loc in locations)
 
 
 class TestIsPathImport:

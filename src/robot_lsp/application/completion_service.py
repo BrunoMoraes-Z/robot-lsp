@@ -250,6 +250,7 @@ class CompletionService:
             for keyword in context.suite.keywords
         ]
         if self._workspace_index is not None and context.document.path is not None:
+            existing_labels = {item.label for item in items}
             items.extend(
                 CompletionItem(
                     label=location.name,
@@ -260,7 +261,20 @@ class CompletionService:
                     context.document.path,
                     context.suite,
                 )
-                if location.name not in {item.label for item in items}
+                if location.name not in existing_labels
+            )
+            existing_labels = {item.label for item in items}
+            lib_keywords, _ = self._workspace_index.imported_library_keywords(
+                context.document.path, context.suite
+            )
+            items.extend(
+                CompletionItem(
+                    label=name,
+                    kind=CompletionItemKind.FUNCTION,
+                    detail="Library keyword",
+                )
+                for name in lib_keywords
+                if name not in existing_labels
             )
         return items
 
