@@ -306,6 +306,85 @@ class TestLazyLoadingImports:
 
         assert any(loc.name == "${MY_VAR}" for loc in locations)
 
+    def test_imported_variables_from_python_file_dict(self, tmp_path):
+        var_file = tmp_path / "vars.py"
+        var_file.write_text('USER = {"name": "Ana", "email": "ana@example.com"}\n', encoding="utf-8")
+        suite_file = tmp_path / "suite.robot"
+        suite_file.write_text("*** Settings ***\nVariables    vars.py\n", encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite_file)
+        entry = index.entries[path_to_uri(suite_file.resolve())]
+
+        variables = index.imported_variables(suite_file, entry.suite)
+
+        assert len(variables) == 1
+        assert variables[0].name == "${USER}"
+        assert variables[0].kind == "dict"
+        assert variables[0].value == {"name": "Ana", "email": "ana@example.com"}
+
+    def test_imported_variables_from_python_get_variables(self, tmp_path):
+        var_file = tmp_path / "vars.py"
+        var_file.write_text(
+            'def get_variables():\n    return {"USER": {"name": "Ana"}, "VALUE": "x"}\n',
+            encoding="utf-8",
+        )
+        suite_file = tmp_path / "suite.robot"
+        suite_file.write_text("*** Settings ***\nVariables    vars.py\n", encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite_file)
+        entry = index.entries[path_to_uri(suite_file.resolve())]
+
+        variables = index.imported_variables(suite_file, entry.suite)
+
+        names = {variable.name: variable for variable in variables}
+        assert names["${USER}"].kind == "dict"
+        assert names["${USER}"].value == {"name": "Ana"}
+        assert names["${VALUE}"].kind == "scalar"
+        assert names["${VALUE}"].value == "x"
+
+    def test_imported_variables_from_python_ignores_dynamic_values(self, tmp_path):
+        var_file = tmp_path / "vars.py"
+        var_file.write_text('USER = dict(name="Ana")\n', encoding="utf-8")
+        suite_file = tmp_path / "suite.robot"
+        suite_file.write_text("*** Settings ***\nVariables    vars.py\n", encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite_file)
+        entry = index.entries[path_to_uri(suite_file.resolve())]
+
+        variables = index.imported_variables(suite_file, entry.suite)
+
+        assert variables == []
+
+    def test_imported_variables_from_yaml_file_dict(self, tmp_path):
+        var_file = tmp_path / "vars.yaml"
+        var_file.write_text("USER:\n  name: Ana\n  email: ana@example.com\n", encoding="utf-8")
+        suite_file = tmp_path / "suite.robot"
+        suite_file.write_text("*** Settings ***\nVariables    vars.yaml\n", encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite_file)
+        entry = index.entries[path_to_uri(suite_file.resolve())]
+
+        variables = index.imported_variables(suite_file, entry.suite)
+
+        assert len(variables) == 1
+        assert variables[0].name == "${USER}"
+        assert variables[0].kind == "dict"
+        assert variables[0].value == {"name": "Ana", "email": "ana@example.com"}
+
+    def test_imported_variables_resolves_variable_file_without_suffix(self, tmp_path):
+        var_file = tmp_path / "vars.yml"
+        var_file.write_text("USER:\n  name: Ana\n", encoding="utf-8")
+        suite_file = tmp_path / "suite.robot"
+        suite_file.write_text("*** Settings ***\nVariables    vars\n", encoding="utf-8")
+        index = WorkspaceIndex()
+        index.update_file(suite_file)
+        entry = index.entries[path_to_uri(suite_file.resolve())]
+
+        variables = index.imported_variables(suite_file, entry.suite)
+
+        assert variables[0].name == "${USER}"
+        assert variables[0].value == {"name": "Ana"}
+
     def test_imported_variable_locations_transitive(self, tmp_path):
         # a.robot imports b.resource (hub) which imports c.resource (has vars)
         c = tmp_path / "c.resource"

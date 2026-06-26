@@ -374,7 +374,7 @@ def _variable_value(name: str, values: list[str]) -> str | list[str] | dict[str,
 
 
 def _variable_kind(name: str, type_annotation: str | None, features: FeatureSet):
-    if features.has_secret_variables and type_annotation == "Secret":
+    if type_annotation == "Secret":
         return "secret"
     if name.startswith("@{"):
         return "list"

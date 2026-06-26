@@ -239,6 +239,26 @@ class TestDiagnosticService:
         assert diagnostic.code == "import_not_found"
         assert diagnostic.message == "Import not found: missing.resource"
 
+    def test_yaml_variable_file_without_pyyaml_reports_diagnostic(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("robot_lsp.application.diagnostic_service.has_yaml_support", lambda: False)
+        index = WorkspaceIndex()
+        variable_file = tmp_path / "vars.yaml"
+        variable_file.write_text("USER:\n  name: Ana\n", encoding="utf-8")
+        path = tmp_path / "suite.robot"
+        uri = path_to_uri(path)
+        text = "*** Settings ***\nVariables    vars.yaml\n"
+        path.write_text(text, encoding="utf-8")
+        index.update_file(path)
+        store, service, published = make_service(workspace_index=index)
+        store.open(uri=uri, text=text, version=1, language_id="robotframework")
+
+        service.flush(uri)
+
+        diagnostic = published[0][1][0]
+        assert diagnostic.severity == DiagnosticSeverity.ERROR
+        assert diagnostic.code == "yaml_support_missing"
+        assert diagnostic.message == "YAML variable files require PyYAML to be installed."
+
     def test_imported_resource_symbols_do_not_report_missing(self, tmp_path):
         main = tmp_path / "main.robot"
         resource = tmp_path / "keywords.resource"

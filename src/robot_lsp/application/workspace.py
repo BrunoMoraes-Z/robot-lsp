@@ -8,6 +8,7 @@ from pathlib import Path
 
 from robot_lsp.domain.models import LspRange, RobotImport, RobotSuite, RobotVariable
 from robot_lsp.infrastructure.robotframework.parser import RobotFrameworkParser
+from robot_lsp.infrastructure.robotframework.variable_files import parse_python_variable_file, parse_yaml_variable_file
 
 from .document_store import path_to_uri
 
@@ -53,8 +54,17 @@ class WorkspaceEntry:
     content_hash: str
 
 
+@dataclass(frozen=True)
+class VariableFileEntry:
+    path: Path
+    variables: list[RobotVariable]
+    mtime: float
+    content_hash: str
+
+
 class WorkspaceIndex:
     SUPPORTED_SUFFIXES = {".robot", ".resource"}
+    SUPPORTED_VARIABLE_FILE_SUFFIXES = {".py", ".yaml", ".yml"}
 
     def __init__(self, parser: RobotFrameworkParser | None = None, import_paths: list[Path] | None = None) -> None:
         self._parser = parser or RobotFrameworkParser()
@@ -62,6 +72,7 @@ class WorkspaceIndex:
         self._import_paths = tuple(path.resolve() for path in import_paths or [])
         self._lock = threading.RLock()
         self._library_keywords_cache: dict[str, list[str] | None] = {}
+        self._variable_file_cache: dict[str, VariableFileEntry] = {}
 
     @property
     def entries(self) -> dict[str, WorkspaceEntry]:
@@ -260,6 +271,9 @@ class WorkspaceIndex:
                 if resolution.resolved_uri is None or resolution.resolved_uri in visited:
                     continue
                 visited.add(resolution.resolved_uri)
+                if resolution.resolved_path is not None and resolution.resolved_path.suffix.lower() in self.SUPPORTED_VARIABLE_FILE_SUFFIXES:
+                    variables.extend(self._load_variable_file(resolution.resolved_path))
+                    continue
                 with self._lock:
                     entry = self._entries.get(resolution.resolved_uri)
                 if entry is None and resolution.resolved_path is not None:
@@ -271,6 +285,35 @@ class WorkspaceIndex:
                     _collect(entry.path, entry.suite)
 
         _collect(source_path, suite)
+        return variables
+
+    def _load_variable_file(self, path: Path) -> list[RobotVariable]:
+        path = path.resolve()
+        if not path.exists() or path.suffix.lower() not in self.SUPPORTED_VARIABLE_FILE_SUFFIXES:
+            return []
+
+        try:
+            content = path.read_bytes()
+            mtime = path.stat().st_mtime
+        except OSError:
+            return []
+        content_hash = hashlib.sha256(content).hexdigest()
+        key = str(path)
+        with self._lock:
+            cached = self._variable_file_cache.get(key)
+        if cached is not None and cached.content_hash == content_hash and cached.mtime == mtime:
+            return cached.variables
+
+        suffix = path.suffix.lower()
+        if suffix == ".py":
+            variables = parse_python_variable_file(path)
+        elif suffix in {".yaml", ".yml"}:
+            variables = parse_yaml_variable_file(path)
+        else:
+            variables = []
+        entry = VariableFileEntry(path=path, variables=variables, mtime=mtime, content_hash=content_hash)
+        with self._lock:
+            self._variable_file_cache[key] = entry
         return variables
 
     def imported_library_keywords(
@@ -342,6 +385,11 @@ class WorkspaceIndex:
                 return candidate
             if import_.type == "resource" and candidate.suffix == "":
                 for suffix in (".resource", ".robot"):
+                    with_suffix = candidate.with_suffix(suffix)
+                    if with_suffix.exists():
+                        return with_suffix
+            if import_.type == "variables" and candidate.suffix == "":
+                for suffix in (".robot", ".resource", ".py", ".yaml", ".yml"):
                     with_suffix = candidate.with_suffix(suffix)
                     if with_suffix.exists():
                         return with_suffix

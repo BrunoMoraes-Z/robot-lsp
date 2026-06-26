@@ -286,3 +286,39 @@ class TestCompletionService:
         completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}[")))
 
         assert labels(completion) == ["name", "email"]
+
+    def test_completion_dictionary_key_imported_python_variable_file(self, tmp_path):
+        var_file = tmp_path / "vars.py"
+        var_file.write_text('USER = {"name": "Ana", "email": "ana@example.com"}\n', encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        suite_text = "*** Settings ***\nVariables    vars.py\n*** Test Cases ***\nT\n    Log    ${USER}[na"
+        suite.write_text(suite_text, encoding="utf-8")
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        store = DocumentStore()
+        parser = RobotFrameworkParser()
+        service = CompletionService(store, ParseService(store, parser), index)
+        uri = path_to_uri(suite.resolve())
+        store.open(uri=uri, text=suite_text, version=1, language_id="robotframework")
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}[na")))
+
+        assert labels(completion) == ["name"]
+
+    def test_completion_dictionary_key_imported_yaml_variable_file(self, tmp_path):
+        var_file = tmp_path / "vars.yaml"
+        var_file.write_text("USER:\n  name: Ana\n  email: ana@example.com\n", encoding="utf-8")
+        suite = tmp_path / "suite.robot"
+        suite_text = "*** Settings ***\nVariables    vars.yaml\n*** Test Cases ***\nT\n    Log    ${USER}["
+        suite.write_text(suite_text, encoding="utf-8")
+        index = WorkspaceIndex()
+        index.scan(tmp_path)
+        store = DocumentStore()
+        parser = RobotFrameworkParser()
+        service = CompletionService(store, ParseService(store, parser), index)
+        uri = path_to_uri(suite.resolve())
+        store.open(uri=uri, text=suite_text, version=1, language_id="robotframework")
+
+        completion = service.compute_completion(uri, LspPosition(line=4, character=len("    Log    ${USER}[")))
+
+        assert labels(completion) == ["name", "email"]

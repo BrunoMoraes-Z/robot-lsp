@@ -7,6 +7,7 @@ from importlib import import_module
 
 from robot_lsp.domain.diagnostics import DiagnosticSeverity, LspDiagnostic
 from robot_lsp.domain.models import LspRange, RobotDiagnostic, RobotStep, RobotSuite
+from robot_lsp.infrastructure.robotframework.variable_files import has_yaml_support
 
 from .configuration import ServerConfig
 from .parse_service import ParseService
@@ -96,13 +97,27 @@ class DiagnosticService:
             return []
         diagnostics = []
         for import_ in suite.imports:
-            if self._workspace_index.resolve_import(source_path, import_).resolved_path is None:
+            resolved_path = self._workspace_index.resolve_import(source_path, import_).resolved_path
+            if resolved_path is None:
                 diagnostics.append(
                     _diagnostic(
                         import_.range,
                         DiagnosticSeverity.ERROR,
                         f"Import not found: {import_.name}",
                         "import_not_found",
+                    )
+                )
+            elif (
+                import_.type == "variables"
+                and resolved_path.suffix.lower() in {".yaml", ".yml"}
+                and not has_yaml_support()
+            ):
+                diagnostics.append(
+                    _diagnostic(
+                        import_.range,
+                        DiagnosticSeverity.ERROR,
+                        "YAML variable files require PyYAML to be installed.",
+                        "yaml_support_missing",
                     )
                 )
         return diagnostics
