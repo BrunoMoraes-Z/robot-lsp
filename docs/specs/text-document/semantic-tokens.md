@@ -106,6 +106,8 @@ Status: partially implemented. English BDD prefixes and qualified keyword calls 
 
 ### Step 6: Documentation and Errors
 
+Status: implemented.
+
 - Color documentation bodies as `documentation`.
 - Ensure parser errors and invalid headers are surfaced as `error` tokens where positions are available.
 

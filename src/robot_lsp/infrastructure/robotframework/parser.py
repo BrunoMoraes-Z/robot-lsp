@@ -47,7 +47,7 @@ def _semantic_tokens(model) -> list[SemanticToken]:
     seen: set[tuple[int, int, int, str]] = set()
     for node in _iter_nodes(model):
         for raw_token in _node_tokens(node):
-            for semantic_token in _semantic_tokens_for_raw_token(raw_token):
+            for semantic_token in _semantic_tokens_for_raw_token(raw_token, node=node):
                 key = (semantic_token.line, semantic_token.start, semantic_token.length, semantic_token.token_type)
                 if key in seen:
                     continue
@@ -101,13 +101,15 @@ def _semantic_token_type(raw_token) -> str | None:
     return None
 
 
-def _semantic_tokens_for_raw_token(raw_token) -> list[SemanticToken]:
+def _semantic_tokens_for_raw_token(raw_token, *, node) -> list[SemanticToken]:
     token_type = _semantic_token_type(raw_token)
     if token_type is None:
         return []
     value = raw_token.value or ""
     line = max(0, (raw_token.lineno or 1) - 1)
     start = raw_token.col_offset or 0
+    if type(node).__name__ == "Documentation" and raw_token.type == Token.ARGUMENT:
+        return [SemanticToken(line=line, start=start, length=_utf16_len(value), token_type="documentation")]
     if token_type == "setting" and value.startswith("[") and value.endswith("]") and len(value) > 2:
         return [
             SemanticToken(line=line, start=start, length=1, token_type="settingOperator"),

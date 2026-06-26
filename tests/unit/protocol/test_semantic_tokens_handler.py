@@ -250,3 +250,48 @@ class TestSemanticTokensHandler:
         assert (2, 4, 5, "control") in tokens
         assert (2, 10, 12, "name") in tokens
         assert (2, 22, 14, "keywordNameCall") in tokens
+
+    def test_semantic_tokens_mark_documentation_arguments(self):
+        server, uri = make_server(
+            "*** Settings ***\n"
+            "Documentation    Suite docs\n"
+            "\n"
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    [Documentation]    Test docs\n"
+            "\n"
+            "*** Keywords ***\n"
+            "Keyword\n"
+            "    [Documentation]    Keyword docs\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (1, 17, 10, "documentation") in tokens
+        assert (5, 23, 9, "documentation") in tokens
+        assert (9, 23, 12, "documentation") in tokens
+
+    def test_semantic_tokens_mark_parser_errors(self):
+        server, uri = make_server(
+            "*** Test Cases ***\n"
+            "Example\n"
+            "    [Bad]\n"
+        )
+
+        response = server.handle_message(
+            create_request(
+                "textDocument/semanticTokens/full",
+                id=2,
+                params={"textDocument": {"uri": uri}},
+            )
+        )
+
+        tokens = decoded_tokens(response.result["data"])
+        assert (2, 4, 5, "error") in tokens
